@@ -1,5 +1,5 @@
 {
-  "experiment": "E007 — Hidden speed (WR): tracked top-end speed beyond the 40 time",
+  "experiment": "E007 \u2014 Hidden speed (WR): tracked top-end speed beyond the 40 time",
   "date": "2026-10-14",
   "written_by": "orchestrator, before any agent or person examined the P2/P3 targets against any Combine feature",
   "already_seen_before_this_prereg": [
@@ -10,10 +10,10 @@
   ],
   "feature": {
     "name": "c_flying20",
-    "definition": "Average speed (yd/s) over yards 20-40 of the 40-yd dash, from tracking: along-track distance from the motion-onset position (not the 'dis' field), interpolated crossing times at 20 and 40 yd, 20 / (t40 - t20). Player value = mean over QC-passing attempts (bdb27.speed, E006 QC rules).",
+    "definition": "Average speed (yd/s) over yards 20-40 of the 40-yd dash, from tracking: along-track distance from the motion-onset position (not the 'dis' field), interpolated crossing times at 20 and 40 yd, 20 / (t40 - t20). Player value = mean over QC-passing attempts (bdb27.speed, E006 QC rules). [AMENDED 2026-10-14: distance from the official start line, see 'amendments'.]",
     "population": "Combine position WR with >= 1 QC-passing tracked 40"
   },
-  "harness": "bdb27.linkage.evaluate, protocol rev 2 (PLAN.md §4): B2 incl. draft-year dummies, expected_sign=+1, n_repeats=50, n_perm=2000, n_perm_fl=10000, seeds 0, 1, 2.",
+  "harness": "bdb27.linkage.evaluate, protocol rev 2 (PLAN.md \u00a74): B2 incl. draft-year dummies, expected_sign=+1, n_repeats=50, n_perm=2000, n_perm_fl=10000, seeds 0, 1, 2.",
   "primary_tests": [
     {
       "id": "P1",
@@ -34,7 +34,7 @@
       "rationale": "Performance: hidden speed turns into production per route run."
     }
   ],
-  "go": "PLAN.md §4 rev 2 criteria for each test, BH across these 3 primaries (and report BH across all E007 tests).",
+  "go": "PLAN.md \u00a74 rev 2 criteria for each test, BH across these 3 primaries (and report BH across all E007 tests).",
   "prespecified_robustness_not_additional_claims": [
     "seeds 0, 1, 2",
     "leave-3-out influence: drop the 3 players with the largest positive contribution to the partial correlation",
@@ -50,5 +50,15 @@
     "targets per route over expected",
     "DB analog: c_flying20 -> DB game_top_speed",
     "career outcome: offensive snaps per available season (player_career_successes) beyond B2"
+  ],
+  "amendments": [
+    {
+      "date": "2026-10-14",
+      "made_before_any_P1_P2_P3_association_was_computed": true,
+      "change": "c_flying20 is measured from the official start line (distance = x - 10 in the raw Combine frame; 20-yd and 40-yd lines are the official marks), not from the motion-onset position.",
+      "reason": "Measurement feasibility, discovered while building bdb27.speed: measured from the onset position, the 40-yd mark lies beyond the end of tracking in 28% of attempts (42% with canonicalized x), so the onset-relative flying 20 is undefined for them. Start-line splits exist for every attempt and match the official course; tracked 10-40 time vs official (forty - ten_yd_split) r = 0.980 (onset-relative: 0.978 on the same attempts).",
+      "implementation": "bdb27.speed player-level c40_v_20_40 (mean over QC-passing attempts).",
+      "also": "P2/P3 EB shrinkage uses the game-clustered sampling variance (cluster='game_id') once added to bdb27.shrinkage.eb_mean: plays within a game are correlated, and the unclustered variance under-shrinks (found on DL get-off)."
+    }
   ]
 }
