@@ -1,0 +1,53 @@
+{
+  "experiment_id": "E004",
+  "probe": "C - OL lateral movement -> pass protection",
+  "written": "2026-10-14, after the reliability screen (results/E004_reliability.json) and segmentation QC (figures/E004_qc_*.png), BEFORE any correlation or model between a Combine feature and a game trait/outcome was computed",
+  "hypothesis": "Offensive linemen who swing their momentum harder through lateral reversals in the Combine pass-pro mirror drill (higher reversal acceleration) accelerate into their pass sets faster in regular-season games and allow less pressure than expected, beyond traditional Combine measures and draft position (B2).",
+  "feature_definition": {
+    "cmb_rev_accel_mirror": "PASS_PRO mirror drill (PASS_PRO-MIRROR_DRILL and PASS_PRO_MIRROR_DRILL merged), one attempt per player. Reversals = segments.breaks with min_turn=120 deg, half_window=0.5 s, context=1 s, entry speed >= 1 yd/s, excluding reversals within 0.3 s of (or after) the start of the final run-out (last frame < 1.5 yd/s before the attempt's peak speed). Per reversal: rev_accel = |v_exit_peak - v_entry_peak| / (t_exit_peak - t_entry_peak) (yd/s^2; peaks of speed within +-1 s of the break). Values centered by Combine session x reversal index (2 sessions per year, ~1.7 h apart), then averaged per player (>= 2 reversals). Higher = harder stop-and-go."
+  },
+  "feature_reliability": {
+    "within_attempt_spearman_brown": 0.73,
+    "cross_drill_r_with_wave_drill_same_metric": 0.25,
+    "note": "Single attempt per player: within-attempt consistency cannot separate the player from the partner/attempt, so 0.73 is an upper bound; the weak cross-drill convergence (r=0.25 with the wave drill, whose own within-attempt reliability is ~0) is the honest caveat. Drop-drill kick metrics (ICC ~0 across two attempts) and wave-drill accelerations (within-attempt ~0) failed the screen and are not primary."
+  },
+  "primary_tests": [
+    {
+      "id": "P1",
+      "feature": "cmb_rev_accel_mirror",
+      "target": "g_set_accel",
+      "population": "Combine OL with the mirror feature and >= 50 qualifying pass-set plays (REG, lined up T/G/C, >= 1 rusher encountered, no play action, dropback >= 2.0 s)",
+      "target_definition": "per play: peak tangential acceleration a_tan in [0, 0.6] s after the snap (first-step burst into the pass set), centered by lined_up_position at the play level; per player: mean over plays",
+      "target_reliability": "split-half (odd/even games, Spearman-Brown) 0.68; corr with log plays 0.07; teammate (same team-season) r 0.29",
+      "expected_sign": "+",
+      "rationale": "Same physical quantity on both sides: horizontal force production from a near standstill / change of direction. If mirror-drill reversal acceleration is a trait, it should show up in how hard a lineman accelerates out of his stance into the set, beyond the 10-yd split and 40 (linear acceleration) already in B2."
+    },
+    {
+      "id": "P2",
+      "feature": "cmb_rev_accel_mirror",
+      "target": "ppp_oe_eb",
+      "population": "Combine OL with the mirror feature and >= 50 REG pass-blocking snaps (T/G/C, >= 1 rusher encountered)",
+      "target_definition": "per play: peak_pressure_probability_allowed minus an OLS expectation from dropback_duration (cubic spline), lined_up_position, 2+ rushers encountered, play action, season; per player: mean residual, empirical-Bayes shrunk (normal-normal, tau^2 by method of moments, sampling variance = pooled within-player residual variance / n)",
+      "target_reliability": "split-half 0.62 (per-play residual); EB-shrunk trait corr with log plays -0.36; teammate r 0.17",
+      "expected_sign": "-",
+      "rationale": "Continuous, more reliable version of pressure allowed. Better lateral recovery should keep the rusher's pressure probability lower."
+    },
+    {
+      "id": "P3",
+      "feature": "cmb_rev_accel_mirror",
+      "target": "pr_oe_eb",
+      "population": "same as P2",
+      "target_definition": "per play: pressure_allowed minus a logistic expectation (same covariates as P2); per player: mean residual (pressures allowed over expected per snap), empirical-Bayes shrunk (sampling variance = sum p(1-p)/n^2)",
+      "target_reliability": "split-half 0.42 (below 0.5: low power, reported as such); EB-shrunk trait corr with log plays -0.35; teammate r 0.07",
+      "expected_sign": "-",
+      "rationale": "The outcome scouts and coaches actually track (pressures allowed), adjusted for time in the pocket, alignment and double-team exposure."
+    }
+  ],
+  "evaluation": {
+    "harness": "bdb27.linkage.evaluate (B0/B1/B2 nested; ridge; repeated 5-fold; Freedman-Lane permutation; LOCO)",
+    "primary_settings": "n_repeats=50, n_perm=2000, n_jobs=3, seeds 0, 1, 2; outcome targets (P2, P3) rerun without the 2025 class",
+    "exploratory_settings": "n_repeats=20, n_perm=500, n_jobs=3, seed 0; every exploratory test is listed in results/E004.json and counted",
+    "go_criteria": "PLAN.md section 4: excess dR2 over B2 minus 1 SE > 0; perm p < 0.05; LOCO dR2 > 0 in >= 2 of 3 classes; feature reliability >= 0.5; stable over seeds 0-2; scout-explainable. Sign must match expected_sign to count as support.",
+    "multiple_testing": "BH-FDR across the 3 primary tests (seed-0 p values) reported alongside raw p"
+  }
+}

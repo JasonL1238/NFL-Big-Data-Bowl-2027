@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bdb27"
+version = "0.1.0"
+description = "NFL Big Data Bowl 2027: linking Combine tracking to game performance"
+requires-python = ">=3.11"
+dependencies = [
+    "polars>=1.30",
+    "duckdb>=1.1",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "statsmodels>=0.14",
+    "matplotlib>=3.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ipykernel>=6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: statistical calibration tests (deselect with -m 'not slow')"]

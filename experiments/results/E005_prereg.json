@@ -1,0 +1,50 @@
+{
+  "experiment_id": "E005",
+  "probe": "D - DB backpedal -> transition",
+  "written_utc": "2026-10-14T18:42:39Z",
+  "statement": "Written after looking at feature/trait distributions, segmentation QC plots and reliability screens only. No correlation or model between any Combine feature and any game trait or outcome had been computed when this file was written.",
+  "hypothesis": "How a DB moves in the Combine DB drills (speed of the opening backpedal; how much velocity he changes through a plant-and-reverse, given his entry speed and turn angle) is a stable trait that transfers to the same movement in regular-season coverage (backpedal speed after the snap; velocity change when he breaks out of his backpedal after the throw), beyond traditional Combine times and draft capital (B2).",
+  "population": "Combine position DB (122 players with drill tracking). Game side: regular-season pass plays (pass_result C/I/S/IN/R) with lined_up_position in CB/SLOT_CB/HIGH_SAFETY/BOX_SAFETY, standardized tracking, snap-aligned.",
+  "primary_tests": [
+    {
+      "id": "P1",
+      "feature": "cmb_backpedal_speed",
+      "target": "gm_backpedal_speed",
+      "population": "DB with >= 20 game backpedal plays (expected n ~82)",
+      "feature_definition": "Peak speed in the opening backpedal leg (t since motion onset in [0, L], L = 1.6 s BP90, 1.2 s TA2, 1.0 s W/BOX/BP45) of BACK_PEDAL_AND_90_DEGREE_BREAK_TO_BALL, TERYL_AUSTIN_DRILL_2, W_DRILL, BOX_DRILL, BACK_PEDAL_AND_TRANSITION_45_DEGREE_REACTION; z-scored within drill (clipped +-3), averaged over attempts within drill, then over drills (equal weight).",
+      "target_definition": "Per player-play: max speed over frames in [0, min(pass_forward, 2.5 s)] after the snap where vx > 0.5 yd/s (downfield) and orientation is within 60 deg of 270 (facing the LOS); plays with >= 5 such frames. Winsorized 1/99%, minus the mean of its lined_up_position x coverage_assignment cell, then empirical-Bayes shrunk player mean (normal-normal, method-of-moments tau2).",
+      "feature_reliability_pre": "cross-drill ICC of drill means (5 drills) -> reliability 0.55 (ICC per drill 0.20)",
+      "target_reliability_pre": "split-half by game (odd/even, Spearman-Brown, >= 10 plays per half): 0.85",
+      "rationale": "Backpedal speed is a technique skill scouts grade by eye; the stopwatch only measures forward speed. If drill backpedal speed predicts game backpedal speed beyond the 40/10-yd split, the drills carry information the timing tests miss.",
+      "expected_sign": "+"
+    },
+    {
+      "id": "P2",
+      "feature": "cmb_transition_dv",
+      "target": "gm_ballair_dv",
+      "population": "DB with >= 10 post-throw transitions out of the backpedal (expected n ~69)",
+      "feature_definition": "dv_10 = |v(t_min + 0.5 s) - v(t_min - 0.5 s)| (velocity-vector change across the plant, t_min = speed minimum of the detected break; segments.breaks min_turn 45, half_window 0.5, context 1.0) at the reversals of TERYL_AUSTIN_DRILL_1 (largest turn >= 90 deg, >= 1.5 s after onset), TERYL_AUSTIN_DRILL_2 (largest turn >= 120 deg, >= 1.5 s), W_DRILL (first 3 turns >= 90 deg), BOX_DRILL (first 2 turns >= 90 deg). Within each drill-cut: OLS residual on entry_speed and |turn|, z-scored (clipped +-3); averaged within drill, then over the 4 drills.",
+      "target_definition": "Breaks (segments.breaks, min_entry_speed 1.5) with speed minimum between 0.3 s after the snap and min(pass arrival, sack/scramble/tackle/out-of-bounds, 5 s), after pass_forward ('ball in air'), whose entry phase (0.8-0.3 s before the minimum) moves downfield (mean vx > 1) while facing the LOS (circular-mean orientation within 60 deg of 270). dv_10 winsorized 1/99%, OLS-residualized on |turn| (quadratic), entry speed, alignment (CB/SLOT_CB/HIGH_SAFETY/BOX_SAFETY) and man/zone/NA; empirical-Bayes shrunk player mean.",
+      "feature_reliability_pre": "cross-drill ICC of drill means (4 drills) -> 0.55; all 7 events as repeats -> 0.57",
+      "target_reliability_pre": "split-half by game (>= 5 events per half): 0.57",
+      "rationale": "'Breaks on the ball': once the ball is thrown, how much velocity a DB changes through his plant out of the backpedal is the transition quickness coaches grade. The drill reversals isolate the same plant-and-drive under controlled conditions.",
+      "expected_sign": "+"
+    }
+  ],
+  "no_outcome_primary_reason": "Screened DB outcomes before preregistration (reliability only): team EPA on MAN-coverage plays (split-half 0.02-0.28), completion rate on MAN plays (-0.03-0.24) are unreliable; tackle/assist rate on completions is reliable (~0.6) but its direction is ambiguous (proximity to the catch, which can mean being beaten). No defensible outcome; kinematic transfer only.",
+  "evaluation": {
+    "harness": "bdb27.linkage.evaluate with default B2 controls (forty, ten_yd_split, vertical, broad_jump, three_cone, short_shuttle, bench_reps, combine_height, combine_weight, ngs_athleticism_score, log_pick, undrafted)",
+    "settings": "n_repeats=50, n_perm=2000, n_jobs=3, seeds 0, 1, 2",
+    "sensitivity": "rerun each primary without the 2025 draft class (one season of games) at seed 0",
+    "go_criteria": "PLAN.md section 4: excess dR2 over B2 minus 1 SE > 0; Freedman-Lane perm p < 0.05; LOCO dR2 > 0 in >= 2 of 3 classes; reliability >= 0.5 on both sides; stable across seeds 0/1/2; partial r in the expected (+) direction; scout story. Multiple testing: BH-FDR at 0.05 across the 2 primary tests (seed-0 p values).",
+    "exposure_check": "corr(trait, log coverage pass plays) reported for both targets"
+  },
+  "planned_exploratory": [
+    "X1 Combine drive_05 composite (speed gained 0.5 s after the plant, reversal drills, unadjusted z) -> game post-throw drive_05 (Combine reliability fails: 0.41 drill-means)",
+    "X2 Combine peak_reaccel composite -> game post-throw peak_reaccel",
+    "X3 cmb_transition_dv -> game dv_10 in pre-throw transitions out of the backpedal (game reliability ~0; expected null)",
+    "X4 cmb_backpedal_speed -> game backpedal speed on MAN plays only / ZONE plays only (2 tests)",
+    "X5 single-drill versions of cmb_transition_dv (TA1 only; W only) -> gm_ballair_dv",
+    "X6 raw (B0) associations are reported inside each evaluate() call and are not separate tests"
+  ]
+}

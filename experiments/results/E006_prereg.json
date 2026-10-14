@@ -1,0 +1,60 @@
+{
+  "experiment_id": "E006",
+  "probe": "E - sprint mechanics profile (Combine 40-yd mono-exponential / Samozino F-V profile vs in-game acceleration-speed profile)",
+  "written": "2026-10-14, before any Combine-feature x game-trait/outcome association was computed in this probe",
+  "hypothesis": "The SHAPE of a player's tracked 40-yd velocity curve carries information about how he accelerates and how fast he gets in regular-season games that the stopwatch (40 time, 10-yd split) and the other B2 controls miss. Specifically: (H1) the fitted maximal velocity vmax adds beyond B2 for the WR in-game maximal speed capacity S0 (extending the E001 WR lead to an independently estimated game target); (H2) the fitted acceleration constant a0 = vmax/tau (= F0/m, horizontal force per kg) adds beyond B2 (which contains the 10-yd split) for the in-game maximal acceleration capacity A0; (H3) vmax adds beyond B2 for WR/TE yards after catch over expected.",
+  "primary_tests": [
+    {
+      "id": "P1",
+      "feature": "c40_vmax",
+      "target": "game_S0",
+      "population": "WR",
+      "rationale": "E001 found Combine 40 peak speed adds beyond B2 for WR game top speed (q95 of play max). S0 is a different game estimator of top-speed capacity (x-intercept of the in-situ A-S envelope, Morin et al. 2021). Population limited to WR because game S0 fails the reliability screen for TE (split-half 0.20, n=21) and is an extrapolation far beyond observed speeds for DL/OL. Note: within WR, S0 correlates 0.85 with E001's target, so P1 is partly a replication of E001 on the same players, not independent evidence."
+    },
+    {
+      "id": "P2",
+      "feature": "c40_a0",
+      "target": "game_A0",
+      "population": "WR+TE+DB+DL pooled (position dummies in all baselines; Freedman-Lane permutation within position)",
+      "rationale": "The 'shape beats stopwatch' question. Within position only 21-41% of a0's variance is explained by the B2 controls (incl. 10-yd split), so the tracked acceleration constant carries information the stopwatch does not. A0 (y-intercept of the A-S envelope) is the in-game analogue of a0. OL excluded because game A0 fails the reliability screen for OL (split-half 0.42) and the OL envelope is flat. Pooled to get n~218."
+    },
+    {
+      "id": "P3",
+      "feature": "c40_vmax",
+      "target": "yacoe_eb",
+      "population": "WR+TE pooled (players with >= 10 REG catches with expected YAC)",
+      "rationale": "Game outcome link: faster receivers should turn space after the catch into more yards than the xYAC model expects (breakaway speed). vmax chosen because it is the most reliable Combine feature (reliability as used 0.90-0.95) and the only one with a prior lead (E001). Target: per-catch YACOE winsorized at +-10 yd, per-player mean shrunk by normal-normal empirical Bayes toward the position mean (DerSimonian-Laird tau^2). Low-powered (n~63, target reliability ~0.35-0.55); the 2025 class is re-run excluded."
+    }
+  ],
+  "frozen_settings": {
+    "combine_fit": "mono-exponential v(t) = vmax(1 - exp(-(t - t0)/tau)) on Savitzky-Golay speed (bdb27.kinematics, window 7, poly 2), fitted from the frame of peak dv/dt within the first 2 s to the frame of peak speed; t0 free. scipy curve_fit, bounds vmax 3-15 yd/s, tau 0.1-5 s.",
+    "combine_qc": "track path 38-43 yd, fit RMSE <= 0.15 yd/s (~97th pct; removes two-phase artifact traces seen in the QC plots), >= 15 fitted frames, tau 0.3-3 s, speed drop after peak <= 1 yd/s. 763/793 attempts pass.",
+    "combine_player_value": "mean over QC-passing attempts (mostly 2 per player)",
+    "fv_profile": "Samozino et al. 2016: F_H = m a + k v^2, k = 0.5 rho Af Cd, Af = 0.2025 h^0.725 m^0.425 x 0.266, Cd 0.9, rho at 20 C / 760 mmHg, no wind (indoor). m from combine_weight (lb->kg), h from combine_height (in->m). Linear F_H-v fit gives F0, V0, Pmax = F0 V0/4, Sfv.",
+    "game_frames": "REG games only, post-snap frames (t_rel >= 0), SG speed and a_tan per player-play, plays with max s > 12 yd/s dropped, frames with SG speed > 12 or |a_tan| > 15 yd/s^2 dropped.",
+    "game_as_profile": "per player: 20 draws of exactly 50 plays (players with < 50 REG plays excluded); per draw, 0.5 yd/s speed bins from 3.0 to 10.5 yd/s, q95 of a_tan per bin with >= 20 frames, OLS line through >= 4 bins: A0 = intercept, S0 = -A0/slope (slope < 0). A0 = mean over draws, S0 = median over draws.",
+    "yacoe": "REG catches (pass_result C, non-null YAC and xYAC, not nullified by penalty), YACOE clipped to +-10 yd, DerSimonian-Laird EB per position, players with >= 10 such catches."
+  },
+  "evaluation": {
+    "harness": "bdb27.linkage.evaluate, unchanged (B2 = position + forty, ten_yd_split, vertical, broad, 3-cone, shuttle, bench, height, weight, NGS athleticism + log pick, undrafted)",
+    "primary": "n_repeats=50, n_perm=2000, n_jobs=3, seeds 0, 1, 2. Also each primary test re-run without the 2025 draft class (seed 0; required for P3, reported for P1/P2 as sensitivity).",
+    "exploratory": "n_repeats=20, n_perm=500, n_jobs=3, seed 0. Every exploratory evaluation is counted and reported.",
+    "go_criteria_per_test": "PLAN.md section 4: excess dR2 - 1 SE > 0; Freedman-Lane perm p < 0.05; LOCO dR2 > 0 in >= 2/3 classes; feature reliability >= 0.5; all of these at all 3 seeds. BH-FDR (q = 0.05) across the 3 primary tests reported (seed 0 p-values).",
+    "multiple_testing": "3 primary tests; exploratory results are hypothesis-generating only."
+  },
+  "planned_exploratory": [
+    "c40_vmax -> game_S0 in TE, DB, and WR+TE+DB pooled",
+    "c40_a0 -> game_A0 separately in WR, TE, DB, DL, and OL",
+    "c40_tau, c40_F0, c40_Pmax_rel, c40_split10_resid -> game_A0 (WR+TE+DB+DL pooled)",
+    "c40_vmax -> game_top_speed (E001 target) in WR",
+    "c40_a0 -> game_a_lo (mean q95 a_tan at 3-5 yd/s; reliable in all 5 groups) pooled over all 5 groups",
+    "c40_a0, c40_Pmax_rel -> yacoe_eb (WR+TE)"
+  ],
+  "already_seen_before_prereg": [
+    "E001 (earlier session): Combine 40 peak speed -> game top speed (q95 play max): WR excess dR2 +0.05, p~0.006; nothing for DL/OL/DB; TE too small.",
+    "Reliability of all Combine fit parameters (icc1 per position) and of game traits (split-half per position) and corr(trait, log plays).",
+    "In-sample R^2 of Combine fit parameters on the B2 controls (no game data).",
+    "Game-game correlations (S0, A0, game_top_speed) within position.",
+    "Fit-variant and QC choices (start window, SG vs s field, RMSE threshold, quantile, K) were picked on fit quality and reliability only."
+  ]
+}

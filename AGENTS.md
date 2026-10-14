@@ -2,7 +2,7 @@
 
 This is the single source of truth for any AI agent working in this repo (Claude Code, Codex/OpenAI, Cursor, Gemini, Copilot, …). `CLAUDE.md` imports this file. Do not duplicate content elsewhere.
 
-**At the start of every session, read `LESSONS.md`.**
+**At the start of every session, read `LESSONS.md` and `PLAN.md`** (iteration plan, evaluation protocol, decision gates).
 
 ---
 
@@ -91,19 +91,27 @@ These guidelines are working if: fewer unnecessary changes in diffs, fewer rewri
   - Football: is it usable week to week, does it handle football's complexity, is it novel?
   - Data Science: is it correct, are claims backed by data, are the models appropriate, is it innovative?
 
-### Data (510 drafted WR/TE/DB/OL/DL, 2023–25 Combines; ~2.3 GB; CC BY-NC 4.0)
+### Data (510 WR/TE/DB/OL/DL from the 2023–25 Combines: 383 drafted, 127 undrafted; ~2.3 GB; CC BY-NC 4.0)
+
+Row counts verified with a CSV parser on 2026-10-14.
 
 | File | Rows | Contents |
 |---|---|---|
-| `players.csv` | 510 | bio, college, draft round/pick, position |
+| `players.csv` | 510 | bio, college, draft round/pick (NA = undrafted), position |
 | `combine_results.csv` | 510 | measurements, drill times, NGS scores |
-| `combine_tracking.csv` | ~463k | 10 Hz drill tracking (x, y, s, a, dis, dir); 40yd, 3-cone, shuttle, 55 position drills |
+| `combine_tracking.csv` | 463,189 | 10 Hz drill tracking (x, y, s, a, dis, dir), PLAYER and BALL rows; 40yd, 3-cone, shuttle, 59 position-drill names (some are naming variants of the same drill) |
 | `player_career_successes.csv` | 510 | career snaps, games, Pro Bowl/All-Pro |
-| `games.csv` | 1,002 | 2023–25 games |
-| `player_play.csv` | ~314k | per player per play: EPA, routes, separation, pressure, coverage |
-| `game_tracking_{2023,2024,2025}.csv` | ~22.6M | 10 Hz in-game tracking (x, y, s, a, dis, o, dir, event) |
+| `games.csv` | 1,002 | 2023–25 games: 816 REG, 147 PRE, 39 POST |
+| `player_play.csv` | 314,197 | per player per play: EPA, routes, separation, pressure, coverage, `play_direction` |
+| `game_tracking_{2023,2024,2025}.csv` | 22,654,290 | 10 Hz in-game tracking (x, y, s, a, dis, o, dir, event) |
 
-Known caveats (community-reported; verify): the Combine `dis` field under-counts distance; 2025 draftees have only one season of game data. Row counts above come from unofficial sources. Confirm them against the Kaggle data page.
+Verified caveats:
+- **Game tracking contains only these 510 players.** There are no opponents, ball, or QB (1–6 tracked players per play). Separation and pressure cannot be computed from tracking; use the `player_play` fields.
+- Game tracking has **no direction column**. Join `play_direction` from `player_play` on (game_id, play_id).
+- `games.csv` includes PRE and POST games. Filter `season_type == "REG"` for regular-season outcomes.
+- `dir`/`o` are degrees clockwise from +y; `s` is yd/s and matches frame-to-frame motion. Combine `dis` under-counts distance (~0.58× the x/y step), so use x/y differences, never `dis`.
+- Missing values are the string `NA`. 3-cone and shuttle are missing for 50–80% of players.
+- 2025 draftees have only one season of game data.
 
 ---
 
@@ -132,7 +140,7 @@ Known caveats (community-reported; verify): the Combine `dis` field under-counts
    - first-step burst
    - acceleration smoothness
 2. **Game traits** measuring the same quantities by position:
-   - WR/TE/DB: route-break deceleration and separation created at the break
+   - WR/TE/DB: route-break deceleration (own tracking) and separation at pass forward (`player_play`)
    - DL: get-off and burst
    - OL: lateral recovery in pass sets
 3. **Linkage:** do Combine signatures predict game traits and outcomes (separation, pressure rate, EPA) **beyond traditional Combine times and draft pick**?
@@ -167,7 +175,7 @@ Explore 3–5 candidate links in weeks 1–2, then commit to the strongest one t
   ```
   kaggle competitions download -c nfl-big-data-bowl-2027 -p data/raw
   ```
-- **Standardize play direction** for all game tracking. If `playDirection == "left"`:
+- **Standardize play direction** for all game tracking (`bdb27.standardize`). If `player_play.play_direction == "left"`:
   - `x → 120 − x`
   - `y → 160/3 − y`
   - rotate `o` and `dir` by 180°
@@ -186,10 +194,12 @@ Explore 3–5 candidate links in weeks 1–2, then commit to the strongest one t
 AGENTS.md          # this file (source of truth)
 CLAUDE.md          # imports AGENTS.md
 LESSONS.md         # mistakes log — read every session
-data/raw, data/processed   # gitignored
-src/bdb/           # library code (io, standardize, features, linkage, viz)
+PLAN.md            # iteration plan, evaluation protocol, gates — read every session
+data/raw, data/processed   # gitignored; processed = Parquet cache + feature store
+src/bdb27/         # library code (io, standardize, features, linkage, viz). Not `bdb`: that name clashes with the stdlib debugger
+tests/             # pytest; `-m "not slow"` skips calibration tests
 notebooks/         # 01_eda … final_writeup
-experiments/log.md # one entry per idea: hypothesis, result, keep/kill
+experiments/       # log.md (one entry per idea), E###_*.py scripts, results/E###.json
 writeup/           # draft.md, figures/
 ```
 

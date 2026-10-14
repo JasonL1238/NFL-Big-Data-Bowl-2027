@@ -1,0 +1,54 @@
+{
+  "experiment": "E007 — Hidden speed (WR): tracked top-end speed beyond the 40 time",
+  "date": "2026-10-14",
+  "written_by": "orchestrator, before any agent or person examined the P2/P3 targets against any Combine feature",
+  "already_seen_before_this_prereg": [
+    "E001/E006: Combine 40 peak speed and fitted vmax predict WR regular-season top speed beyond B2 (partial r ~ +0.32..+0.38). P1 below is therefore a replication under harness rev 2 with a new feature definition, NOT independent confirmation.",
+    "The choice of a flying split as the feature was informed by an E006 skeptic's post-hoc finding that a tracked flying split (x 31->50) absorbs the vmax signal for game S0.",
+    "E006 exploratory: vmax -> WR/TE YAC over expected (null) and deep-route separation at pass_forward (null). These targets are therefore NOT used as primaries.",
+    "Target semantics checks only (no Combine association): cushion is recorded on ~95% of WR REG routes (median 6.3 yd); rec_yards is null on routes without a catch (treated as 0 yards)."
+  ],
+  "feature": {
+    "name": "c_flying20",
+    "definition": "Average speed (yd/s) over yards 20-40 of the 40-yd dash, from tracking: along-track distance from the motion-onset position (not the 'dis' field), interpolated crossing times at 20 and 40 yd, 20 / (t40 - t20). Player value = mean over QC-passing attempts (bdb27.speed, E006 QC rules).",
+    "population": "Combine position WR with >= 1 QC-passing tracked 40"
+  },
+  "harness": "bdb27.linkage.evaluate, protocol rev 2 (PLAN.md §4): B2 incl. draft-year dummies, expected_sign=+1, n_repeats=50, n_perm=2000, n_perm_fl=10000, seeds 0, 1, 2.",
+  "primary_tests": [
+    {
+      "id": "P1",
+      "target": "game_top_speed: q95 of the player's REG play max speed (bdb27.features.game_top_speed; plays > 12 yd/s dropped; >= 50 REG plays)",
+      "expected_sign": 1,
+      "rationale": "Mechanism: speed the stopwatch hides shows up as higher top-end speed in games. Replication of E001/E006."
+    },
+    {
+      "id": "P2",
+      "target": "cushion_oe: per-route defender cushion at the snap (player_play.cushion) minus a cross-fitted (5-fold by game) play-level expectation from context only: lined_up_position, receiver_alignment, offense_formation, in_motion_at_ball_snap, team_coverage_man_zone, down, yards_to_go, yards to the end zone, quarter, score differential, season, and the DEFENSE's team-season. Per-player mean of residuals, shrunk with bdb27.shrinkage.eb_mean (prior estimated on eligible players), >= 50 REG routes with cushion.",
+      "expected_sign": 1,
+      "rationale": "Defenses respect speed: defensive backs play off receivers they fear will run past them."
+    },
+    {
+      "id": "P3",
+      "target": "yprr_oe: per-route receiving yards (0 if no catch) minus a cross-fitted play-level expectation from the same context as P2 (no route type: route choice is part of how a player is used), per-player mean, EB-shrunk (bdb27.shrinkage.eb_mean), >= 100 REG routes.",
+      "expected_sign": 1,
+      "rationale": "Performance: hidden speed turns into production per route run."
+    }
+  ],
+  "go": "PLAN.md §4 rev 2 criteria for each test, BH across these 3 primaries (and report BH across all E007 tests).",
+  "prespecified_robustness_not_additional_claims": [
+    "seeds 0, 1, 2",
+    "leave-3-out influence: drop the 3 players with the largest positive contribution to the partial correlation",
+    "without the 2025 class",
+    "feature variants: raw tracked peak speed (E001 feature), fitted vmax, flying 10 (yards 30-40)",
+    "target variants: P1 with the A-S profile S0 (speed.py draws); P2 with alignment-centered raw cushion; P3 with raw EB-shrunk YPRR",
+    "WR+TE pooled with position dummies",
+    "team-share of the P2/P3 targets (reliability.team_share) and split-half reliability"
+  ],
+  "exploratory_prelisted": [
+    "deep-route share (GO/POST/CORNER) over expected",
+    "average depth of target",
+    "targets per route over expected",
+    "DB analog: c_flying20 -> DB game_top_speed",
+    "career outcome: offensive snaps per available season (player_career_successes) beyond B2"
+  ]
+}

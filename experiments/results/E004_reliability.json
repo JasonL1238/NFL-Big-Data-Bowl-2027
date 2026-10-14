@@ -1,0 +1,284 @@
+{
+  "combine_within_attempt": {
+    "MIRROR": {
+      "rev_accel": {
+        "icc": 0.4554556641317384,
+        "reliability": 0.7318048861072253,
+        "n_players": 121,
+        "n_single": 1,
+        "n_repeated": 120
+      },
+      "peak_decel": {
+        "icc": 0.3813634628753803,
+        "reliability": 0.668922520274103,
+        "n_players": 121,
+        "n_single": 1,
+        "n_repeated": 120
+      },
+      "peak_reaccel": {
+        "icc": 0.4240852106198512,
+        "reliability": 0.7064725192063226,
+        "n_players": 121,
+        "n_single": 1,
+        "n_repeated": 120
+      },
+      "rev_time": {
+        "icc": 0.41178295523599556,
+        "reliability": 0.6960392001929293,
+        "n_players": 121,
+        "n_single": 1,
+        "n_repeated": 120
+      },
+      "entry_speed": {
+        "icc": 0.3553550484442457,
+        "reliability": 0.6441166440119431,
+        "n_players": 121,
+        "n_single": 1,
+        "n_repeated": 120
+      },
+      "exit_speed": {
+        "icc": 0.398392664250603,
+        "reliability": 0.684341380838958,
+        "n_players": 121,
+        "n_single": 1,
+        "n_repeated": 120
+      },
+      "n_reversals": 414,
+      "n_lateral_share": 0.9879227053140096
+    },
+    "WAVE": {
+      "rev_accel": {
+        "icc": 0.007440515766126178,
+        "reliability": 0.022288641256873902,
+        "n_players": 117,
+        "n_single": 11,
+        "n_repeated": 106
+      },
+      "peak_decel": {
+        "icc": 0.005252601318003333,
+        "reliability": 0.015819247127707492,
+        "n_players": 117,
+        "n_single": 11,
+        "n_repeated": 106
+      },
+      "peak_reaccel": {
+        "icc": 0.0036002977503482346,
+        "reliability": 0.010887348249000006,
+        "n_players": 117,
+        "n_single": 11,
+        "n_repeated": 106
+      },
+      "rev_time": {
+        "icc": 0.12554119504094405,
+        "reliability": 0.29503530647316617,
+        "n_players": 117,
+        "n_single": 11,
+        "n_repeated": 106
+      },
+      "entry_speed": {
+        "icc": 0.21494939049319978,
+        "reliability": 0.43796433420192515,
+        "n_players": 117,
+        "n_single": 11,
+        "n_repeated": 106
+      },
+      "exit_speed": {
+        "icc": -0.0327986778378395,
+        "reliability": -0.10926478328873099,
+        "n_players": 117,
+        "n_single": 11,
+        "n_repeated": 106
+      },
+      "n_reversals": 357,
+      "n_lateral_share": 0.4649859943977591
+    }
+  },
+  "combine_cross_drill": {
+    "rev_accel": {
+      "r_mirror_wave": 0.24946883101181982,
+      "composite_alpha": 0.39931981466044253,
+      "n": 105
+    },
+    "peak_decel": {
+      "r_mirror_wave": 0.20260342898104367,
+      "composite_alpha": 0.33694137917552414,
+      "n": 105
+    },
+    "peak_reaccel": {
+      "r_mirror_wave": 0.20793825455453577,
+      "composite_alpha": 0.34428623113889106,
+      "n": 105
+    },
+    "rev_time": {
+      "r_mirror_wave": -0.05498959398461221,
+      "composite_alpha": -0.11637881156563011,
+      "n": 105
+    },
+    "entry_speed": {
+      "r_mirror_wave": 0.18321296403220683,
+      "composite_alpha": 0.3096872154068451,
+      "n": 105
+    },
+    "exit_speed": {
+      "r_mirror_wave": 0.17151428573958558,
+      "composite_alpha": 0.2928078433654052,
+      "n": 105
+    },
+    "rev_accel_mirror_vs_wave_lateral": {
+      "r": 0.13800885341985691,
+      "n": 54
+    }
+  },
+  "drop_across_attempts": {
+    "kick_speed": {
+      "icc": -0.014243074140933338,
+      "reliability": -0.0287791995201228,
+      "n_players": 120,
+      "n_single": 2,
+      "n_repeated": 118
+    },
+    "kick_accel": {
+      "icc": 0.029711324351611123,
+      "reliability": 0.05746167340708846,
+      "n_players": 120,
+      "n_single": 2,
+      "n_repeated": 118
+    },
+    "kick_brake": {
+      "icc": 0.04522807275583196,
+      "reliability": 0.08616917485779227,
+      "n_players": 120,
+      "n_single": 2,
+      "n_repeated": 118
+    },
+    "sprint_max": {
+      "icc": 0.529498894332735,
+      "reliability": 0.690326698655026,
+      "n_players": 120,
+      "n_single": 2,
+      "n_repeated": 118
+    }
+  },
+  "game_set": {
+    "g_set_accel": {
+      "r_half": 0.5184611941243468,
+      "reliability": 0.6828771076014604,
+      "n_players": 71,
+      "corr_log_plays": 0.0723569328617316,
+      "teammate_r": 0.2928759108485227,
+      "n_pairs": 73
+    },
+    "g_set_speed": {
+      "r_half": 0.6377369507487067,
+      "reliability": 0.7788026648078733,
+      "n_players": 71,
+      "corr_log_plays": 0.11522018023061611,
+      "teammate_r": 0.5829183128510985,
+      "n_pairs": 73
+    },
+    "g_depth10": {
+      "r_half": 0.6673934278658518,
+      "reliability": 0.8005230399883118,
+      "n_players": 71,
+      "corr_log_plays": -0.010218237345463644,
+      "teammate_r": 0.519675080682159,
+      "n_pairs": 73
+    },
+    "g_getoff": {
+      "r_half": 0.6759603399559265,
+      "reliability": 0.8066543388177104,
+      "n_players": 71,
+      "corr_log_plays": -0.010496911363045801,
+      "teammate_r": 0.5023047751448174,
+      "n_pairs": 73
+    },
+    "g_set_brake": {
+      "r_half": 0.4575349025466107,
+      "reliability": 0.6278201664292278,
+      "n_players": 71,
+      "corr_log_plays": 0.36628313388494205,
+      "teammate_r": 0.18692430476373117,
+      "n_pairs": 73
+    },
+    "g_lat10": {
+      "r_half": 0.6965312812512052,
+      "reliability": 0.8211240063165919,
+      "n_players": 71,
+      "corr_log_plays": 0.2507731634532413,
+      "teammate_r": 0.21101364835535957,
+      "n_pairs": 73
+    }
+  },
+  "outcomes": {
+    "pr_oe": {
+      "r_half": 0.2692542159963425,
+      "reliability": 0.4242715330040998,
+      "n_players": 73,
+      "teammate_r": 0.06879589422704245,
+      "n_pairs": 82,
+      "player_trait": "pr_oe_eb",
+      "corr_log_plays": -0.34623784674837416
+    },
+    "ppp_oe": {
+      "r_half": 0.45019040961002105,
+      "reliability": 0.6208707582490278,
+      "n_players": 73,
+      "teammate_r": 0.16581788970074365,
+      "n_pairs": 82,
+      "player_trait": "ppp_oe_eb",
+      "corr_log_plays": -0.36227947286020673
+    },
+    "pressure": {
+      "r_half": 0.32560584439248674,
+      "reliability": 0.4912558974748772,
+      "n_players": 73,
+      "teammate_r": 0.06738051810050781,
+      "n_pairs": 82,
+      "player_trait": "pressure_rate",
+      "corr_log_plays": -0.2016368206444075
+    },
+    "ppp": {
+      "r_half": 0.6033024482302338,
+      "reliability": 0.7525747233732156,
+      "n_players": 73,
+      "teammate_r": 0.10027249136424994,
+      "n_pairs": 82
+    },
+    "sack_allowed": {
+      "r_half": 0.04505597384634323,
+      "reliability": 0.08622691027833483,
+      "n_players": 73,
+      "teammate_r": 0.012377163406060416,
+      "n_pairs": 82,
+      "player_trait": "sack_rate",
+      "corr_log_plays": -0.04743485501550883
+    },
+    "time_to_pressure_allowed": {
+      "r_half": 0.500818093176132,
+      "reliability": 0.6673934642089331,
+      "n_players": 64,
+      "teammate_r": 0.7653126084308135,
+      "n_pairs": 15,
+      "player_trait": "ttp",
+      "corr_log_plays": 0.28906821557684625
+    },
+    "eb": {
+      "tau2_pr_oe": 0.0003206177272985148,
+      "tau2_ppp_oe": 0.0003814063156748088,
+      "method": "normal-normal EB on per-player mean residual; tau^2 by method of moments (var of means - mean sampling var); sampling var = sum p(1-p)/n^2 for pressure, pooled within-player residual var / n for peak pressure probability"
+    }
+  },
+  "combine_runout_sensitivity": {
+    "r_mirror_rev_accel_with_vs_without_runout_exclusion": 0.9729669475213928,
+    "n": 121,
+    "reversals_dropped_by_runout_rule": 186
+  },
+  "coverage": {
+    "combine_mirror_players": 120,
+    "combine_wave_players": 106,
+    "game_set_players": 67,
+    "outcome_players": 70,
+    "pass_block_plays": 46352,
+    "set_plays": 28424
+  }
+}

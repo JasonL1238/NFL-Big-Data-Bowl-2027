@@ -1,0 +1,60 @@
+{
+  "experiment_id": "E003",
+  "probe": "B - DL first-step burst / get-off",
+  "written": "2026-10-14, before any Combine-feature vs game-trait/outcome association was computed",
+  "seen_before_prereg": [
+    "Combine burst feature distributions, onset-detection QC plots, attempt ICC, cross-drill ICC, and ICC of the part of each feature not explained by the B2 controls (Combine feature vs Combine controls only)",
+    "Game trait split-half reliabilities (alignment-adjusted), game-field semantics (pass-rush snap, pressure, quick pressure, get-off definition vs tracking), population counts",
+    "No correlation between any Combine feature and any game trait or outcome"
+  ],
+  "hypothesis": "Burst after motion onset in the tracked 40-yard dash (distance covered in the first 1.0 s after the player first reaches 1 yd/s) is a stable trait that the stopwatch does not capture (r = -0.38 with the 10-yd split; its residual beyond B2 has attempt-to-attempt reliability 0.62). DL with more Combine burst show more onset-aligned burst on NFL pass-rush snaps, faster NGS get-off, and more quick pressures, beyond Combine times and draft pick (B2).",
+  "feature": {
+    "name": "c40_d10",
+    "definition": "Per 40-yd dash attempt: Savitzky-Golay speed from x/y (bdb27.kinematics); onset = interpolated time the speed first crosses 1.0 yd/s at the start of a >=3-frame run at or above it (attempts whose first frame is already >= 1 yd/s are dropped: onset unobserved); d10 = integral of speed over [onset, onset + 1.0 s] (yards). Player value = mean over attempts. Code: bdb27.probes.b_dl_burst.burst_features.",
+    "reliability": {"attempt_icc1": 0.609, "attempt_reliability": 0.728, "residual_beyond_B2_icc1": 0.480, "residual_beyond_B2_reliability": 0.616, "n_players": 92, "n_repeated": 74},
+    "why_this_feature": "Pre-specified choice rule: among the onset-aligned distance features (d05, d10) take the one whose residual beyond B2 is most reliable (d10 0.616 vs d05 0.598). Position-drill burst composites were screened and rejected for primary use: cross-drill reliability 0.42-0.58 but residual-beyond-B2 reliability only 0.08-0.35 (FOUR_BAG and BODY_CONTROL do not load on burst at all)."
+  },
+  "population": "Combine position DL, regular season 2023-2025, >= 30 pass-rush snaps aligned EDGE or INTERIOR_LINE, and a tracked 40 with an observed onset. n = 67 (2023: 27, 2024: 23, 2025: 17).",
+  "pass_rush_snap": "player_play.blitzing == True AND sack non-null (defensive pass-rush fields recorded) AND play_nullified_by_penalty == 'N', lined_up_position in {EDGE, INTERIOR_LINE}",
+  "alignment_adjustment": "Every per-play value is centered by alignment (EDGE / INTERIOR_LINE) mean, then the overall mean is added back; rates use per-play alignment base rates as the expectation.",
+  "primary_tests": [
+    {
+      "id": "P1",
+      "feature": "c40_d10",
+      "target": "g_d10_rush",
+      "target_definition": "Same onset-aligned d10 computed on each pass-rush snap (onset searched from 0.5 s before the snap; player must be < 1 yd/s then), alignment-adjusted, player mean with normal-normal empirical-Bayes shrinkage (tau^2 by method of moments). Split-half reliability 0.83.",
+      "population": "DL, n = 67",
+      "expected_sign": "+",
+      "rationale": "Same movement measured the same way on both sides: does Combine burst transfer to game burst beyond the stopwatch?"
+    },
+    {
+      "id": "P2",
+      "feature": "c40_d10",
+      "target": "g_getoff_rush",
+      "target_definition": "player_get_off (s, lower = faster; ~time from snap to 1.3 yd upfield) on pass-rush snaps, alignment-adjusted, EB-shrunk player mean. Split-half reliability 0.82.",
+      "population": "DL, n = 67",
+      "expected_sign": "-",
+      "rationale": "NGS get-off is the trait clubs already value; it mixes reaction (not measurable at the Combine) and burst."
+    },
+    {
+      "id": "P3",
+      "feature": "c40_d10",
+      "target": "g_quick_pressure_oe",
+      "target_definition": "Quick pressures (time_to_pressure <= 2.4 s, i.e. quick_pressure == True) per pass-rush snap, beta-binomial EB-shrunk toward the player's alignment-mix expectation, minus that expectation. Split-half reliability 0.72 (overall pressure rate 0.57).",
+      "population": "DL, n = 67",
+      "expected_sign": "+",
+      "rationale": "A first-step advantage should act early in the rep, so quick pressures are the outcome where burst should show; it is also the more reliable pressure outcome. Overall pressure rate and sack rate are exploratory."
+    }
+  ],
+  "evaluation": "bdb27.linkage.evaluate with n_repeats=50, n_perm=2000, n_jobs=3 for seeds 0, 1, 2. Go criteria from PLAN.md section 4 (excess - SE > 0, perm p < 0.05, LOCO > 0 in >= 2/3 classes, reliability >= 0.5, stable across the 3 seeds). All three primaries rerun without the 2025 class. No multiplicity correction is applied inside the harness; with 3 primaries, a Bonferroni threshold of p < 0.0167 is also reported.",
+  "planned_exploratory": [
+    "Negative control: c40_d10 -> g_tmove_rush (time from snap to onset, reaction). Combine has no stimulus, so no link is expected.",
+    "Other 40 burst features (d05, s05, s10, amax06, t3, t5) -> g_d10_rush",
+    "Position-drill burst composite (FRONT_START_WAVE, PASS_RUSH, RUN_AND_CLUB, RUN_THE_HOOP; d10 within-drill z) and burst4+40 composite -> P1-P3 targets (larger n)",
+    "c40_d10 -> snap-aligned game burst (g_d10_snap_rush), overall pressure rate, sack rate",
+    "c40_d10 -> game burst on all snaps (pass rush + run)",
+    "Stratified by majority alignment (EDGE vs INTERIOR_LINE)",
+    "Game-side chain (not a Combine linkage): partial correlation of game burst with quick pressure rate across players"
+  ],
+  "exploratory_settings": "n_repeats=20, n_perm=500, n_jobs=3, seed 0. Every exploratory evaluate() call is counted and reported."
+}

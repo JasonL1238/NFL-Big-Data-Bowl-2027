@@ -1,0 +1,2838 @@
+{
+  "experiment_id": "E005",
+  "prereg": "experiments/results/E005_prereg.json",
+  "counts": {
+    "combine_transitions": 1086,
+    "combine_backpedal_legs": 727,
+    "game_breaks_in_window": 25801,
+    "game_backpedal_plays": 29685,
+    "game_db_players": 92,
+    "game_ballair_backpedal_transitions": 4727
+  },
+  "reliability": {
+    "combine": [
+      {
+        "feature": "entry_speed",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.23609271526806416,
+        "reliability": 0.6734977780802622,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "entry_speed",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.11782137650830964,
+        "reliability": 0.3313958100797237,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "entry_speed",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": -0.22480451834320345,
+        "reliability": -0.5056102739282617,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "entry_speed",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.4711699435599469,
+        "reliability": 0.7191732424002952,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "entry_speed",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.5536401779659627,
+        "reliability": 0.7139754546514513,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "entry_speed",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": -0.13123081601189024,
+        "reliability": -0.2926142919380503,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.1385356580357212,
+        "reliability": 0.5183147007001153,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.08182643622135626,
+        "reliability": 0.2487729239022248,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": -0.08006332986680342,
+        "reliability": -0.15292976637516298,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.2885736919815267,
+        "reliability": 0.5405803412125592,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.1562721270892213,
+        "reliability": 0.2726262067457638,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": -0.0008523409420187839,
+        "reliability": -0.005778633385630281,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": -0.03734792183033744,
+        "reliability": -0.15548751308285974,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": -0.14650051540492984,
+        "reliability": -0.30013357911239996,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": -0.0366370131480005,
+        "reliability": -0.11784012241809998,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.16154446465097586,
+        "reliability": 0.280496426698383,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "peak_decel",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.11026667565841852,
+        "reliability": 0.19372184642584514,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.17964231290160465,
+        "reliability": 0.5940662841309876,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.09405109429213515,
+        "reliability": 0.27828645323231826,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": -0.1039195496199251,
+        "reliability": -0.2033861160739933,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.3122764893942072,
+        "reliability": 0.5681249208496084,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.3823658939243829,
+        "reliability": 0.5552069983948246,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.030825219376107663,
+        "reliability": 0.17625490830970875,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.030008275447659695,
+        "reliability": 0.1033054151492737,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": -0.1468820286581919,
+        "reliability": -0.30104276307560673,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": -0.035741632910621005,
+        "reliability": -0.11472155922541746,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.028173997064092998,
+        "reliability": -0.05906368273600242,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "brake_05",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": -0.020079805844082938,
+        "reliability": -0.03982127037425572,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.03892797664568593,
+        "reliability": 0.21403995386217783,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.08709188955798589,
+        "reliability": 0.26168100786883985,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.06422262673439492,
+        "reliability": 0.10757527174569813,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": -0.03353412787566182,
+        "reliability": -0.10708863499403436,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.21365818147744792,
+        "reliability": -0.5755548100759732,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.0358215616630235,
+        "reliability": 0.19990103214963376,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.07679885346541515,
+        "reliability": 0.23616030703395982,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.05376796958363086,
+        "reliability": 0.09085281246495881,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": -0.07252838810928516,
+        "reliability": -0.254933638517422,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.008404472468484974,
+        "reliability": 0.0169320315743461,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "min_speed",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": -0.062416389509334126,
+        "reliability": -0.12921382884610144,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.10662884483496728,
+        "reliability": 0.4443144569075781,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.11882384418426561,
+        "reliability": 0.33352106204635956,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.278325936255005,
+        "reliability": 0.3980099810692539,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.2642931466219813,
+        "reliability": 0.5106485620027171,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.011720225155175241,
+        "reliability": -0.02412851597644182,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.051033097684099554,
+        "reliability": 0.265396086777304,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.06104938662629724,
+        "reliability": 0.19471736021082556,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.16830828634294848,
+        "reliability": 0.25988260255480444,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.09917599867545145,
+        "reliability": 0.2443673453757106,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.18842529351096748,
+        "reliability": 0.31950738587265076,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "peak_reaccel",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.1492385585641571,
+        "reliability": 0.2535795770559603,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.16293359476335392,
+        "reliability": 0.5654907607841746,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.15545138295019667,
+        "reliability": 0.40557454327513137,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.16426752967358316,
+        "reliability": 0.25440244840301085,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.351622886393703,
+        "reliability": 0.61057180999822,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.052668097724274304,
+        "reliability": 0.10137087729285908,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.0743596257840816,
+        "reliability": 0.35021155398488063,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.09310261643660316,
+        "reliability": 0.27605299314766285,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.17998426258013192,
+        "reliability": 0.275541642748406,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.11859991823025286,
+        "reliability": 0.28297037395367863,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.20071061746361615,
+        "reliability": 0.3367402709944689,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "drive_05",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.07807055138652942,
+        "reliability": 0.1411247728123689,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.06554475655700247,
+        "reliability": 0.3201037772516976,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.12004075642204634,
+        "reliability": 0.33608916137968664,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.19507875380666437,
+        "reliability": 0.29540794192631764,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.0841710531683199,
+        "reliability": 0.21279106722614263,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.11266821513863498,
+        "reliability": -0.261282420375113,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.08610864135830418,
+        "reliability": 0.3871708220185049,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.11419256979121857,
+        "reliability": 0.32362845948766983,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.14399499328874185,
+        "reliability": 0.22641968568532583,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.06529823101129645,
+        "reliability": 0.17068520021661018,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.29968726844589666,
+        "reliability": 0.46346017808164136,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "drive_10",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.0892151003190705,
+        "reliability": 0.15863481790352188,
+        "n_players": 72,
+        "n_single": 5,
+        "n_repeated": 67
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.3182182813706271,
+        "reliability": 0.7567426526056301,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.20945207094741283,
+        "reliability": 0.4951267339561656,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.08849046107364583,
+        "reliability": 0.14531185409448003,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.637359194813485,
+        "reliability": 0.8337543067576193,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.4593830711181173,
+        "reliability": 0.6312361430181493,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.1646501029059281,
+        "reliability": 0.5685554338855732,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.24754537442301022,
+        "reliability": 0.5488708298283983,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.38352716644211204,
+        "reliability": 0.5133741012846605,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.16308850411516773,
+        "reliability": 0.3629233192862427,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.19501199527486138,
+        "reliability": 0.32879181856491957,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "dv_10",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": -0.04598573387013268,
+        "reliability": -0.09360365485796275,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.0855716574622543,
+        "reliability": 0.3855544679220656,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.09492895607343602,
+        "reliability": 0.2803454160756309,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": -0.003348220624405146,
+        "reliability": -0.005945889315430542,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.0790596868770766,
+        "reliability": 0.20166011207638143,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.11061508034852147,
+        "reliability": 0.20124519530177176,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.06785050438850761,
+        "reliability": 0.3281911653957921,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.07083967497624843,
+        "reliability": 0.22083281894906537,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.037991652607466245,
+        "reliability": 0.06505997193793042,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.0906019373724557,
+        "reliability": 0.22652090653466153,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.1386328688909702,
+        "reliability": -0.3327532171080385,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "decel_time",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 2.9490299091605716e-16,
+        "reliability": 5.734224823367778e-16,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "retention",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.1123116112515384,
+        "reliability": 0.45869586393253997,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "retention",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.11955479402224971,
+        "reliability": 0.3350651588332161,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "retention",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.08817176710356396,
+        "reliability": 0.14482573940378804,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "retention",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.08022522010641728,
+        "reliability": 0.20421561667181026,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "retention",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.20662889812886248,
+        "reliability": 0.3449137711866024,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "retention",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.046577735688016896,
+        "reliability": 0.24715216598514597,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "retention",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.08638629704111475,
+        "reliability": 0.2599687692398914,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "retention",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.10438532519562355,
+        "reliability": 0.16924989443953667,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "retention",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": -0.06455389723339268,
+        "reliability": -0.22224531687730253,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "retention",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.03999250041826205,
+        "reliability": 0.07796752024500612,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "retention",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.05229538700134454,
+        "reliability": 0.09677644674004116,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.06821762507665709,
+        "reliability": 0.3294646248521726,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.10085035965959575,
+        "reliability": 0.29403092672393183,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.041427085250487224,
+        "reliability": 0.0707351310130647,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.1327438159291723,
+        "reliability": 0.3095962000453472,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.2563015625984654,
+        "reliability": -0.7544211782946811,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.09678866741401955,
+        "reliability": 0.41798965074276867,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.11457987292802058,
+        "reliability": 0.3244630631893069,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": 0.01884625527958078,
+        "reliability": 0.032813725483532646,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.08040169742978703,
+        "reliability": 0.2046016552160033,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": 0.0689398614175295,
+        "reliability": 0.13055908319974452,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "turn_radius",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.03835452497117999,
+        "reliability": 0.07190219457047863,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "none",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.08741486115161637,
+        "reliability": 0.390776488967959,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "none",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.06593850682529245,
+        "reliability": 0.20790791511981696,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "none",
+        "scope": "TA1 vs TA2",
+        "icc": 0.05230130061137375,
+        "reliability": 0.08848359951433206,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "none",
+        "scope": "W_DRILL cuts",
+        "icc": 0.17833357715028866,
+        "reliability": 0.38718012047975064,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "none",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.08337162764982896,
+        "reliability": -0.18637927789774522,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "entry+turn",
+        "scope": "reversal events (TA1,TA2,Wx3,BOXx2)",
+        "icc": 0.0165820541323815,
+        "reliability": 0.10187162467139839,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "entry+turn",
+        "scope": "reversal drill means (4 drills)",
+        "icc": 0.008453794014240129,
+        "reliability": 0.030804284042793617,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "entry+turn",
+        "scope": "TA1 vs TA2",
+        "icc": -0.0629171798922425,
+        "reliability": -0.1181566289074844,
+        "n_players": 122,
+        "n_single": 31,
+        "n_repeated": 91
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "entry+turn",
+        "scope": "W_DRILL cuts",
+        "icc": 0.03735265331906405,
+        "reliability": 0.10257400181426815,
+        "n_players": 121,
+        "n_single": 3,
+        "n_repeated": 118
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "entry+turn",
+        "scope": "BOX_DRILL cuts",
+        "icc": -0.05209264432352136,
+        "reliability": -0.11221275689551458,
+        "n_players": 122,
+        "n_single": 1,
+        "n_repeated": 121
+      },
+      {
+        "feature": "max_turn_rate",
+        "adjust": "none",
+        "scope": "BP45 reaction U-turn, 2 attempts (icc1)",
+        "icc": 0.01782552550348505,
+        "reliability": 0.03407106218877059,
+        "n_players": 72,
+        "n_single": 4,
+        "n_repeated": 68
+      },
+      {
+        "feature": "bp_peak",
+        "adjust": "none",
+        "scope": "backpedal attempts (5 drills)",
+        "icc": 0.1767633293146927,
+        "reliability": 0.5605831261432673,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "bp_peak",
+        "adjust": "none",
+        "scope": "backpedal drill means (5 drills)",
+        "icc": 0.20230857039049366,
+        "reliability": 0.5536401394853655,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "bp_peak",
+        "adjust": "none",
+        "scope": "BP45 attempts (icc1)",
+        "icc": 0.23250902589612502,
+        "reliability": 0.37373354864597885,
+        "n_players": 122,
+        "n_single": 3,
+        "n_repeated": 119
+      },
+      {
+        "feature": "bp_v05",
+        "adjust": "none",
+        "scope": "backpedal attempts (5 drills)",
+        "icc": 0.15179310230538554,
+        "reliability": 0.5153935330961587,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "bp_v05",
+        "adjust": "none",
+        "scope": "backpedal drill means (5 drills)",
+        "icc": 0.148153421343529,
+        "reliability": 0.45973059340393,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "bp_v05",
+        "adjust": "none",
+        "scope": "BP45 attempts (icc1)",
+        "icc": 0.15333645133383567,
+        "reliability": 0.2631326699427611,
+        "n_players": 122,
+        "n_single": 3,
+        "n_repeated": 119
+      },
+      {
+        "feature": "bp_v10",
+        "adjust": "none",
+        "scope": "backpedal attempts (5 drills)",
+        "icc": 0.16448272773778375,
+        "reliability": 0.5391270814390898,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "bp_v10",
+        "adjust": "none",
+        "scope": "backpedal drill means (5 drills)",
+        "icc": 0.19113708669170992,
+        "reliability": 0.5361261411492251,
+        "n_players": 122,
+        "n_single": 0,
+        "n_repeated": 122
+      },
+      {
+        "feature": "bp_v10",
+        "adjust": "none",
+        "scope": "BP45 attempts (icc1)",
+        "icc": 0.23250902589612502,
+        "reliability": 0.37373354864597885,
+        "n_players": 122,
+        "n_single": 3,
+        "n_repeated": 119
+      }
+    ],
+    "game": [
+      {
+        "event_set": "from_backpedal",
+        "feature": "entry_speed",
+        "n_events": 11075,
+        "rel_min5": 0.6251640160184598,
+        "n_min5": 70,
+        "rel_min10": 0.63262346143739,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "peak_decel",
+        "n_events": 11075,
+        "rel_min5": -0.35429912386581747,
+        "n_min5": 70,
+        "rel_min10": -0.3418033010856385,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "brake_05",
+        "n_events": 11075,
+        "rel_min5": -0.5205166353629969,
+        "n_min5": 70,
+        "rel_min10": -0.4761379818703236,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "min_speed",
+        "n_events": 11075,
+        "rel_min5": 0.10365697043576218,
+        "n_min5": 70,
+        "rel_min10": 0.1192973679577503,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "peak_reaccel",
+        "n_events": 11075,
+        "rel_min5": 0.5463181738174038,
+        "n_min5": 70,
+        "rel_min10": 0.5131410616147875,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "drive_05",
+        "n_events": 11075,
+        "rel_min5": 0.2850739364227965,
+        "n_min5": 70,
+        "rel_min10": 0.2896389941024831,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "drive_10",
+        "n_events": 11075,
+        "rel_min5": 0.5509142038967435,
+        "n_min5": 70,
+        "rel_min10": 0.5716069998736268,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "dv_10",
+        "n_events": 11075,
+        "rel_min5": 0.4773066087964003,
+        "n_min5": 70,
+        "rel_min10": 0.4821639226960854,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "decel_time",
+        "n_events": 11075,
+        "rel_min5": 0.18571982073016277,
+        "n_min5": 70,
+        "rel_min10": 0.24853787465418364,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "retention",
+        "n_events": 11075,
+        "rel_min5": 0.11909965445086762,
+        "n_min5": 70,
+        "rel_min10": 0.16845454063142148,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "turn_radius",
+        "n_events": 11075,
+        "rel_min5": 0.14030956877318643,
+        "n_min5": 70,
+        "rel_min10": 0.1526410215961784,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal",
+        "feature": "max_turn_rate",
+        "n_events": 11061,
+        "rel_min5": 0.1458801171800874,
+        "n_min5": 70,
+        "rel_min10": 0.15363581991230085,
+        "n_min10": 69
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "entry_speed",
+        "n_events": 4727,
+        "rel_min5": 0.6663446310255013,
+        "n_min5": 66,
+        "rel_min10": 0.619590088558839,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "peak_decel",
+        "n_events": 4727,
+        "rel_min5": 0.06156771476479564,
+        "n_min5": 66,
+        "rel_min10": 0.39537947639406085,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "brake_05",
+        "n_events": 4727,
+        "rel_min5": -0.03446035959892913,
+        "n_min5": 66,
+        "rel_min10": 0.32284701584115033,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "min_speed",
+        "n_events": 4727,
+        "rel_min5": 0.5613721732158646,
+        "n_min5": 66,
+        "rel_min10": 0.4511478881927507,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "peak_reaccel",
+        "n_events": 4727,
+        "rel_min5": 0.6307472186665765,
+        "n_min5": 66,
+        "rel_min10": 0.7074264960519062,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "drive_05",
+        "n_events": 4727,
+        "rel_min5": 0.6471276026173826,
+        "n_min5": 66,
+        "rel_min10": 0.6847607486873671,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "drive_10",
+        "n_events": 4727,
+        "rel_min5": 0.6915493848127285,
+        "n_min5": 66,
+        "rel_min10": 0.6956311530080493,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "dv_10",
+        "n_events": 4727,
+        "rel_min5": 0.5740733402962942,
+        "n_min5": 66,
+        "rel_min10": 0.5589811227263113,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "decel_time",
+        "n_events": 4727,
+        "rel_min5": 0.29989969707193237,
+        "n_min5": 66,
+        "rel_min10": 0.5326763342781397,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "retention",
+        "n_events": 4727,
+        "rel_min5": 0.543038171444492,
+        "n_min5": 66,
+        "rel_min10": 0.3678697878316177,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "turn_radius",
+        "n_events": 4727,
+        "rel_min5": 0.41064820363874266,
+        "n_min5": 66,
+        "rel_min10": 0.42109600670636727,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_ball_in_air",
+        "feature": "max_turn_rate",
+        "n_events": 4725,
+        "rel_min5": -0.025182152398064303,
+        "n_min5": 66,
+        "rel_min10": 0.3103570402619744,
+        "n_min10": 52
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "entry_speed",
+        "n_events": 6348,
+        "rel_min5": 0.27139835280637953,
+        "n_min5": 69,
+        "rel_min10": 0.4953557450026385,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "peak_decel",
+        "n_events": 6348,
+        "rel_min5": -0.0005388053357603358,
+        "n_min5": 69,
+        "rel_min10": 0.2015315578104426,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "brake_05",
+        "n_events": 6348,
+        "rel_min5": -0.05783134073601853,
+        "n_min5": 69,
+        "rel_min10": -0.08137487966576239,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "min_speed",
+        "n_events": 6348,
+        "rel_min5": -0.29585919857632076,
+        "n_min5": 69,
+        "rel_min10": -0.11219228568067309,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "peak_reaccel",
+        "n_events": 6348,
+        "rel_min5": 0.13011389326579667,
+        "n_min5": 69,
+        "rel_min10": -0.23852097503081549,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "drive_05",
+        "n_events": 6348,
+        "rel_min5": -0.014418774691073175,
+        "n_min5": 69,
+        "rel_min10": 0.1749178033865986,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "drive_10",
+        "n_events": 6348,
+        "rel_min5": -0.03697335340418027,
+        "n_min5": 69,
+        "rel_min10": 0.2741708330701269,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "dv_10",
+        "n_events": 6348,
+        "rel_min5": -0.06363651095496933,
+        "n_min5": 69,
+        "rel_min10": 0.1266198697361092,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "decel_time",
+        "n_events": 6348,
+        "rel_min5": 0.25437883859211924,
+        "n_min5": 69,
+        "rel_min10": 0.37282040003248124,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "retention",
+        "n_events": 6348,
+        "rel_min5": -0.1339275452178458,
+        "n_min5": 69,
+        "rel_min10": 0.06293069522601945,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "turn_radius",
+        "n_events": 6348,
+        "rel_min5": -0.11359976840357264,
+        "n_min5": 69,
+        "rel_min10": 0.1598527819475306,
+        "n_min10": 57
+      },
+      {
+        "event_set": "from_backpedal_pre_pass",
+        "feature": "max_turn_rate",
+        "n_events": 6336,
+        "rel_min5": -0.07063445138006522,
+        "n_min5": 69,
+        "rel_min10": 0.36691670097503826,
+        "n_min10": 57
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "entry_speed",
+        "n_events": 2168,
+        "rel_min5": 0.22748906379324,
+        "n_min5": 51,
+        "rel_min10": 0.5362035042888386,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "peak_decel",
+        "n_events": 2168,
+        "rel_min5": -0.17552726489548312,
+        "n_min5": 51,
+        "rel_min10": -0.3917772234402468,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "brake_05",
+        "n_events": 2168,
+        "rel_min5": -0.37604323812073537,
+        "n_min5": 51,
+        "rel_min10": -0.5837088943488041,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "min_speed",
+        "n_events": 2168,
+        "rel_min5": -0.18126809645362463,
+        "n_min5": 51,
+        "rel_min10": -0.020794929786818607,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "peak_reaccel",
+        "n_events": 2168,
+        "rel_min5": 0.4372529208330772,
+        "n_min5": 51,
+        "rel_min10": 0.38384808957097893,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "drive_05",
+        "n_events": 2168,
+        "rel_min5": 0.3926396290939532,
+        "n_min5": 51,
+        "rel_min10": 0.1303995719706678,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "drive_10",
+        "n_events": 2168,
+        "rel_min5": 0.5512323637860228,
+        "n_min5": 51,
+        "rel_min10": 0.4928020241569953,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "dv_10",
+        "n_events": 2168,
+        "rel_min5": 0.6472453327082941,
+        "n_min5": 51,
+        "rel_min10": 0.6648476217751693,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "decel_time",
+        "n_events": 2168,
+        "rel_min5": -0.26637787279851055,
+        "n_min5": 51,
+        "rel_min10": 0.34859894571614514,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "retention",
+        "n_events": 2168,
+        "rel_min5": -0.5265618653920646,
+        "n_min5": 51,
+        "rel_min10": -0.10881456381787935,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "turn_radius",
+        "n_events": 2168,
+        "rel_min5": 0.24107353294858402,
+        "n_min5": 51,
+        "rel_min10": 0.22529575308846098,
+        "n_min10": 31
+      },
+      {
+        "event_set": "backpedal_reversal",
+        "feature": "max_turn_rate",
+        "n_events": 2168,
+        "rel_min5": 0.15885393398365227,
+        "n_min5": 51,
+        "rel_min10": 0.30373406269375586,
+        "n_min10": 31
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "entry_speed",
+        "n_events": 25801,
+        "rel_min5": 0.6936297720001164,
+        "n_min5": 78,
+        "rel_min10": 0.7021326782926373,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "peak_decel",
+        "n_events": 25801,
+        "rel_min5": -0.13152859717177623,
+        "n_min5": 78,
+        "rel_min10": 0.05811185858472861,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "brake_05",
+        "n_events": 25801,
+        "rel_min5": -0.4191689888096372,
+        "n_min5": 78,
+        "rel_min10": 0.014435132277973998,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "min_speed",
+        "n_events": 25801,
+        "rel_min5": -0.788750773406861,
+        "n_min5": 78,
+        "rel_min10": -0.055285638686220356,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "peak_reaccel",
+        "n_events": 25801,
+        "rel_min5": 0.24429631053967735,
+        "n_min5": 78,
+        "rel_min10": 0.2481203483244393,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "drive_05",
+        "n_events": 25801,
+        "rel_min5": 0.4035848485231941,
+        "n_min5": 78,
+        "rel_min10": 0.3682165258753862,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "drive_10",
+        "n_events": 25795,
+        "rel_min5": 0.2405667842227972,
+        "n_min5": 78,
+        "rel_min10": 0.41261328373732525,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "dv_10",
+        "n_events": 25801,
+        "rel_min5": 0.26632261864347856,
+        "n_min5": 78,
+        "rel_min10": 0.171181729399665,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "decel_time",
+        "n_events": 25801,
+        "rel_min5": 0.3231323192507344,
+        "n_min5": 78,
+        "rel_min10": 0.24531735178006459,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "retention",
+        "n_events": 25801,
+        "rel_min5": -0.1942426046955892,
+        "n_min5": 78,
+        "rel_min10": 0.15932134620197386,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "turn_radius",
+        "n_events": 25801,
+        "rel_min5": -0.3943254904565985,
+        "n_min5": 78,
+        "rel_min10": 0.10931412548093898,
+        "n_min10": 72
+      },
+      {
+        "event_set": "all_breaks",
+        "feature": "max_turn_rate",
+        "n_events": 25684,
+        "rel_min5": 0.37420233289784244,
+        "n_min5": 78,
+        "rel_min10": 0.33481613325521403,
+        "n_min10": 72
+      },
+      {
+        "event_set": "backpedal_plays",
+        "feature": "bp_peak",
+        "n_events": 29685,
+        "rel_min5": 0.723465355831951,
+        "n_min5": 79,
+        "rel_min10": 0.8473864731262524,
+        "n_min10": 73
+      }
+    ]
+  },
+  "exposure": {
+    "gm_backpedal_speed": {
+      "n": 82,
+      "corr_log_cov_pass_plays": 0.054740682873271676,
+      "corr_log_events": 0.058254155409069405,
+      "eb_weight_median": 0.8905471713577473
+    },
+    "gm_ballair_dv": {
+      "n": 69,
+      "corr_log_cov_pass_plays": -0.13262758236287597,
+      "corr_log_events": -0.07340248099455797,
+      "eb_weight_median": 0.6756086177489772
+    }
+  },
+  "feature_vs_controls_r": {
+    "cmb_backpedal_speed": {
+      "forty": 0.00906365874993222,
+      "ten_yd_split": -0.07903142000719877,
+      "three_cone": -0.04458313463854187,
+      "short_shuttle": 0.1913713868425477,
+      "ngs_athleticism_score": -0.027051300417647153,
+      "log_pick": -0.005955492894931475
+    },
+    "cmb_transition_dv": {
+      "forty": -0.21163939708135074,
+      "ten_yd_split": -0.0982478201976238,
+      "three_cone": -0.17116978057900065,
+      "short_shuttle": 0.021867695770333123,
+      "ngs_athleticism_score": 0.2368793706569433,
+      "log_pick": -0.12744910299394288
+    }
+  },
+  "primary": {
+    "P1": {
+      "spec": {
+        "id": "P1",
+        "feature": "cmb_backpedal_speed",
+        "target": "gm_backpedal_speed",
+        "population": "DB with >= 20 game backpedal plays (expected n ~82)",
+        "feature_definition": "Peak speed in the opening backpedal leg (t since motion onset in [0, L], L = 1.6 s BP90, 1.2 s TA2, 1.0 s W/BOX/BP45) of BACK_PEDAL_AND_90_DEGREE_BREAK_TO_BALL, TERYL_AUSTIN_DRILL_2, W_DRILL, BOX_DRILL, BACK_PEDAL_AND_TRANSITION_45_DEGREE_REACTION; z-scored within drill (clipped +-3), averaged over attempts within drill, then over drills (equal weight).",
+        "target_definition": "Per player-play: max speed over frames in [0, min(pass_forward, 2.5 s)] after the snap where vx > 0.5 yd/s (downfield) and orientation is within 60 deg of 270 (facing the LOS); plays with >= 5 such frames. Winsorized 1/99%, minus the mean of its lined_up_position x coverage_assignment cell, then empirical-Bayes shrunk player mean (normal-normal, method-of-moments tau2).",
+        "feature_reliability_pre": "cross-drill ICC of drill means (5 drills) -> reliability 0.55 (ICC per drill 0.20)",
+        "target_reliability_pre": "split-half by game (odd/even, Spearman-Brown, >= 10 plays per half): 0.85",
+        "rationale": "Backpedal speed is a technique skill scouts grade by eye; the stopwatch only measures forward speed. If drill backpedal speed predicts game backpedal speed beyond the 40/10-yd split, the drills carry information the timing tests miss.",
+        "expected_sign": "+"
+      },
+      "seeds": {
+        "0": {
+          "feature": "cmb_backpedal_speed",
+          "target": "gm_backpedal_speed",
+          "n": 82,
+          "resid_df": 62,
+          "positions": [
+            "DB"
+          ],
+          "raw_r": 0.08442333432128193,
+          "cv_r2": {
+            "B0": -0.030973558204357914,
+            "B1": -0.05185506001135893,
+            "B2": -0.04832627961531545,
+            "full": -0.04922396047250596,
+            "B0+feature": -0.04130144473484383
+          },
+          "delta_r2_vs_B0": {
+            "mean": -0.01032788653048592,
+            "se": 0.017079994093772293
+          },
+          "delta_r2_vs_B2": {
+            "mean": -0.000897680857190521,
+            "se": 0.008385649724451529,
+            "null_mean": -0.0016241807531017665,
+            "excess": 0.0007264998959112455
+          },
+          "perm_p": 0.2448775612193903,
+          "n_perm": 2000,
+          "partial_r": 0.03141048017297293,
+          "by_class": {
+            "2023": {
+              "n": 26,
+              "partial_r": -0.13257486305733093
+            },
+            "2024": {
+              "n": 32,
+              "partial_r": 0.06638398312434293
+            },
+            "2025": {
+              "n": 24,
+              "partial_r": 0.12741716686360344
+            }
+          },
+          "loco_delta_r2": {
+            "2023": 2.0845794460599976e-05,
+            "2024": 5.8463493007088196e-05,
+            "2025": 0.015254234308113679
+          },
+          "checks": {
+            "excess_lb_gt_0": false,
+            "perm_p_lt_05": false,
+            "loco_positive_classes": "3/3"
+          }
+        },
+        "1": {
+          "feature": "cmb_backpedal_speed",
+          "target": "gm_backpedal_speed",
+          "n": 82,
+          "resid_df": 62,
+          "positions": [
+            "DB"
+          ],
+          "raw_r": 0.08442333432128193,
+          "cv_r2": {
+            "B0": -0.02390589128913613,
+            "B1": -0.039935745748432366,
+            "B2": -0.040202278436236326,
+            "full": -0.04051689825518253,
+            "B0+feature": -0.03182200031271806
+          },
+          "delta_r2_vs_B0": {
+            "mean": -0.007916109023581922,
+            "se": 0.01394904553688695
+          },
+          "delta_r2_vs_B2": {
+            "mean": -0.00031461981894620727,
+            "se": 0.007289765173984741,
+            "null_mean": -0.0007873539386065472,
+            "excess": 0.0004727341196603399
+          },
+          "perm_p": 0.5547226386806596,
+          "n_perm": 2000,
+          "partial_r": 0.03141048017297293,
+          "by_class": {
+            "2023": {
+              "n": 26,
+              "partial_r": -0.13257486305733093
+            },
+            "2024": {
+              "n": 32,
+              "partial_r": 0.06638398312434293
+            },
+            "2025": {
+              "n": 24,
+              "partial_r": 0.12741716686360344
+            }
+          },
+          "loco_delta_r2": {
+            "2023": 2.0845794460599976e-05,
+            "2024": 5.8463493007088196e-05,
+            "2025": 0.015254234308113679
+          },
+          "checks": {
+            "excess_lb_gt_0": false,
+            "perm_p_lt_05": false,
+            "loco_positive_classes": "3/3"
+          }
+        },
+        "2": {
+          "feature": "cmb_backpedal_speed",
+          "target": "gm_backpedal_speed",
+          "n": 82,
+          "resid_df": 62,
+          "positions": [
+            "DB"
+          ],
+          "raw_r": 0.08442333432128193,
+          "cv_r2": {
+            "B0": -0.025704573576880635,
+            "B1": -0.04002755221075552,
+            "B2": -0.03966518384158633,
+            "full": -0.03997858876933274,
+            "B0+feature": -0.03273968754131366
+          },
+          "delta_r2_vs_B0": {
+            "mean": -0.007035113964433026,
+            "se": 0.011025417285814867
+          },
+          "delta_r2_vs_B2": {
+            "mean": -0.0003134049277464195,
+            "se": 0.0053265223768045366,
+            "null_mean": -0.0010477987144437795,
+            "excess": 0.00073439378669736
+          },
+          "perm_p": 0.23788105947026486,
+          "n_perm": 2000,
+          "partial_r": 0.03141048017297293,
+          "by_class": {
+            "2023": {
+              "n": 26,
+              "partial_r": -0.13257486305733093
+            },
+            "2024": {
+              "n": 32,
+              "partial_r": 0.06638398312434293
+            },
+            "2025": {
+              "n": 24,
+              "partial_r": 0.12741716686360344
+            }
+          },
+          "loco_delta_r2": {
+            "2023": 2.0845794460599976e-05,
+            "2024": 5.8463493007088196e-05,
+            "2025": 0.015254234308113679
+          },
+          "checks": {
+            "excess_lb_gt_0": false,
+            "perm_p_lt_05": false,
+            "loco_positive_classes": "3/3"
+          }
+        }
+      },
+      "without_2025": {
+        "feature": "cmb_backpedal_speed",
+        "target": "gm_backpedal_speed",
+        "n": 58,
+        "resid_df": 38,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.007970490293466331,
+        "cv_r2": {
+          "B0": -0.036313535957550526,
+          "B1": -0.06182214667142381,
+          "B2": -0.06165339270001004,
+          "full": -0.06425901258212302,
+          "B0+feature": -0.037922247146464944
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.0016087111889144174,
+          "se": 0.004498991133822862
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.0026056198821129703,
+          "se": 0.013852003715941244,
+          "null_mean": 0.0013176492822182377,
+          "excess": -0.003923269164331208
+        },
+        "perm_p": 0.11494252873563218,
+        "n_perm": 2000,
+        "partial_r": -0.033568405660588274,
+        "by_class": {
+          "2023": {
+            "n": 26,
+            "partial_r": -0.09960102355327878
+          },
+          "2024": {
+            "n": 32,
+            "partial_r": 0.023057181513301727
+          }
+        },
+        "loco_delta_r2": {
+          "2023": -0.023689615466095715,
+          "2024": -0.008446277584363893
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "0/2"
+        }
+      },
+      "bh_q": 0.4897551224387806,
+      "go": {
+        "seeds_passing_all_automatable_checks": "0/3",
+        "feature_reliability": 0.5536401394853655,
+        "target_reliability": 0.8473864731262524,
+        "reliability_ok": true,
+        "bh_q_lt_05": false
+      }
+    },
+    "P2": {
+      "spec": {
+        "id": "P2",
+        "feature": "cmb_transition_dv",
+        "target": "gm_ballair_dv",
+        "population": "DB with >= 10 post-throw transitions out of the backpedal (expected n ~69)",
+        "feature_definition": "dv_10 = |v(t_min + 0.5 s) - v(t_min - 0.5 s)| (velocity-vector change across the plant, t_min = speed minimum of the detected break; segments.breaks min_turn 45, half_window 0.5, context 1.0) at the reversals of TERYL_AUSTIN_DRILL_1 (largest turn >= 90 deg, >= 1.5 s after onset), TERYL_AUSTIN_DRILL_2 (largest turn >= 120 deg, >= 1.5 s), W_DRILL (first 3 turns >= 90 deg), BOX_DRILL (first 2 turns >= 90 deg). Within each drill-cut: OLS residual on entry_speed and |turn|, z-scored (clipped +-3); averaged within drill, then over the 4 drills.",
+        "target_definition": "Breaks (segments.breaks, min_entry_speed 1.5) with speed minimum between 0.3 s after the snap and min(pass arrival, sack/scramble/tackle/out-of-bounds, 5 s), after pass_forward ('ball in air'), whose entry phase (0.8-0.3 s before the minimum) moves downfield (mean vx > 1) while facing the LOS (circular-mean orientation within 60 deg of 270). dv_10 winsorized 1/99%, OLS-residualized on |turn| (quadratic), entry speed, alignment (CB/SLOT_CB/HIGH_SAFETY/BOX_SAFETY) and man/zone/NA; empirical-Bayes shrunk player mean.",
+        "feature_reliability_pre": "cross-drill ICC of drill means (4 drills) -> 0.55; all 7 events as repeats -> 0.57",
+        "target_reliability_pre": "split-half by game (>= 5 events per half): 0.57",
+        "rationale": "'Breaks on the ball': once the ball is thrown, how much velocity a DB changes through his plant out of the backpedal is the transition quickness coaches grade. The drill reversals isolate the same plant-and-drive under controlled conditions.",
+        "expected_sign": "+"
+      },
+      "seeds": {
+        "0": {
+          "feature": "cmb_transition_dv",
+          "target": "gm_ballair_dv",
+          "n": 69,
+          "resid_df": 49,
+          "positions": [
+            "DB"
+          ],
+          "raw_r": 0.07100443649377515,
+          "cv_r2": {
+            "B0": -0.030043262565538208,
+            "B1": -0.0424766292107975,
+            "B2": -0.06317392066911443,
+            "full": -0.05828358469492052,
+            "B0+feature": -0.0389569780011296
+          },
+          "delta_r2_vs_B0": {
+            "mean": -0.008913715435591387,
+            "se": 0.015475170965044993
+          },
+          "delta_r2_vs_B2": {
+            "mean": 0.00489033597419391,
+            "se": 0.008825151337137616,
+            "null_mean": 7.37426651504347e-05,
+            "excess": 0.004816593309043476
+          },
+          "perm_p": 0.5482258870564718,
+          "n_perm": 2000,
+          "partial_r": 0.06572176183896866,
+          "by_class": {
+            "2023": {
+              "n": 23,
+              "partial_r": 0.05106849985023061
+            },
+            "2024": {
+              "n": 27,
+              "partial_r": 0.1098321849665229
+            },
+            "2025": {
+              "n": 19,
+              "partial_r": 0.018380161238930173
+            }
+          },
+          "loco_delta_r2": {
+            "2023": 4.872747594997229e-05,
+            "2024": 0.0002141744075716545,
+            "2025": -6.688257596432212e-05
+          },
+          "checks": {
+            "excess_lb_gt_0": false,
+            "perm_p_lt_05": false,
+            "loco_positive_classes": "2/3"
+          }
+        },
+        "1": {
+          "feature": "cmb_transition_dv",
+          "target": "gm_ballair_dv",
+          "n": 69,
+          "resid_df": 49,
+          "positions": [
+            "DB"
+          ],
+          "raw_r": 0.07100443649377515,
+          "cv_r2": {
+            "B0": -0.03278507239494672,
+            "B1": -0.041357790943347086,
+            "B2": -0.04331141541755778,
+            "full": -0.04077178362853921,
+            "B0+feature": -0.039561384650681555
+          },
+          "delta_r2_vs_B0": {
+            "mean": -0.006776312255734838,
+            "se": 0.01445653700239549
+          },
+          "delta_r2_vs_B2": {
+            "mean": 0.0025396317890185715,
+            "se": 0.0052979138655649596,
+            "null_mean": -0.002210163478434883,
+            "excess": 0.004749795267453455
+          },
+          "perm_p": 0.45527236381809094,
+          "n_perm": 2000,
+          "partial_r": 0.06572176183896866,
+          "by_class": {
+            "2023": {
+              "n": 23,
+              "partial_r": 0.05106849985023061
+            },
+            "2024": {
+              "n": 27,
+              "partial_r": 0.1098321849665229
+            },
+            "2025": {
+              "n": 19,
+              "partial_r": 0.018380161238930173
+            }
+          },
+          "loco_delta_r2": {
+            "2023": 4.872747594997229e-05,
+            "2024": 0.0002141744075716545,
+            "2025": -6.688257596432212e-05
+          },
+          "checks": {
+            "excess_lb_gt_0": false,
+            "perm_p_lt_05": false,
+            "loco_positive_classes": "2/3"
+          }
+        },
+        "2": {
+          "feature": "cmb_transition_dv",
+          "target": "gm_ballair_dv",
+          "n": 69,
+          "resid_df": 49,
+          "positions": [
+            "DB"
+          ],
+          "raw_r": 0.07100443649377515,
+          "cv_r2": {
+            "B0": -0.03756846696813107,
+            "B1": -0.04874170526582313,
+            "B2": -0.06575566766813237,
+            "full": -0.05497594121875137,
+            "B0+feature": -0.04669069975620334
+          },
+          "delta_r2_vs_B0": {
+            "mean": -0.009122232788072272,
+            "se": 0.015140929827695555
+          },
+          "delta_r2_vs_B2": {
+            "mean": 0.010779726449381005,
+            "se": 0.04736743292475083,
+            "null_mean": -0.006471738804321519,
+            "excess": 0.017251465253702525
+          },
+          "perm_p": 0.4192903548225887,
+          "n_perm": 2000,
+          "partial_r": 0.06572176183896866,
+          "by_class": {
+            "2023": {
+              "n": 23,
+              "partial_r": 0.05106849985023061
+            },
+            "2024": {
+              "n": 27,
+              "partial_r": 0.1098321849665229
+            },
+            "2025": {
+              "n": 19,
+              "partial_r": 0.018380161238930173
+            }
+          },
+          "loco_delta_r2": {
+            "2023": 4.872747594997229e-05,
+            "2024": 0.0002141744075716545,
+            "2025": -6.688257596432212e-05
+          },
+          "checks": {
+            "excess_lb_gt_0": false,
+            "perm_p_lt_05": false,
+            "loco_positive_classes": "2/3"
+          }
+        }
+      },
+      "without_2025": {
+        "feature": "cmb_transition_dv",
+        "target": "gm_ballair_dv",
+        "n": 50,
+        "resid_df": 30,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.10767253300235663,
+        "cv_r2": {
+          "B0": -0.04410306740503196,
+          "B1": -0.09625808451545836,
+          "B2": -0.13278325246301392,
+          "full": -0.1097459308581661,
+          "B0+feature": -0.061079975009598914
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.01697690760456695,
+          "se": 0.024336604249679424
+        },
+        "delta_r2_vs_B2": {
+          "mean": 0.02303732160484781,
+          "se": 0.1163673821996612,
+          "null_mean": -0.018610765951450767,
+          "excess": 0.04164808755629858
+        },
+        "perm_p": 0.6496751624187906,
+        "n_perm": 2000,
+        "partial_r": 0.07882512587585701,
+        "by_class": {
+          "2023": {
+            "n": 23,
+            "partial_r": 0.09924383241765433
+          },
+          "2024": {
+            "n": 27,
+            "partial_r": 0.060514770210487005
+          }
+        },
+        "loco_delta_r2": {
+          "2023": 7.993882075174596e-05,
+          "2024": 6.582820601275241e-05
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "2/2"
+        }
+      },
+      "bh_q": 0.5482258870564718,
+      "go": {
+        "seeds_passing_all_automatable_checks": "0/3",
+        "feature_reliability": 0.5488708298283983,
+        "target_reliability": 0.5740733402962942,
+        "reliability_ok": true,
+        "bh_q_lt_05": false
+      }
+    }
+  },
+  "exploratory": {
+    "X1": {
+      "description": "drive (speed gained 0.5 s after plant), unadjusted Combine z",
+      "result": {
+        "feature": "cmb_drive05",
+        "target": "gm_ballair_drive05",
+        "n": 69,
+        "resid_df": 49,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.10101674668845934,
+        "cv_r2": {
+          "B0": -0.03161056254201943,
+          "B1": -0.054290205806681924,
+          "B2": -0.05728207449740976,
+          "full": -0.061804216899971516,
+          "B0+feature": -0.041579065735184745
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.00996850319316532,
+          "se": 0.0174069032624478
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.0045221424025617815,
+          "se": 0.012422038755773593,
+          "null_mean": -0.007513091769886156,
+          "excess": 0.0029909493673243746
+        },
+        "perm_p": 0.2894211576846307,
+        "n_perm": 500,
+        "partial_r": 0.0594614961894135,
+        "by_class": {
+          "2023": {
+            "n": 23,
+            "partial_r": 0.27212494064902815
+          },
+          "2024": {
+            "n": 27,
+            "partial_r": -0.07151262024650133
+          },
+          "2025": {
+            "n": 19,
+            "partial_r": -0.05822269631801713
+          }
+        },
+        "loco_delta_r2": {
+          "2023": 6.734681996301006e-05,
+          "2024": 0.002204244597534988,
+          "2025": 0.001192360682211402
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "3/3"
+        }
+      }
+    },
+    "X2": {
+      "description": "peak re-acceleration out of the plant",
+      "result": {
+        "feature": "cmb_reaccel",
+        "target": "gm_ballair_reaccel",
+        "n": 69,
+        "resid_df": 49,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.11552452387732594,
+        "cv_r2": {
+          "B0": -0.029794846524067373,
+          "B1": -0.05093737166401798,
+          "B2": -0.07160386083128568,
+          "full": -0.0719996479632442,
+          "B0+feature": -0.04553370089765136
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.01573885437358397,
+          "se": 0.02227731627715962
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.0003957871319585382,
+          "se": 0.03410264115723484,
+          "null_mean": -0.0034849549309298876,
+          "excess": 0.0030891677989713495
+        },
+        "perm_p": 0.7784431137724551,
+        "n_perm": 500,
+        "partial_r": 0.09446898897203172,
+        "by_class": {
+          "2023": {
+            "n": 23,
+            "partial_r": 0.30855336139308925
+          },
+          "2024": {
+            "n": 27,
+            "partial_r": 0.02808958880164984
+          },
+          "2025": {
+            "n": 19,
+            "partial_r": -0.1682653121723671
+          }
+        },
+        "loco_delta_r2": {
+          "2023": -0.010192267662283427,
+          "2024": 0.0006538568559704139,
+          "2025": 0.00022445966025264052
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "2/3"
+        }
+      }
+    },
+    "X3": {
+      "description": "dv in PRE-throw transitions (game trait unreliable)",
+      "result": {
+        "feature": "cmb_transition_dv",
+        "target": "gm_prepass_dv",
+        "n": 70,
+        "resid_df": 50,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.1445475266553777,
+        "cv_r2": {
+          "B0": -0.032003099616159415,
+          "B1": -0.05052344168267839,
+          "B2": -0.05399459064060616,
+          "full": -0.05578725151653868,
+          "B0+feature": -0.04320889073115869
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.011205791114999275,
+          "se": 0.013986705472923381
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.0017926608759325302,
+          "se": 0.012607927522386212,
+          "null_mean": -0.002148421632020817,
+          "excess": 0.0003557607560882867
+        },
+        "perm_p": 0.6846307385229541,
+        "n_perm": 500,
+        "partial_r": 0.16356438158140313,
+        "by_class": {
+          "2023": {
+            "n": 23,
+            "partial_r": -0.007283942813370974
+          },
+          "2024": {
+            "n": 28,
+            "partial_r": 0.30202378701676963
+          },
+          "2025": {
+            "n": 19,
+            "partial_r": -0.049277621877702064
+          }
+        },
+        "loco_delta_r2": {
+          "2023": -0.0008286008425040237,
+          "2024": 0.00011655343332606094,
+          "2025": 0.0002901406581576893
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "2/3"
+        }
+      }
+    },
+    "X4a": {
+      "description": "backpedal speed, man-coverage plays only",
+      "result": {
+        "feature": "cmb_backpedal_speed",
+        "target": "gm_backpedal_man",
+        "n": 64,
+        "resid_df": 44,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.14705330972057062,
+        "cv_r2": {
+          "B0": -0.038375875864365916,
+          "B1": 0.04073767191583635,
+          "B2": 0.03790344765638445,
+          "full": 0.033011832041457974,
+          "B0+feature": -0.05699168191859201
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.018615806054226094,
+          "se": 0.02716742236162732
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.004891615614926467,
+          "se": 0.015687826996907236,
+          "null_mean": -0.008234669424153702,
+          "excess": 0.003343053809227235
+        },
+        "perm_p": 0.313373253493014,
+        "n_perm": 500,
+        "partial_r": 0.0602711555635302,
+        "by_class": {
+          "2023": {
+            "n": 21,
+            "partial_r": -0.16418761449870184
+          },
+          "2024": {
+            "n": 27,
+            "partial_r": 0.04666034504391512
+          },
+          "2025": {
+            "n": 16,
+            "partial_r": 0.2082442628612438
+          }
+        },
+        "loco_delta_r2": {
+          "2023": 0.00569894689299022,
+          "2024": 0.0046975560546331785,
+          "2025": 0.002713658069714908
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "3/3"
+        }
+      }
+    },
+    "X4b": {
+      "description": "backpedal speed, zone-coverage plays only",
+      "result": {
+        "feature": "cmb_backpedal_speed",
+        "target": "gm_backpedal_zone",
+        "n": 71,
+        "resid_df": 51,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.05096459074325171,
+        "cv_r2": {
+          "B0": -0.030464986495356717,
+          "B1": -0.042373282903515316,
+          "B2": -0.040697228445281036,
+          "full": -0.03980068997224998,
+          "B0+feature": -0.03303792856819347
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.0025729420728367726,
+          "se": 0.005218983628385599
+        },
+        "delta_r2_vs_B2": {
+          "mean": 0.0008965384730310477,
+          "se": 0.0033408451619285433,
+          "null_mean": -0.004925609497215997,
+          "excess": 0.005822147970247045
+        },
+        "perm_p": 0.0998003992015968,
+        "n_perm": 500,
+        "partial_r": -0.013084472853349577,
+        "by_class": {
+          "2023": {
+            "n": 23,
+            "partial_r": -0.2428306246380953
+          },
+          "2024": {
+            "n": 27,
+            "partial_r": -0.06721522971521252
+          },
+          "2025": {
+            "n": 21,
+            "partial_r": 0.2009945622413732
+          }
+        },
+        "loco_delta_r2": {
+          "2023": -9.092132652854801e-05,
+          "2024": 3.015960072416668e-05,
+          "2025": 0.00047046915132797906
+        },
+        "checks": {
+          "excess_lb_gt_0": true,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "2/3"
+        }
+      }
+    },
+    "X5a": {
+      "description": "transition dv from TA1 only",
+      "result": {
+        "feature": "cmb_dv_ta1",
+        "target": "gm_ballair_dv",
+        "n": 57,
+        "resid_df": 38,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.06098573208309556,
+        "cv_r2": {
+          "B0": -0.04311707528838786,
+          "B1": -0.05048978673729309,
+          "B2": -0.07562135309314487,
+          "full": -0.07952119418362044,
+          "B0+feature": -0.050067639964959325
+        },
+        "delta_r2_vs_B0": {
+          "mean": -0.006950564676571451,
+          "se": 0.01402093293613609
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.003899841090475563,
+          "se": 0.07745769354575324,
+          "null_mean": -0.0004700073397539423,
+          "excess": -0.003429833750721621
+        },
+        "perm_p": 0.19560878243512975,
+        "n_perm": 500,
+        "partial_r": 0.17080761693077973,
+        "by_class": {
+          "2023": {
+            "n": 14,
+            "partial_r": 0.42913796035320423
+          },
+          "2024": {
+            "n": 24,
+            "partial_r": -0.03064954915433684
+          },
+          "2025": {
+            "n": 19,
+            "partial_r": 0.4508688491745567
+          }
+        },
+        "loco_delta_r2": {
+          "2023": 2.933152569628561e-05,
+          "2024": -0.0019669231365082585,
+          "2025": 2.316543709779406e-05
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "2/3"
+        }
+      }
+    },
+    "X5b": {
+      "description": "transition dv from W drill only",
+      "result": {
+        "feature": "cmb_dv_w",
+        "target": "gm_ballair_dv",
+        "n": 69,
+        "resid_df": 49,
+        "positions": [
+          "DB"
+        ],
+        "raw_r": 0.2355763115412827,
+        "cv_r2": {
+          "B0": -0.029350475301258463,
+          "B1": -0.04401646250515078,
+          "B2": -0.05556342879218348,
+          "full": -0.05803784697902259,
+          "B0+feature": 0.0026417745898533627
+        },
+        "delta_r2_vs_B0": {
+          "mean": 0.03199224989111182,
+          "se": 0.04000631935755145
+        },
+        "delta_r2_vs_B2": {
+          "mean": -0.0024744181868391123,
+          "se": 0.012270132194983826,
+          "null_mean": -0.0018172191994904332,
+          "excess": -0.0006571989873486791
+        },
+        "perm_p": 0.7285429141716567,
+        "n_perm": 500,
+        "partial_r": 0.11529521191879007,
+        "by_class": {
+          "2023": {
+            "n": 23,
+            "partial_r": 0.051491495785242675
+          },
+          "2024": {
+            "n": 27,
+            "partial_r": 0.3626834653123391
+          },
+          "2025": {
+            "n": 19,
+            "partial_r": -0.30568301630925593
+          }
+        },
+        "loco_delta_r2": {
+          "2023": 0.0005943636974827804,
+          "2024": 0.0013504055889896893,
+          "2025": -0.0633166793353458
+        },
+        "checks": {
+          "excess_lb_gt_0": false,
+          "perm_p_lt_05": false,
+          "loco_positive_classes": "2/3"
+        }
+      }
+    }
+  },
+  "n_exploratory": 7,
+  "figures": [
+    "experiments/figures/E005_qc_combine.png",
+    "experiments/figures/E005_qc_game.png",
+    "experiments/figures/E005_primary_added_variable.png"
+  ]
+}

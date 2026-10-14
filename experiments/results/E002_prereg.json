@@ -1,0 +1,70 @@
+{
+  "experiment_id": "E002",
+  "probe": "A - WR/TE route-break mechanics",
+  "written": "2026-10-14, before any Combine-feature vs game-trait/outcome association was computed",
+  "hypothesis": "How much speed a WR carries through 90-degree breaks in Combine route drills (speed out, dagger, slot sail, post-corner) is a player trait that transfers to the same mechanic on regular-season OUT/IN routes and to separation at the throw on breaking routes, beyond traditional Combine times and draft capital. Secondary mechanic: braking into stop routes (curl/comeback/slot strike) transfers to braking on game HITCH routes.",
+  "population": "Combine position WR (main). Unit = player. Regular-season games only.",
+  "primary_tests": [
+    {
+      "id": "P1",
+      "feature": "c_turn_retention",
+      "target": "g_turn_retention",
+      "population": "WR",
+      "expected_sign": "+",
+      "rationale": "Same mechanic on both sides: fraction of entry speed kept at the slowest point of a 90-degree break. Combine composite reliability 0.56 (4 drills, cross-drill ICC 0.27); game trait split-half 0.77; composite nearly orthogonal to B2 controls (in-sample R2 0.12, n=107)."
+    },
+    {
+      "id": "P2",
+      "feature": "c_turn_retention",
+      "target": "soe_hoi",
+      "population": "WR",
+      "expected_sign": "+",
+      "rationale": "Speed carried through the break should create separation at the throw on the routes where the break happens. Separation over expected restricted to HITCH/OUT/IN plays (split-half 0.41); all-route SOE is unreliable (0.15). Game outcome: also reported without the 2025 class."
+    },
+    {
+      "id": "P3",
+      "feature": "c_stop_peak_decel",
+      "target": "g_stop_peak_decel",
+      "population": "WR",
+      "expected_sign": "+",
+      "rationale": "Braking into a stop (curl/comeback/slot strike) vs braking into a hitch: the same stop-and-turn movement. Game trait split-half 0.79. KNOWN A PRIORI: Combine composite reliability 0.44 < 0.5 (go criterion 5 fails regardless of the result)."
+    }
+  ],
+  "definitions": {
+    "combine_events": "src/bdb27/probes/a_route_breaks.py: canonicalize attempts (segments.canonicalize), Savitzky-Golay kinematics, one break per attempt. STOP drills (CURL_ROUTE_RIGHT, COMEBACK_ROUTE_RIGHT, SLOT_STRIKE_ROUTE_LEFT): first frame after onset where speed < 0.5 x running peak (peak >= 3 yd/s), entry = stem peak, stop frame = first frame within 0.2 yd/s of the min speed in the next 1.2 s, path distance of the stop inside a per-drill window. TURN drills (SPEED_OUT_ROUTE_LEFT + SPEED_OUT_LEFT pooled, DAGGER_ROUTE_LEFT, SLOT_SAIL_ROUTE_RIGHT, POST_CORNER_ROUTE_LEFT): sharpest net heading change over +-half_window inside a per-drill path-distance window (|turn| >= min_turn), break frame = slowest frame within +-half_window of it, entry = fastest frame in the previous 1 s (>= 3 yd/s). Windows and thresholds in DRILLS were set from QC plots of paths and speed curves only.",
+    "retention": "speed at the break frame / entry speed",
+    "peak_decel": "max of -a_tan (yd/s^2) between the entry frame and the break frame",
+    "c_turn_retention": "attempt-mean retention per player x turn drill, z-scored within drill (WRs), averaged over drills; players with >= 2 turn drills",
+    "c_stop_peak_decel": "same construction for peak_decel over the 3 WR stop drills; players with >= 2 stop drills",
+    "game_events": "REG-season WR/TE route plays (player_play.route_ran, not nullified), snap-aligned. t_end = first of pass_forward/pass_shovel/qb_sack/qb_strip_sack/run, capped at 4 s. HITCH: same STOP algorithm from 0.5 s after the snap; the stem peak must be at or before t_end. OUT/IN: same TURN algorithm (min_turn 45, half_window 0.5) with the sharpest turn in [0.5 s, t_end + 0.5 s].",
+    "g_turn_retention": "per-play retention on OUT/IN minus the route-type mean (all WR/TE events), player mean shrunk by empirical Bayes toward the WR mean (normal-normal, method-of-moments tau2, pooled within-player sigma2); players with >= 10 events",
+    "g_stop_peak_decel": "same for peak_decel on HITCH events",
+    "soe_hoi": "separation_at_pass_forward minus a cross-fitted (GroupKFold by player, 5 folds) HistGradientBoosting prediction from route_ran, team_coverage_man_zone, team_coverage_type, receiver_alignment, lined_up_position, offense_formation, in_motion_at_ball_snap, dropback_duration, down, yards_to_go, yards_to_goal, quarter (model fit on all non-SCREEN WR/TE plays; cushion and pass_length excluded). Player mean over HITCH/OUT/IN plays, EB-shrunk as above; players with >= 20 such plays."
+  },
+  "evaluation": {
+    "harness": "bdb27.linkage.evaluate(df, feature, target), df = linkage.player_table() joined to features/targets, WR only",
+    "primary": "n_repeats=50, n_perm=2000, n_jobs=3, seeds 0, 1, 2",
+    "go_criteria": "PLAN.md section 4: excess dR2 - 1 SE > 0, Freedman-Lane perm p < 0.05, LOCO dR2 > 0 in >= 2/3 classes, reliability >= 0.5, stable over 3 seeds, scout-explainable",
+    "multiple_testing": "3 primary tests; report BH-FDR across the 3 perm p-values",
+    "2025_caveat": "P2 (game outcome) rerun without draft_year 2025"
+  },
+  "reliability_before_prereg": {
+    "combine_WR_composites_spearman_brown": {"turn_retention": 0.56, "turn_min_speed": 0.61, "turn_mean_decel": 0.58, "turn_peak_alat": 0.58, "turn_peak_decel": 0.51, "turn_turn_radius": 0.51, "stop_peak_decel": 0.44, "stop_mean_decel": 0.43, "stop_retention": 0.37},
+    "combine_WR_within_drill_retest_icc": {"turn_retention": 0.62, "turn_min_speed": 0.77, "stop_peak_decel": 0.76, "n_players_with_2_attempts": {"turn": 39, "stop": 15}},
+    "game_WR_split_half": {"turn_retention": 0.77, "turn_min_speed": 0.80, "turn_turn_radius": 0.80, "stop_peak_decel": 0.79, "soe_all_nonscreen": 0.15, "soe_no_GO": 0.34, "soe_hitch_out_in": 0.41},
+    "TE": "Combine TE composites unreliable (1 stop drill; turn composite <= 0.41) and TE game turn traits unreliable (n=31 events median) -> TE only in an exploratory pooled sensitivity"
+  },
+  "decisions_made_before_prereg": [
+    "Excluded Combine SLANT_ROUTE_LEFT, CORNER_ROUTE, POST_CORNER_ROUTE_RIGHT, WHEEL_ROUTE_LEFT, GO_ROUTE_RIGHT: smooth arcs with no identifiable break on QC plots",
+    "Game turn traits use OUT/IN only: SLANT/CORNER/POST/CROSS are gradual bends (detection 40-60%)",
+    "SOE target restricted to HITCH/OUT/IN plays because all-route SOE has split-half reliability 0.15",
+    "Main population WR; TE too small and unreliable"
+  ],
+  "planned_exploratory": [
+    "X1: P1-P3 with combine_top_speed added as a control (is it just the E001 speed signal?)",
+    "X2: P1-P3 pooled WR+TE (position dummies)",
+    "X3: min_speed variant: c_turn_min_speed -> g_turn_min_speed",
+    "X4: c_turn_retention -> SOE on all non-screen routes and on non-GO routes",
+    "X5: game trait -> SOE (game-game, descriptive)"
+  ]
+}
