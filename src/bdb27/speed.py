@@ -3,30 +3,41 @@
 Conventions: speeds yd/s, times s, 10 Hz. Speed and a_tan are Savitzky-Golay from x/y (bdb27.kinematics);
 never use `dis` (wrong in Combine tracking).
 
-Combine 40 (one row per attempt; a player's value is the mean over his QC-passing attempts):
-  - The raw Combine frame is already the track (verified 2026-10-14 on all 793 attempts): the dash runs along
-    +x from the start line at x = 10 to the finish at x = 50. Tracking starts with the player already moving
-    (~0.6 yd/s, ~0.7 yd past the start line) and stops 0.1-2.8 yd past the finish. So along-track distance is
-    x - START_X and the split lines are the official ones. Measured from the onset position instead, the 40-yd
-    mark lies beyond the end of tracking in 28% of attempts (42% with segments.canonicalize x).
-  - Splits: crossing times of the 10/20/30/40-yd lines, linearly interpolated between frames; split times and
-    average speeds for 0-10, 10-20, 20-30, 30-40 and the flying 20 (20-40). The 0-10 split starts at motion
-    onset (SG speed first reaches 1 yd/s, interpolated; NaN when the first frame is already faster) and covers
-    the yards from the onset position to the 10-yd line. Because tracking starts after motion, 0-10 is a weak
-    measure; the flying splits do not depend on the start.
-  - smax: peak SG speed.
+Combine 40 (forty_attempts: one row per attempt; combine_speed_table: one row per player, c40_<metric> = mean
+over his QC-passing attempts):
+  - Distance is measured from the OFFICIAL START LINE, not from the motion-onset position: along-track distance
+    = x - START_X, and the 10/20/30/40-yd marks are the official lines (E007 amendment). The raw Combine frame is
+    already the track (verified 2026-10-14 on all 793 attempts): the dash runs along +x from the start line at
+    x = 10 to the finish at x = 50. Tracking starts with the player already moving (~0.6 yd/s, ~0.7 yd past the
+    start line) and stops 0.1-2.8 yd past the finish. Measured from the onset position instead, the 40-yd mark
+    lies beyond the end of tracking in 28% of attempts (42% with segments.canonicalize x).
+  - Splits: crossing times of the 10/20/30/40-yd lines, linearly interpolated between frames; split times
+    (split_<a>_<b>) and average speeds (v_<a>_<b>) for 0-10, 10-20, 20-30, 30-40 and the flying 20.
+    FLYING 20 = v_20_40, at player level c40_v_20_40: average speed (yd/s) from the 20-yd line to the 40-yd line,
+    20 / (t40 - t20), mean over the player's QC-passing attempts.
+  - 0-10 starts at motion onset (onset_time: SG speed holds >= 1 yd/s for 3 frames, interpolated) and covers
+    the yards from the onset position to the 10-yd line. It is NaN when the start is not observed: already moving
+    at the first frame, or a pre-start movement (speed dips > MAX_START_DIP before START_PHASE_SPEED). Because
+    tracking starts after motion, 0-10 is a weak measure; the flying splits do not depend on the start.
+  - smax: peak SG speed over interior frames. The EDGE frames at each end come from the SG edge polynomial and
+    are noisier; the peak is the last tracked frame in 29% of attempts, where it exceeded the device `s` peak by
+    +0.04 yd/s on average (interior peaks: +0.0003).
   - Mono-exponential v(t) = vmax (1 - exp(-(t - t0) / tau)), fitted from the frame of peak dv/dt (first 2 s;
-    dv/dt rises for 0.3-0.8 s at the start, which a mono-exponential cannot fit) to the frame of peak speed.
+    dv/dt rises for 0.3-0.8 s at the start, which a mono-exponential cannot fit) to the frame of peak speed
+    (all frames, as in E006; ending at the interior peak instead lowered the ICC of vmax and tau slightly).
     a0 = vmax / tau. Horizontal force-velocity profile of Samozino et al. (2016) with air resistance.
-  - QC (E006): path 38-43 yd, >= 15 fitted frames, tau 0.3-3 s, speed drop after the peak <= 1 yd/s, fit
-    RMSE <= 0.15 yd/s. A larger RMSE flags `two_phase`: a plateau, then a second rise late in the run.
+  - QC (E006, add_qc): path 38-43 yd, >= 15 fitted frames, tau 0.3-3 s, speed drop after the peak <= 1 yd/s,
+    fit RMSE <= 0.15 yd/s. A larger RMSE flags `two_phase`: a plateau, then a second rise late in the run.
 
 Game (regular season, post-snap frames): the in-situ A-S profile (Morin et al. 2021), made exposure-invariant.
-Per player, R draws of exactly K plays; per draw, the q95 of a_tan in 0.5 yd/s speed bins (3-10.5 yd/s) and a
-linear envelope A = A0 - (A0 / S0) S through them. A0 is the mean over draws, so its expectation does not
-depend on the number of plays. S0 is the median over draws (a heavy-tailed ratio), which makes it only nearly
-invariant: with few plays the draws overlap, so it tends to the per-draw mean, with many plays to the median
-(WRs, 2026-10-14: pools of exactly K plays give S0 0.03 +- 0.01 yd/s higher than pools of >= 4K, ~0.1 SD).
+Per player, AS_R draws of exactly AS_K plays; per draw, the q95 of a_tan in 0.5 yd/s speed bins (3-10.5 yd/s)
+and a linear envelope A = A0 - (A0 / S0) S through them. A0 is the mean over draws, so its expectation does not
+depend on the number of plays. S0 is the median over draws (a heavy-tailed ratio), so it is invariant only
+approximately: with N = K plays every draw is the whole pool (the per-draw mean), with many plays the median.
+On WRs with >= 200 plays the difference was not detectable (exactly K plays minus all plays: -0.002 +- 0.004
+yd/s, between-player SD 0.35; 2026-10-14). The random draws add Monte Carlo noise that shrinks only with more
+draws: at AS_R = 1000 two seeds correlate >= 0.996 for WR/TE/DB/DL A0 and S0 (R = 20: 0.96 for WR S0, which
+moved WRs up to 16 of 70 rank places); OL S0, extrapolated far past observed speeds, stays at 0.98.
 """
 
 import warnings
@@ -45,6 +56,9 @@ START_X = 10.0  # start line in the Combine frame; the finish line is at START_X
 MARKS = (10, 20, 30, 40)  # yd past the start line
 SPLITS = ((0, 10), (10, 20), (20, 30), (30, 40), (20, 40))
 ONSET_SPEED = 1.0
+MAX_START_DIP = 0.3  # yd/s; a larger speed dip between onset and START_PHASE_SPEED is a pre-start movement
+START_PHASE_SPEED = 4.0
+EDGE = 3  # frames at each end of a trace that come from the SG edge polynomial (window 7)
 QC = dict(min_path=38.0, max_path=43.0, max_rmse=0.15, min_n_fit=15, tau_range=(0.3, 3.0), max_end_drop=1.0)
 METRICS = ["smax", *(f"{p}_{a}_{b}" for p in ("split", "v") for a, b in SPLITS),
            "vmax", "tau", "a0", "F0", "V0", "Pmax", "Sfv", "F0_rel", "Pmax_rel"]
@@ -73,9 +87,17 @@ def crossing_times(t: np.ndarray, d: np.ndarray, marks) -> np.ndarray:
 
 
 def onset_time(t: np.ndarray, v: np.ndarray) -> float:
-    """Interpolated time v first reaches ONSET_SPEED for 3 frames (NaN if already there at frame 0, or never)."""
+    """Interpolated time at the start of the first run of 3 frames with v >= ONSET_SPEED. NaN when that run
+    starts at frame 0 (already moving), never happens, or is followed by a speed dip > MAX_START_DIP before
+    v reaches START_PHASE_SPEED (a pre-start movement; the sprint start is not observed).
+    Unlike segments.onset_time, a single fast first frame is not 'already moving': SG speed at frame 0 is an
+    edge estimate and can be spuriously high (e.g. a backward vx[0])."""
     i = segments.onset_index(v, ONSET_SPEED)
     if i == 0:
+        return np.nan
+    fast = np.flatnonzero(v[i:] >= START_PHASE_SPEED)
+    start = v[i:i + fast[0] + 1] if len(fast) else v[i:]
+    if np.max(np.maximum.accumulate(start) - start) > MAX_START_DIP:
         return np.nan
     return float(t[i - 1] + (ONSET_SPEED - v[i - 1]) / (v[i] - v[i - 1]) * (t[i] - t[i - 1]))
 
@@ -143,15 +165,31 @@ def fv_profile(vmax_yd: float, tau: float, mass_kg: float, height_m: float, dura
                 F0_rel=float(f0 / mass_kg), Pmax_rel=float(f0 * v0 / 4 / mass_kg))
 
 
+def attempt_metrics(t: np.ndarray, x: np.ndarray, v: np.ndarray) -> dict:
+    """One attempt's dur, smax (peak over interior frames: EDGE frames at each end are SG edge estimates),
+    end_drop (QC: overall peak minus last frame), forty_splits and fit_mono_exp."""
+    return dict(dur=float(t[-1]), smax=float(v[EDGE:-EDGE].max()), end_drop=float(v.max() - v[-1]),
+                **forty_splits(t, x, v), **fit_mono_exp(t, v))
+
+
+def add_qc(a: pl.DataFrame) -> pl.DataFrame:
+    """Add `two_phase` (finite fit RMSE > QC max_rmse) and `qc_ok` (all QC limits met; False if any is NaN/null)."""
+    lo, hi = QC["tau_range"]
+    return a.with_columns(
+        two_phase=pl.col("rmse").is_finite() & (pl.col("rmse") > QC["max_rmse"]),
+        qc_ok=(pl.col("path").is_between(QC["min_path"], QC["max_path"]) & (pl.col("rmse") <= QC["max_rmse"])
+               & (pl.col("n_fit") >= QC["min_n_fit"]) & pl.col("tau").is_between(lo, hi)
+               & (pl.col("end_drop") <= QC["max_end_drop"])).fill_null(False),
+    )
+
+
 def forty_attempts(frames: pl.DataFrame | None = None) -> pl.DataFrame:
-    """One row per 40-yd attempt: ids, position, path, smax, splits, mono-exponential fit, F-V profile,
-    `two_phase` and `qc_ok`."""
+    """One row per 40-yd attempt: ids, position, path, attempt_metrics, F-V profile, `two_phase` and `qc_ok`."""
     d = forty_frames() if frames is None else frames
     rows = []
     for (traj,), g in d.group_by(["traj"], maintain_order=True):
         t, x, v = (g[c].to_numpy() for c in ("t", "x", "speed"))
-        rows.append(dict(traj=traj, path=float(g["path"][-1]), dur=float(t[-1]), smax=float(v.max()),
-                         end_drop=float(v.max() - v[-1]), **forty_splits(t, x, v), **fit_mono_exp(t, v)))
+        rows.append(dict(traj=traj, path=float(g["path"][-1]), **attempt_metrics(t, x, v)))
     ids = d.select("traj", "nfl_id", "event_id", "attempt", "draft_year").unique("traj")
     body = io.load("combine_results").select("nfl_id", position="combine_position",
                                              mass_kg=pl.col("combine_weight") * LB,
@@ -159,13 +197,7 @@ def forty_attempts(frames: pl.DataFrame | None = None) -> pl.DataFrame:
     a = pl.DataFrame(rows).join(ids, on="traj").join(body, on="nfl_id", how="left")
     fv = pl.DataFrame([fv_profile(r["vmax"], r["tau"], r["mass_kg"], r["height_m"], r["dur"] - r["t0"])
                        for r in a.iter_rows(named=True)])
-    lo, hi = QC["tau_range"]
-    return pl.concat([a, fv], how="horizontal").with_columns(
-        two_phase=pl.col("rmse").is_finite() & (pl.col("rmse") > QC["max_rmse"]),
-        qc_ok=(pl.col("path").is_between(QC["min_path"], QC["max_path"]) & (pl.col("rmse") <= QC["max_rmse"])
-               & (pl.col("n_fit") >= QC["min_n_fit"]) & pl.col("tau").is_between(lo, hi)
-               & (pl.col("end_drop") <= QC["max_end_drop"])).fill_null(False),
-    ).sort("nfl_id", "event_id", "attempt")
+    return add_qc(pl.concat([a, fv], how="horizontal")).sort("nfl_id", "event_id", "attempt")
 
 
 def combine_speed_table(attempts: pl.DataFrame | None = None) -> pl.DataFrame:
@@ -198,7 +230,7 @@ AS_QUANTILE = 0.95
 AS_MIN_FRAMES = 20  # frames per bin for the bin to enter the envelope fit
 AS_MIN_BINS = 4
 AS_K = 50  # plays per draw
-AS_R = 20  # draws per player
+AS_R = 1000  # draws per player; the Monte Carlo (seed) variance of A0/S0 shrinks as 1 / R, not with more plays
 
 
 def build_game_frames(overwrite: bool = False) -> pl.DataFrame:
@@ -250,7 +282,8 @@ def envelope(qa: np.ndarray, bins: np.ndarray = AS_BINS, min_bins: int = AS_MIN_
 def as_profile(fr: pl.DataFrame, k: int = AS_K, r: int = AS_R, q: float = AS_QUANTILE, bins: np.ndarray = AS_BINS,
                min_frames: int = AS_MIN_FRAMES, seed: int = 0) -> dict:
     """A-S profile of one player's frames (game_id, play_id, speed, a_tan) from r draws of exactly k plays:
-    A0, slope and binned quantiles qa = mean over draws, S0 = median over draws. NaN if < k plays."""
+    A0, slope and binned quantiles qa = mean over draws, S0 = median over draws. NaN if < k plays.
+    qa is descriptive only: a bin has a value if any draw fills it, which depends on the number of plays."""
     plays = fr.select("game_id", "play_id").unique().sort("game_id", "play_id")
     if plays.height < k:
         return dict(A0=np.nan, S0=np.nan, slope=np.nan, qa=np.full(len(bins) - 1, np.nan), n_plays=plays.height)
@@ -273,16 +306,15 @@ def as_profile(fr: pl.DataFrame, k: int = AS_K, r: int = AS_R, q: float = AS_QUA
 
 
 def game_as_profiles(frames: pl.DataFrame, seed: int = 0, **kw) -> pl.DataFrame:
-    """Per-player A-S profile (A0, S0, slope, n_plays, qa_<bin lower edge>) from build_game_frames output.
-    Frames with implausible speed or |a_tan| > MAX_A are dropped first. kw goes to as_profile."""
+    """Per-player A-S profile (nfl_id, A0, S0, slope, n_plays) from build_game_frames output; empty if no
+    frames. Frames with implausible speed or |a_tan| > MAX_A are dropped first. kw goes to as_profile."""
     fr = frames.filter(pl.col("speed").is_between(0, features.MAX_PLAUSIBLE_SPEED) & (pl.col("a_tan").abs() <= MAX_A))
-    bins = kw.get("bins", AS_BINS)
     rows = []
     for (pid,), g in fr.group_by(["nfl_id"], maintain_order=True):
         p = as_profile(g, seed=seed + int(pid), **kw)
-        rows.append(dict(nfl_id=int(pid), A0=p["A0"], S0=p["S0"], slope=p["slope"], n_plays=p["n_plays"],
-                         **{f"qa_{b:.1f}": float(v) for b, v in zip(bins[:-1], p["qa"])}))
-    return pl.DataFrame(rows).sort("nfl_id")
+        rows.append(dict(nfl_id=int(pid), A0=p["A0"], S0=p["S0"], slope=p["slope"], n_plays=p["n_plays"]))
+    schema = {"nfl_id": pl.Int64, "A0": pl.Float64, "S0": pl.Float64, "slope": pl.Float64, "n_plays": pl.Int64}
+    return pl.DataFrame(rows, schema=schema).sort("nfl_id")
 
 
 def game_as_split_half(frames: pl.DataFrame, seed: int = 0, **kw) -> pl.DataFrame:
@@ -297,7 +329,11 @@ def game_as_split_half(frames: pl.DataFrame, seed: int = 0, **kw) -> pl.DataFram
 
 
 def split_half_reliability(sh: pl.DataFrame, col: str) -> dict:
-    """Spearman-Brown corrected split-half reliability of `col` from game_as_split_half output."""
+    """Spearman-Brown corrected split-half reliability of `col` from game_as_split_half output. SB assumes the
+    estimator's error variance halves when the data double; the Monte Carlo part does not, which is why AS_R is
+    large. Check (half r predicted by SB from quarters vs observed, 41-59 players per position with >= 60 plays
+    per quarter): WR A0 0.86 vs 0.85 (0.85 vs 0.78 at R = 20), DL A0 0.95 vs 0.95, but DB A0 0.77 vs 0.69, so
+    treat SB values as approximate (gaps up to 0.08)."""
     m = sh.select(f"{col}_h0", f"{col}_h1").fill_nan(None).drop_nulls()
     if m.height < 10:
         return {"r_half": np.nan, "reliability": np.nan, "n_players": m.height}

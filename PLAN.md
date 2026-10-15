@@ -172,7 +172,7 @@ Mock judging every 2 weeks (from Oct 26) uses the checklist in `AGENTS.md`.
 - [x] Gate 1 — probe ranking (done 2026-10-14; see experiments/log.md "GATE 1")
   - Only WR tracked top speed beyond the 40 time survived (E001/E006, BH q = 0.021 over the round's 14 primaries). Position-drill signatures (A–D) show no detectable transfer beyond B2 (CIs about ±0.3 on partial r).
   - Carried forward: (1) hero candidate **"hidden top speed"**; (2) the **drill reliability + transfer map** (PLAN §6 fallback, now a core section); (3) harness upgrade before round 2.
-  - [ ] Round 2: harness upgrade → hidden-speed deep build (robustness + preregistered outcome links) → transfer map
-- [ ] Gate 2 — hero metric chosen (Nov 16)
+  - [x] Round 2: harness upgrade → hidden-speed deep build (E007) → transfer map (E008) (2026-10-14)
+- [x] Gate 2 — hero metric (2026-10-14): **no hero survived.** E007 primaries all fail; E008 shows 16/18 links null, with bounds. See experiments/log.md "GATE 2". Direction of the writeup: pending the user's decision.
 - [ ] Gate 3 — analysis frozen (Dec 7)
 - [ ] Submitted (Jan 5)

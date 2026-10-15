@@ -11,6 +11,149 @@ Template:
 - Decision: keep / kill / revisit — why
 ```
 
+## 2026-10-14 — GATE 2: hero candidate fails; the transfer map is the main finding
+- **E007 (preregistered "hidden speed", WR): no primary passes.**
+  - P1 (flying 20 → game top speed): +0.31 [0.00, 0.56], q 0.075, fails leave-3-out.
+  - P2 (cushion): null; post hoc, cushion is mostly the receiver's own alignment.
+  - P3 (YPRR): wrong sign, not robust; positive effects above about +0.1 are ruled out.
+  - The 5 exploratory tests are null.
+- **E008 (all 18 round-1 links under rev 2): 16 nulls.** Each rules out an observed partial r above +0.09 to +0.38, but true-score effects of 0.5 or more cannot be excluded for six. The only pass (E006-P1, WR vmax → extrapolated S0) is the same WR speed signal as E001, fragile (3 WRs = 42%), and fails BH across about 90 round-1 tests (q ≈ 0.06).
+- **Drill profile, like for like:** 2 of 22 repeated position-drill metrics reach reliability 0.5, against 28 of 28 tracked 40-yd metrics. Cross-drill composites: 10 of 68. Unreliability does **not** explain the nulls (13 of 16 nulls pass reliability); low power (n ≈ 60–80 against ~20 B2 columns) and imperfect game targets do.
+- **Decision (PLAN §6):** no hero metric survived. The project's original core idea (drill movement signatures transfer to the same movement in games beyond the stopwatch and draft slot) has no detectable support at this n. The direction of the writeup goes to the user (pending).
+- **Technical debt found:** round-1 scripts E002–E006 no longer run against rev-2 `linkage` (removed keys, `_fit_resid`), so the public notebook must rebuild from the probe modules as E008 does. `probe_e_game_profile.parquet` is stale (AS_R = 20). Harness criterion 2 ignores sign and criterion 3 (LOCO) does not discriminate; both need fixing before any new round.
+
+## 2026-10-14 — E008: Drill reliability + transfer map (all round-1 links re-estimated under protocol rev 2; revised after skeptic review)
+- **Hypothesis:** no new links. Re-estimate the 14 round-1 primaries and the E001 sanity link (WR/DB/DL/OL; not preregistered) under rev 2, so the whole round reads on one footing. Bound the nulls with reliability-corrected intervals and profile every Combine signature the probes built (PLAN §6 fallback, now a core writeup section).
+  - Expected signs: preregistered for E002–E005; inferred from the hypothesis text for E006 (no sign field); set after round 1 for E001 (two-sided p reported).
+- **Method:**
+  - Rebuild every feature and target from the round-1 probe parquets/functions. All 18 reproduce round-1 n and raw r.
+  - Harness: `linkage.evaluate` rev 2 (B2 + year dummies; one-sided Freedman–Lane with 10,000 permutations; 50×5 CV with 2,000 permutations).
+    - Seeds 1–2 when p < 0.10.
+    - Without-2025 reruns.
+    - Leave-3-out of the most supportive players.
+    - Exposure check.
+    - BH over the 14 primaries; E001 over all 18.
+  - Reliability-corrected interval = CI / √(rel_x·rel_y), using the **beyond-B2 reliabilities** (the parts the partial r uses). The as-used version is an under-correction. Joint ceilings are Bonferroni over the 18 links.
+  - E001 reliabilities: the feature's is computed for a max over attempts; the target's split-half is recomputed on the link samples with the exact target definition.
+  - Drill profile: 142 signatures, grouped by reliability type (repeat attempts / cross-drill / within-attempt), with session and year shares.
+  - Files: `experiments/E008_transfer_map.py`, `experiments/results/E008.json`, `experiments/figures/E008_{transfer_map,drill_reliability}.png`, `data/processed/e008_{transfer_map,drill_reliability,link_players}.parquet`. ~25–35 min, ≤1.8 GB, deterministic across runs.
+- **Result (with uncertainty):**
+  - **One link passes criteria 1–6: E006-P1, WR fitted 40 vmax → extrapolated game top-speed capacity S0.**
+    - n = 61, partial r +0.48 [+0.20, +0.68], one-sided p = 0.0007 (two-sided 0.0013).
+    - q = 0.010 over the 14 primaries; **q ≈ 0.06 across all ~90 round-1 tests (does not survive)**.
+    - Excess ΔR² +0.063 ± 0.056 (3/3 seeds); LOCO 2/3 (2024 −0.07).
+    - Fragile: 3 WRs carry 42% of the partial r; without them +0.31 [−0.01, +0.57], p 0.03. Without 2025: +0.38 [+0.01, +0.67]. By class: +0.29 / +0.50 / +0.67.
+    - Corrected (beyond-B2) interval: [+0.26, +0.88].
+    - **Not independent of E001-WR:** same 61 WRs; B2-residual r 0.77 (features), 0.83 (targets).
+  - **E001-WR (observed game top speed), the same signal, fails criteria 4 and 6.** r +0.32 [+0.03, +0.56], p 0.016 (two-sided 0.03), q18 0.15; leave-3-out p 0.15.
+  - **Other 16 links: no detectable link** (one-sided p ≥ 0.21; partial r −0.15 to +0.12).
+    - Per link, observed partial r above +0.09 to +0.38 is excluded at 95% (jointly over 18 links: +0.15 to +0.48).
+    - **For error-free measures, true-score partial r up to +0.14 to +0.73 is not excluded**, with ≥ 0.5 for E002-P2 (0.73), E005-P2, E004-P2, E003-P1, E001-DB and E004-P3.
+    - One-sided MDE 0.31–0.38 at n ≈ 60–80. The +0.09 bound (a0 → A0) is a pooled within-position average.
+  - **Drill profile, like for like:**
+    - Repeated position-drill metrics: 2 of 22 reach 0.5. Tracked 40: 28 of 28 (top speed 0.95–0.98, start phase 0.67–0.81).
+    - Cross-drill composites: 10 of 68 reach 0.5 (family medians 0.29–0.39), so signatures rarely generalize across drills.
+    - WR same-drill retests: median ICC 0.70 (single attempts, same session), so route signatures are largely drill-specific.
+    - The OL wave drill is the one clear session-tempo artifact.
+    - 40 year shares: about 0 for top-speed metrics, 0.11–0.20 for start-phase metrics.
+  - 13 of 16 nulls pass the reliability criterion, and 4 of the 5 position-drill features tested have reliability ≥ 0.55. **Unreliability does not explain these nulls**; low power and imperfect game targets do.
+  - Harness: LOCO (criterion 3) passes for 11 of 16 nulls on ±0.001–0.02 excesses, so it does not discriminate.
+- **Decision:** **keep** the transfer map and drill-reliability figures as the writeup's rigor section.
+  - The 5 position-drill signatures we could test (WR route-break speed retention and stop braking, OL mirror reversal acceleration, DB backpedal speed and plant-and-drive) show no detectable transfer to the game measures we built. DL position drills and the OL wave drill were not tested.
+  - The nulls bound the tested constructs, not the scouting concepts.
+  - The only signal is WR tracked top-end speed, which is one signal (E001/E006) and fragile. E007 is the confirmatory test.
+  - Revisit drill links only with repeated attempts or opponent tracking. Add a per-class noise threshold to criterion 3.
+- **Verification (2 skeptics, both 'weakened'):** every number reproduced. Accepted fixes:
+  - beyond-B2 correction made primary;
+  - per-link vs joint bounds;
+  - all-round BH;
+  - like-for-like drill counts and literal target labels;
+  - E001 reliabilities recomputed;
+  - the unreliability-explains-nulls claim removed;
+  - E006-P1 fragility shown.
+  No go/no-go verdict changed.
+
+**Plain-English summary (150 words).** We re-tested all 18 round-1 links. The question: does a movement signature in the Combine tracking data tell you anything about the same movement, or an outcome, in regular-season games that the 40 time, other Combine results, draft slot and draft year do not? One link holds up under our criteria. For wide receivers, top speed fitted from the tracked 40 predicts extrapolated in-game top-speed capacity beyond the 40 time: partial r +0.48, or +0.38 without the rookie-only 2025 class, and three receivers carry about 40% of it. It re-tests the signal first seen in E001, has no outcome link yet, and is weaker on directly observed game top speed (+0.32). It also fails multiplicity across all ~90 round-1 tests. The other 16 links show nothing detectable. Each rules out observed correlations above +0.09 to +0.38. But with 60 to 80 players, true effects of 0.5 or more remain possible for six of them. These nulls bound the game measures we built, not the scouting concepts.
+
+## 2026-10-14 — E007: Hidden speed (WR): tracked flying 20 beyond the 40 time → game top speed, cushion, yards per route
+- **Hypothesis** (prereg `experiments/results/E007_prereg.json`, amended before any association; protocol rev 2): among Combine WRs, the tracked flying 20 adds beyond B2 (expected sign + for all three tests).
+  - Feature `c40_v_20_40` = 20 / (t40 − t20) from the official lines, mean over QC-passing 40 attempts.
+  - (P1) It predicts game top speed (q95 of REG play max speed).
+  - (P2) Defenders play off such receivers (cushion over expected).
+  - (P3) It turns into production (yards per route over expected).
+- **Method:**
+  - Code: `src/bdb27/targets_wr.py` (route table, cross-fitted context expectations, half-difference diagnostic; 8 tests) and `experiments/E007_hidden_speed.py`, which reproduces everything top to bottom in about 22 min.
+  - Data: REG WR+TE routes (43,162).
+  - Expectation model: HGB with default hyperparameters, GroupKFold(5) by game. Context: alignment, formation, motion, man/zone, down, distance, field position, quarter, score, season, defense team-season.
+  - Player targets: per WR `eb_mean(cluster='game_id')`.
+  - Harness: `linkage.evaluate`, 50×5 CV, 10,000 Freedman–Lane perms, seeds 0–2.
+  - Prespecified robustness and 5 prelisted exploratory tests.
+  - Post hoc blocks 8b and 8c (8c added after the skeptic review; in no BH family).
+  - Outputs: `experiments/results/E007.json`, `E007_leaderboard.json`, `experiments/figures/E007_{added_variable,concept,leaderboard}.png`.
+- **Result (with uncertainty):**
+  - **Reliability.**
+    - Feature: attempt ICC 0.92. Only 16% of its variance is left beyond B2, with reliability 0.75.
+    - Targets (split-half): P1 0.92, P2 0.71, P3 0.87.
+    - EB targets are over-shrunk (half-difference z2 0.6–0.9).
+  - **P1** (n = 61):
+    - Partial r +0.31 [0.00, +0.56]; bootstrap [−0.06, +0.59].
+    - One-sided FL p 0.025 (seeds 0.023–0.026). Excess ΔR² +0.045 ± 0.029. LOCO 3/3.
+    - Fails BH (q 0.075 across the primaries; 0.20 across the 32 prespecified tests).
+    - Fails leave-3-out (+0.12, p 0.24). By class −0.09 / +0.54 / +0.41.
+    - The data fit a modest true effect (about 0.3) as well as none: leave-3-out has about 1/3 power at r 0.3, and the class differences are not significant (p 0.14).
+    - Post hoc: partly deep-route usage. With deep share added +0.22 (p 0.09); with offense EPA added +0.37.
+  - **P2** (n = 60):
+    - Partial r +0.01 [−0.30, +0.31], p 0.48.
+    - Post hoc check against tracking: `cushion` is the receiver-to-aligned-defender distance at the snap, so it includes the receiver's own depth and split. Depth is a stable personal habit (split-half 0.95).
+    - With alignment added to the context: target split-half 0.47, P2 +0.16 [−0.15, +0.45], p 0.16.
+    - So the prereg null does not bound 'defenders respect speed'. Effects up to about +0.45 (about +0.75 disattenuated) remain possible.
+  - **P3** (n = 55):
+    - Partial r −0.31 [−0.58, +0.02], the wrong sign; one-sided p 0.97.
+    - Positive effects above about +0.1 are ruled out. Upper bounds are +0.06 to +0.10 under the bootstrap, offense/QB adjustment, and whole-population yards per season (−0.14 [−0.36, +0.10], n 91).
+    - The negative estimate is not robust: dropping the 3 most negative WRs gives −0.08, and part of it is offense quality.
+  - **Exploratory (5), all null:** deep share +0.13; aDOT +0.10; targets per route −0.21; DB top speed −0.01; career snaps −0.07.
+  - **S0 target variant:**
+    - +0.56 [+0.30, +0.74], p 0.0002. It is robust to usage controls (+0.53).
+    - But it is a re-observation, not evidence: the feature equals E006's post hoc x31→50 split (r 0.999 beyond B2), which was chosen after it absorbed the vmax → S0 signal on these same WRs.
+  - **Leaderboard (descriptive):**
+    - 91 WRs. Hidden speed has reliability 0.72.
+    - Attempt 1 vs attempt 2: r 0.70, and 8 of 15 top-quintile WRs replicate.
+    - 7 of the 15 top-quintile late or undrafted WRs have P(truly top quintile) ≤ 0.5.
+    - Those WRs reach the field no more often than other late WRs (8/15 vs 27/49).
+    - Tracked hidden speed is not corroborated by the official electronic splits (r −0.11 beyond the 40).
+- **Decision:**
+  - **Kill** hidden speed as an outcome-linked hero. There is no detectable performance link at n ≈ 55–91 for:
+    - cushion as defined (null, though it is mostly alignment)
+    - yards per route (no positive effect above about +0.1)
+    - targets, aDOT, deep share, career snaps
+    Effects below these bounds remain possible. A cushion target net of receiver alignment was not powered or reliable enough here.
+  - **Park** the P1/S0 kinematic link as a descriptive transfer result for the §6 map, not a claim. P1 fails BH and leave-3-out. S0 cannot be confirmed on these data; that needs a Combine class or season not yet examined, and none is available before the deadline.
+  - **Leaderboard:** descriptive only, 'speed beyond the official 40', with per-player uncertainty. Never 'undervalued'. Draft position reflects non-football factors.
+  - The post hoc 'production tracks the start' idea is withdrawn (untested; the negative P3 sign is not robust).
+- **Verification (2 skeptics: both 'weakened'):** the arithmetic reproduced exactly, and the prereg, leakage and context semantics checks were clean. Issues raised:
+  1. S0 re-observes a known post hoc result.
+  2. 'Fragile' overstated P1, given the low leave-3-out power.
+  3. Bounds were too precise (P3 +0.02 → about +0.1).
+  4. The BH family wrongly included a post hoc test (fixed).
+  5. Harness criterion 2 ignores sign.
+  6. The leaderboard flagged noisy, unshrunk residuals as 'undervalued' (fixed).
+  7. Cushion includes the receiver's own alignment.
+  8. P3 is partly offense quality, and leave-3-out had been run one way only.
+  9. P1 is partly usage.
+  10. Hidden speed is not corroborated by the official splits.
+  All were addressed in post hoc block 8c, except annotating a named player's reported off-field matter (rejected: unverifiable here and inappropriate). **Corrected reading: no detectable performance link; P1 is consistent with a modest effect or none.** Kill stands.
+
+## 2026-10-14 — Infrastructure round 2: shared modules speed / shrinkage / reliability+segments (built, reviewed, fixed)
+- What: promoted probe E's sprint code to `bdb27.speed`; added one empirical-Bayes definition in `bdb27.shrinkage`; added `split_half_estimator`, `team_share`, `cross_drill_icc(zscore, center_by)`, `segments.combine_sessions` and `segments.onset_time`. Each module got an adversarial reviewer (evidence required) and a fix pass. 77 fast + 3 slow tests pass.
+- Changes that affect earlier numbers (log only; no decision changes):
+  - **A-S profile draws R = 20 → 1000.** At R = 20, Monte Carlo noise moved a WR's S0 by up to 1.0 between-player SD between seeds (rank changes up to 16 of 70); at R = 1000 the seed-to-seed r is 0.9995. WR S0 (E006-P1 target) correlates 0.984 with the R = 20 version. Split-half A0/S0: WR 0.90/0.94, DB 0.80/0.85, DL 0.94/0.70.
+  - The Combine 40 peak speed `smax` now ignores the Savitzky–Golay edge frames (ICC 0.942 → 0.946). The flying 20 (`c40_v_20_40`, the E007 feature) and `vmax` are bit-identical to before.
+  - `reliability.icc1` reliability is 0 when ICC ≤ 0 (it used to blow up near −1/(n−1)); E002–E005 negative values would become 0.
+  - `team_share` is now a cross-half covariance ratio with a jackknife SE (the old version grew with plays per player).
+  - `shrinkage.eb_mean` / `eb_rate` take `cluster="game_id"`: plays within a game are correlated, roughly doubling the true sampling variance for DL get-off; without clustering the shrinkage was too weak.
+- Open: OL pressure-over-expected variance still looks understated with clustering (half-difference ratio 1.5 ± 0.2, cause unknown), and HITCH decel is over-shrunk (the conservative direction). Run the half-difference diagnostic on new rate targets.
+- E007 prereg amended (before any P1–P3 association): the flying 20 is measured from the official start line, because the onset-relative 40-yd mark falls past the end of tracking in 28% of attempts. P2/P3 shrinkage uses `cluster="game_id"`.
+
 ## 2026-10-14 — GATE 1: probe round 1 (E002–E006) summary and decision
 - Round: 5 probes, 14 preregistered primary tests, ~76 exploratory tests; each probe built by one agent and attacked by two skeptics (reproduction/statistics and football/semantics). Numbers reproduced exactly in all five.
 - BH across the 14 primaries: **only E006-P1 survives** (WR fitted 40 vmax → game top-speed capacity S0, q = 0.021). The next best is E006-P2, q = 0.15, with the wrong sign. Everything else has q ≥ 0.70.

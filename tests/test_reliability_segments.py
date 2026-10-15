@@ -21,17 +21,41 @@ def _games(n_players=150, n_games=20, per_game=3, sd=2.0, seed=2):
 
 # ---------- icc1 edge cases ----------
 
-@pytest.mark.parametrize("values, groups, icc", [
-    (np.arange(5.0), np.arange(5), np.nan),                          # all singletons
-    (np.ones(9), np.array([0, 0, 1, 1, 2, 2, 3, 4, 5]), np.nan),     # no variance: 0 / 0
-    (np.array([0, 1, 0, 1, 0, 1.0]), np.array([0, 0, 1, 1, 2, 2]), -1.0),  # icc = -1 -> SB denominator 0
+@pytest.mark.parametrize("values, groups", [
+    (np.arange(5.0), np.arange(5)),                          # all singletons
+    (np.ones(9), np.array([0, 0, 1, 1, 2, 2, 3, 4, 5])),     # no variance: 0 / 0
 ])
-def test_icc1_degenerate_inputs_are_nan_without_warnings(values, groups, icc):
+def test_icc1_degenerate_inputs_are_nan_without_warnings(values, groups):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         res = icc1(values, groups)
-    assert np.isnan(res["reliability"])
-    assert np.isnan(res["icc"]) if np.isnan(icc) else res["icc"] == pytest.approx(icc)
+    assert np.isnan(res["icc"]) and np.isnan(res["reliability"])
+
+
+@pytest.mark.parametrize("eps", [0, 1e-6, 1e-3])
+def test_icc1_negative_icc_has_zero_reliability_at_the_singular_point(eps):
+    # icc = -1 makes the Spearman-Brown denominator 1 + (n - 1) icc = 0; a nudge used to give -3e12
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = icc1(np.array([0, 1, 0, 1, 0, 1.0 + eps]), np.array([0, 0, 1, 1, 2, 2]))
+    assert res["icc"] == pytest.approx(-1.0, abs=1e-3) and res["reliability"] == 0.0
+
+
+def test_icc1_negative_icc_with_unbalanced_repeats_is_not_reliable():
+    # anti-correlated pairs (2 repeats) + 8-repeat players: icc ~ -0.2, where 1 + (n - 1) icc changes sign
+    # between n = 2 and n = 8 and the averaged Spearman-Brown used to read +1.46 (passing a >= 0.5 screen)
+    rng = np.random.default_rng(0)
+    vals, grp = [], []
+    for p in range(50):
+        a = rng.normal()
+        vals += [a, -a]
+        grp += [p, p]
+    for p in range(50, 100):
+        x = rng.normal(size=8)
+        vals += list(x - x.mean() + rng.normal(0, 0.15))
+        grp += [p] * 8
+    res = icc1(np.array(vals), np.array(grp))
+    assert -0.3 < res["icc"] < -0.1 and res["reliability"] == 0.0
 
 
 # ---------- cross_drill_icc ----------
@@ -60,13 +84,41 @@ def test_cross_drill_icc_zscore_equalizes_drill_scales():
     assert abs(cross_drill_icc(df, "v", zscore=True)["icc"] - 0.8) < 0.04
 
 
+def test_cross_drill_icc_drops_rows_alone_in_their_centering_group():
+    rng = np.random.default_rng(1)
+    rows = [{"nfl_id": p, "drill_name": d, "session": p if d == "C" else 0, "v": mu + rng.normal(0, 0.5)}
+            for p, mu in enumerate(rng.normal(size=300)) for d in "ABC"]  # drill C: every player in his own session
+    df = pl.DataFrame(rows)
+    ab = df.filter(pl.col("drill_name") != "C")
+    assert abs(cross_drill_icc(ab, "v")["icc"] - 0.8) < 0.05
+    for z in (False, True):  # with zscore=False an exact-0 singleton used to count as a repeat (icc 0.39)
+        res = cross_drill_icc(df, "v", center_by=["drill_name", "session"], zscore=z)
+        assert res["n_dropped"] == 300 and res["n_players"] == 300 and res["n_single"] == 0
+        assert res["icc"] == pytest.approx(cross_drill_icc(ab, "v", zscore=z)["icc"])
+
+
 # ---------- split_half / split_half_estimator ----------
 
-def test_split_half_spearman_matches_the_normal_rank_correlation():
-    res = split_half(_games(n_players=2000), "v", method="spearman")
-    r = 1 / (1 + 4 / 30)  # Pearson r_half 0.88 -> Spearman (6 / pi) asin(r / 2) = 0.873
-    assert abs(res["r_half"] - 6 / np.pi * np.arcsin(r / 2)) < 0.03
-    assert res["reliability"] == pytest.approx(2 * res["r_half"] / (1 + res["r_half"]))
+def test_split_half_spearman_correlates_ranks():
+    # one row per player-half (2 games): half means are the rows, corr 0.5 bivariate normal
+    rng = np.random.default_rng(8)
+    mu = rng.normal(size=4000)
+    df = pl.DataFrame({"nfl_id": np.repeat(np.arange(4000), 2), "game_id": np.tile([0, 1], 4000),
+                       "v": np.repeat(mu, 2) + rng.normal(size=8000)})
+    lognormal = df.with_columns(v=(2 * pl.col("v")).exp())  # monotone: same ranks; population Pearson r 0.02
+    sp = split_half(df, "v", min_per_half=1, method="spearman")
+    assert abs(sp["r_half"] - 6 / np.pi * np.arcsin(0.5 / 2)) < 0.04  # 0.483, SE ~0.012
+    assert split_half(lognormal, "v", min_per_half=1, method="spearman") == sp
+    assert split_half(lognormal, "v", min_per_half=1)["r_half"] < sp["r_half"] - 0.2
+    assert sp["reliability"] == pytest.approx(2 * sp["r_half"] / (1 + sp["r_half"]))
+
+
+def test_split_half_rejects_an_unknown_method_even_with_few_players():
+    small = _games(n_players=5)  # < 10 players: both used to return NaN without checking the method
+    with pytest.raises(ValueError):
+        split_half(small, "v", method="bogus")
+    with pytest.raises(ValueError):
+        split_half_estimator(small, lambda g: g["v"].mean(), method="bogus")
 
 
 def test_split_half_spearman_resists_an_extreme_player():
@@ -100,34 +152,55 @@ def test_split_half_estimator_quantile_has_the_asymptotic_reliability():
 
 # ---------- team_share ----------
 
-def _team_plays(team_sd, n_teams=300, per_team=4, plays=200, seed=7):
+def _team_plays(team_sd, player_sd, noise_sd, n_plays, shared_sd=0.0, n_teams=1200, per_team=4, n_games=16, seed=7):
+    """Every player of a team is on each of its n_plays plays (spread evenly over n_games games);
+    value = team + player + play noise shared by the teammates on the play (shared_sd) + own noise."""
     rng = np.random.default_rng(seed)
-    rows, pid = [], 0
-    for t in range(n_teams):
-        eff = rng.normal(0, team_sd)
-        for _ in range(per_team):
-            mu = eff + rng.normal()
-            n = plays if pid % 10 else 10  # every 10th player has too few plays
-            rows += [(pid, f"T{t % 32}", 2023 + t // 32, mu + rng.normal(0, 2)) for _ in range(n)]
-            pid += 1
-    return pl.DataFrame(rows, schema=["nfl_id", "team", "season", "v"], orient="row")
+    team = np.repeat(np.arange(n_teams), per_team)
+    mu = rng.normal(0, team_sd, n_teams)[team] + rng.normal(0, player_sd, len(team))
+    game = np.arange(n_plays) % n_games
+    v = mu[:, None] + rng.normal(0, shared_sd, (n_teams, n_plays))[team] + rng.normal(0, noise_sd, (len(team), n_plays))
+    return pl.DataFrame({"nfl_id": np.repeat(np.arange(len(team)), n_plays), "team": np.repeat(team, n_plays),
+                         "season": 2024, "game_id": np.tile(game, len(team)), "v": v.ravel()})
 
 
-def test_team_share_recovers_the_team_variance_share():
-    df = _team_plays(team_sd=1.0)
-    res = team_share(df, "v", ["team", "season"])
-    # team var 1, player var 1, mean noise 4 / 200 -> 1 / 2.02 = 0.495
-    assert abs(res["team_share"] - 0.495) < 0.07
-    assert res["n_teams"] == 300 and res["n_player_teams"] == 1200 - 120
-    assert abs(team_share(_team_plays(team_sd=0.0), "v", ["team", "season"])["team_share"]) < 0.07
+def _close(res, truth):
+    return res["se"] < 0.05 and abs(res["team_share"] - truth) < 4 * res["se"]
+
+
+@pytest.mark.parametrize("n_plays", [24, 400])
+def test_team_share_does_not_depend_on_plays_per_player(n_plays):
+    # team var 1, player var 1, play noise var 36: an ICC of player x team means reads 1 / (2 + 36 / n) = 0.29 at
+    # 24 plays (7 se below 0.5) and 0.48 at 400; the cross-half ratio reads 0.5 at both
+    res = team_share(_team_plays(1.0, 1.0, 6.0, n_plays), "v", ["team", "season"])
+    assert _close(res, 0.5)
+    r_half = 2 / (2 + 36 / (n_plays / 2))
+    assert abs(res["reliability"] - 2 * r_half / (1 + r_half)) < 0.03
+    assert res["n_teams"] == res["n_shared"] == 1200 and res["n_player_teams"] == 4800
+    assert _close(team_share(_team_plays(0.0, 1.0, 6.0, n_plays), "v", ["team", "season"]), 0.0)
+
+
+def test_team_share_ignores_play_noise_shared_by_teammates():
+    # shared play noise var 36 over 32 plays adds 1.1 to teammates' covariance: the ICC of means reads 0.67
+    assert _close(team_share(_team_plays(1.0, 1.0, 1.0, 32, shared_sd=6.0), "v", ["team", "season"]), 0.5)
+
+
+def test_team_share_jackknife_se_matches_the_spread_across_samples():
+    res = [team_share(_team_plays(1.0, 1.0, 4.0, 40, n_teams=60, per_team=3, seed=s), "v", ["team", "season"])
+           for s in range(60)]
+    est, se = np.array([r["team_share"] for r in res]), np.array([r["se"] for r in res])
+    assert abs(est.mean() - 0.5) < 0.05 and 0.75 < np.median(se) / est.std() < 1.33
 
 
 def test_team_share_counts_a_traded_player_once_per_team_and_needs_shared_teams():
-    df = pl.DataFrame({"nfl_id": [1] * 40 + [2] * 20 + [3] * 20, "team_season": ["A"] * 20 + ["B"] * 40 + ["C"] * 20,
-                       "v": np.arange(80.0)})
-    res = team_share(df, "v", "team_season")
+    rows = [(pid, team, g, float(pid + g)) for pid, team, games in [(1, "A", range(4)), (1, "B", range(4, 8)),
+                                                                    (2, "B", range(4, 8)), (3, "C", range(4)),
+                                                                    (4, "C", [0])]  # one game: one half only
+            for g in games for _ in range(3)]
+    df = pl.DataFrame(rows, schema=["nfl_id", "team_season", "game_id", "v"], orient="row")
+    res = team_share(df, "v", "team_season", min_per_half=5)
     assert res["n_player_teams"] == 4 and res["n_teams"] == 3 and res["n_shared"] == 1
-    assert np.isnan(res["team_share"])  # < 3 team-seasons with >= 2 study players
+    assert np.isnan(res["team_share"]) and np.isnan(res["se"])  # < 3 team-seasons with >= 2 study players
 
 
 # ---------- segments: combine_sessions, onset_time ----------

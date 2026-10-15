@@ -32,8 +32,9 @@ def attempts(drill_names: list[str] | None = None, drill_types: list[str] | None
 def combine_sessions(df: pl.DataFrame, drill: str = "drill_name") -> pl.DataFrame:
     """Add `session` = "<drill>_<draft_year>_<k>" to attempt frames (needs `traj`, `time`, `draft_year`):
     within a drill and draft year, an attempt starting more than SESSION_GAP_S after the previous attempt's
-    start opens session k + 1. Sessions share coaches, partners and tempo, so center drill metrics by session.
-    Pass `drill` to merge naming variants of one drill. Sessions are inferred from the attempts in df only."""
+    start opens session k + 1. Sessions share coaches, partners and tempo, so center drill metrics by session
+    (small sessions attenuate: see reliability.cross_drill_icc). Pass `drill` to merge naming variants of one
+    drill. Sessions are inferred from the attempts in df only."""
     starts = (df.group_by("traj", drill, "draft_year").agg(t0=pl.col("time").min()).sort(drill, "draft_year", "t0")
               .with_columns(gap=pl.col("t0").diff().over(drill, "draft_year").dt.total_seconds().fill_null(0))
               .with_columns(k=(pl.col("gap") > SESSION_GAP_S).cum_sum().over(drill, "draft_year"))
