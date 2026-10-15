@@ -1,0 +1,9 @@
+{
+  "id": "A1",
+  "recorded_at_utc": "2026-10-15T13:27:00Z",
+  "status": "Amendment recorded before any CGE, variance component, R2 or forecast on real data (only the unit tests on simulated data had run).",
+  "topic": "in-season blend weight",
+  "finding": "The prereg's in_season_rule writes w_k = k / (k + lambda (1 - R2_C)). That is not the Bayesian posterior weight. With prior N(mu_C, (1 - R2_C) tau2) and ybar_k ~ N(theta, sigma2 / k), the posterior mean puts weight (1 - R2) tau2 / ((1 - R2) tau2 + sigma2 / k) = k / (k + lambda / (1 - R2_C)) = k / (k + lambda + CGE_C) on ybar_k. Only this form matches the prereg's own reading ('C is a prior worth CGE_C pseudo-games on top of shrinkage to the position mean': lambda + CGE = lambda / (1 - R2)). The literal formula gives games MORE weight when the Combine prior is BETTER. The unit test the task requires (blend weight = Bayesian posterior mean) fails on the literal formula.",
+  "choice": "Primary (H1-H3, calibration, weight curves, case studies): w_k = k / (k + lambda / (1 - R2_C)). Sensitivity, reported in full beside it: the literal prereg formula w_k = k / (k + lambda (1 - R2_C)), labeled 'prereg-literal weight'. The posterior variance used for calibration (V_k) is unchanged; it already matched the posterior.",
+  "reason": "The prereg names the rule as the Bayesian in-season rule and defines CGE through it; the written weight is an algebra slip. Fixing it before any forecast keeps the test confirmatory; reporting the literal version keeps the prereg auditable."
+}

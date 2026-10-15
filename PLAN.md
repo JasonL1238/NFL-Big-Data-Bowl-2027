@@ -175,5 +175,6 @@ Mock judging every 2 weeks (from Oct 26) uses the checklist in `AGENTS.md`.
   - Carried forward: (1) hero candidate **"hidden top speed"**; (2) the **drill reliability + transfer map** (PLAN §6 fallback, now a core section); (3) harness upgrade before round 2.
   - [x] Round 2: harness upgrade → hidden-speed deep build (E007) → transfer map (E008) (2026-10-14)
 - [x] Gate 2 — hero metric (2026-10-14): **no hero survived.** E007 primaries all fail; E008 shows 16/18 links null, with bounds. See experiments/log.md "GATE 2". Direction of the writeup: pending the user's decision.
-- [ ] Gate 3 — analysis frozen (Dec 7)
+- [x] Gate 2b — framing (2026-10-15): **Combine Game Equivalents** (E012) + transfer map as evidence; see experiments/log.md "GATE 2b".
+- [ ] Gate 3 — analysis frozen: final figures, public notebook reproducing every writeup number, writeup v2 + mock judging (Dec 7)
 - [ ] Submitted (Jan 5)

@@ -29,6 +29,7 @@ import numpy as np
 import polars as pl
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.model_selection import GroupKFold
+from threadpoolctl import threadpool_limits
 
 from bdb27 import io, shrinkage
 
@@ -37,6 +38,7 @@ CONTEXT_CAT = ["lined_up_position", "receiver_alignment", "offense_formation", "
 CONTEXT_NUM = ["down", "yards_to_go", "yards_to_end_zone", "quarter", "score_diff"]
 DEEP_ROUTES = ("GO", "POST", "CORNER")
 N_SPLITS = 5
+MAX_THREADS = 3  # project rule for the shared machine (LESSONS 2026-10-15)
 SEED = 0
 
 
@@ -106,6 +108,12 @@ def cross_fit(d: pl.DataFrame, value: str, kind: str = "regression", n_splits: i
     X, y, groups = design(d, cat, num), d[value].cast(pl.Float64).to_numpy(), d["game_id"].to_numpy()
     cat_idx = list(range(len(cat)))
     pred = np.full(len(y), np.nan)
+    with threadpool_limits(MAX_THREADS):  # OpenMP would otherwise take every core of the shared machine
+        _fit_folds(X, y, groups, kind, n_splits, seed, cat_idx, pred)
+    return pred
+
+
+def _fit_folds(X, y, groups, kind, n_splits, seed, cat_idx, pred) -> None:
     for tr, te in GroupKFold(n_splits=n_splits).split(X, y, groups):
         if kind == "regression":
             m = HistGradientBoostingRegressor(categorical_features=cat_idx, random_state=seed).fit(X[tr], y[tr])
@@ -115,7 +123,6 @@ def cross_fit(d: pl.DataFrame, value: str, kind: str = "regression", n_splits: i
             pred[te] = m.predict_proba(X[te])[:, list(m.classes_).index(1.0)]
         else:
             raise ValueError(f"kind must be 'regression' or 'classification', not {kind!r}")
-    return pred
 
 
 def oof_r2(y: np.ndarray, pred: np.ndarray) -> float:

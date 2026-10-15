@@ -1,0 +1,61 @@
+{
+  "experiment": "E012 — Combine Game Equivalents (CGE): how many NFL games of a player's own tracking is his Combine worth, trait by trait, and how to blend the two in season",
+  "date": "2026-10-15",
+  "written_by": "orchestrator, before any CGE, variance component or in-season forecast in this design was computed",
+  "already_seen_before_this_prereg": [
+    "E001-E010 player-level links (transfer map): position-drill signatures show no detectable link beyond B2; WR tracked top speed is the only (fragile) signal.",
+    "Writeup v1 post hoc (experiments/posthoc_writeup_v1/ph_inseason.json): for WR game top speed, one game of a player's own tracking forecasts his later game top speed about as well as his best Combine measure (r 0.56 vs 0.57, n = 42). This motivated E012; that analysis is NOT counted as evidence here.",
+    "Split-half reliabilities of most game traits (E002-E010 logs)."
+  ],
+  "framework": {
+    "model": "For trait T at position P: game-level value y_ig = theta_i + e_ig, between-player variance tau2 (within position, after draft-year centering), between-game within-player variance sigma2. lambda = sigma2 / tau2 (games of noise per unit of signal). An information set C forecasts theta out of sample with R2_C (true-score R2 = cross-validated R2 on the player-level trait divided by that trait's reliability, clipped to [0, 0.99]).",
+    "estimand": "CGE_C = lambda * R2_C / (1 - R2_C): the number of games of the player's own data that forecast theta as well as C does. Equivalently, C is a prior worth CGE_C pseudo-games on top of shrinkage to the position mean.",
+    "in_season_rule": "After k games with mean ybar_k: theta_hat = mu_C + w_k (ybar_k - mu_C), w_k = k / (k + lambda (1 - R2_C)), where mu_C is C's forecast.",
+    "tracking_value": "Delta CGE = CGE(C3) - CGE(C2): games of in-season data that the Combine tracking adds beyond the stopwatch and draft slot."
+  },
+  "information_sets": {
+    "C0": "draft-year means within position (no Combine)",
+    "C1": "C0 + traditional Combine (linkage.COMBINE_CONTROLS)",
+    "C2": "C1 + draft slot (log_pick, undrafted) = B2",
+    "C3": "C2 + Combine tracking: tracked-40 set (bdb27.speed c40_smax, c40_v_20_40, c40_vmax, c40_tau, c40_a0) plus the trait's matched drill signature listed below (if any)",
+    "model": "median-impute + indicators -> standardize -> RidgeCV (linkage._model), repeated 5-fold CV (20 repeats), player-level"
+  },
+  "traits": [
+    {"id": "T1", "pos": "WR", "game_value": "per-game q90 of play max speed (plays > 12 yd/s dropped; games with >= 10 tracked plays)", "matched_signature": null},
+    {"id": "T2", "pos": "WR", "game_value": "per-game mean of route-centered OUT/IN turn retention (E002 definitions, probes.a_route_breaks; games with >= 2 events)", "matched_signature": "c_turn_retention"},
+    {"id": "T3", "pos": "WR", "game_value": "per-game mean of HITCH peak braking (E002; games with >= 2 events)", "matched_signature": "c_stop_peak_decel"},
+    {"id": "T4", "pos": "WR", "game_value": "per-game mean of separation over expected on HITCH/OUT/IN routes (E002 soe definition; games with >= 3 routes)", "matched_signature": "c_turn_retention"},
+    {"id": "T5", "pos": "WR", "game_value": "per-game mean of yards per route over expected (E007 yprr_oe residuals; games with >= 10 routes)", "matched_signature": null},
+    {"id": "T6", "pos": "DL", "game_value": "per-game mean of first-second rush distance (E003 g_d10_rush play values; games with >= 5 pass-rush snaps)", "matched_signature": "c40_d10"},
+    {"id": "T7", "pos": "DL", "game_value": "per-game mean of player_get_off on pass-rush snaps (games with >= 5)", "matched_signature": "c40_d10"},
+    {"id": "T8", "pos": "DL", "game_value": "per-game pressure rate over expected (E003 definitions; games with >= 10 pass-rush snaps)", "matched_signature": "c40_d10"},
+    {"id": "T9", "pos": "OL", "game_value": "per-game mean of pass-set acceleration 0-0.6 s (E004 set_accel play values; games with >= 10 qualifying sets)", "matched_signature": "cmb_rev_accel_mirror"},
+    {"id": "T10", "pos": "OL", "game_value": "per-game pressure allowed over expected (E004 pr_oe definitions; games with >= 15 pass-block snaps)", "matched_signature": "cmb_rev_accel_mirror"},
+    {"id": "T11", "pos": "DB", "game_value": "per-game mean of pre-throw peak retreat speed (E005 gm_backpedal play values; games with >= 3 plays)", "matched_signature": "cmb_backpedal_speed"},
+    {"id": "T12", "pos": "DB", "game_value": "per-game q90 of play max speed (as T1)", "matched_signature": null}
+  ],
+  "estimation": {
+    "variance_components": "One-way random effects of game-level values within position after draft-year centering (bdb27.reliability.icc1 machinery: tau2 = between, sigma2 = within), players with >= 3 qualifying games.",
+    "uncertainty": "Player bootstrap (1,000 resamples) of the whole pipeline (lambda, R2_C, CGE) per trait.",
+    "exposure_checks": "corr(player trait, log games) and corr(per-game value, plays in game), reported per trait."
+  },
+  "validation_1_internal": "For players with >= 8 qualifying games: chronologically first k games (k = 1..6) vs Combine forecasts (C0-C3, out of fold), each correlated with the player's mean over his remaining games. Empirical crossover k = first k where the k-game correlation reaches C's. Report agreement with formula CGE (does the formula CGE fall inside the bootstrap CI of the empirical crossover?).",
+  "validation_2_prospective": {
+    "design": "Fit tau2, sigma2, R2_C and the ridge models on the 2023 + 2024 classes ONLY. Apply them to 2025 rookies (their one season): for each 2025 player with >= k + 3 qualifying games, forecast his mean over games k+1..end with (a) Combine only (mu_C), (b) games only (ybar_k), (c) the in-season rule (blend), for k = 1, 2, 3, 4.",
+    "metric": "Squared error of each forecast, standardized by the trait's 2023-24 tau2, averaged over the trait's eligible 2025 players; pooled over traits with equal trait weights.",
+    "primary_tests": [
+      {"id": "H1", "claim": "Blend (C2 prior) beats games-only at k = 1 (pooled standardized MSE lower).", "expected_sign": "blend < games-only"},
+      {"id": "H2", "claim": "Blend (C2 prior) beats games-only at k = 2.", "expected_sign": "blend < games-only"},
+      {"id": "H3", "claim": "Combine tracking improves the prior: blend with C3 prior beats blend with C2 prior at k = 1.", "expected_sign": "C3 < C2"}
+    ],
+    "inference": "Player-level paired differences in standardized squared error (trait-weighted), one-sided sign-flip permutation test (100,000 flips) and a player bootstrap 95% CI; BH across H1-H3; alpha 0.05.",
+    "secondary": "Same comparisons per trait and for k = 3, 4 (descriptive); calibration of the rule's implied uncertainty (coverage of 80% intervals)."
+  },
+  "deliverables": [
+    "CGE table and figure: traits x information sets, games with 95% bootstrap CI, plus Delta CGE for tracking",
+    "in-season weight curves w_k by trait",
+    "2025 rookie case studies: Combine prior vs first-k-game estimates vs rest of season (chosen by a rule fixed here: the 2 largest and 2 smallest |prior - final| per position among players with >= 10 games)",
+    "a 'Combine surprises' table (descriptive): 2025 rookies whose season trait differs most from their C2 prior, in prior-SD units"
+  ],
+  "go": "H1-H3 judged by the BH-adjusted one-sided tests. The CGE estimates are descriptive estimands with CIs, not hypothesis tests."
+}

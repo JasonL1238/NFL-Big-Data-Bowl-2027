@@ -1,0 +1,44 @@
+[      2s] Combine inputs built
+[      2s] play max: 103,666 plays
+[     23s] route events: 31,497
+[     26s] separation over expected built
+[     27s] yards per route over expected built
+[     27s] DL values built
+[     50s] OL values built
+[     50s] DB values built
+[    221s] T1 WR Game top speed: n 64, lambda 1.48, rel 0.89, R2 C1/C2/C3 0.22/0.24/0.28, CGE 0.43/0.47/0.57, dCGE +0.10
+[    392s] T2 WR OUT/IN turn speed retention: n 64, lambda 6.78, rel 0.62, R2 C1/C2/C3 0.00/0.00/0.03, CGE 0.00/0.00/0.18, dCGE +0.18
+[    562s] T3 WR HITCH peak braking: n 62, lambda 4.65, rel 0.71, R2 C1/C2/C3 0.00/0.00/0.00, CGE 0.00/0.00/0.00, dCGE +0.00
+[    732s] T4 WR Separation over expected (HITCH/OUT/IN): n 65, lambda 22.80, rel 0.34, R2 C1/C2/C3 0.46/0.41/0.33, CGE 19.68/15.78/11.10, dCGE -4.67
+[    902s] T5 WR Yards per route over expected: n 64, lambda 4.84, rel 0.71, R2 C1/C2/C3 0.00/0.00/0.00, CGE 0.00/0.00/0.00, dCGE +0.00
+[   1077s] T6 DL First-second rush distance: n 85, lambda 3.61, rel 0.74, R2 C1/C2/C3 0.25/0.25/0.21, CGE 1.20/1.23/0.98, dCGE -0.24
+[   1253s] T7 DL Get-off (NGS): n 84, lambda 3.29, rel 0.76, R2 C1/C2/C3 0.06/0.07/0.05, CGE 0.21/0.24/0.17, dCGE -0.08
+[   1426s] T8 DL Pressure rate over expected: n 71, lambda 11.22, rel 0.43, R2 C1/C2/C3 0.32/0.49/0.49, CGE 5.18/10.61/10.84, dCGE +0.24
+[   1596s] T9 OL Pass-set acceleration (0-0.6 s): n 65, lambda 5.75, rel 0.69, R2 C1/C2/C3 0.00/0.00/0.00, CGE 0.00/0.00/0.00, dCGE +0.00
+[   1766s] T10 OL Pressure allowed over expected: n 66, lambda 10.84, rel 0.53, R2 C1/C2/C3 0.00/0.00/0.00, CGE 0.00/0.00/0.00, dCGE +0.00
+[   1939s] T11 DB Pre-throw peak retreat speed: n 74, lambda 5.83, rel 0.68, R2 C1/C2/C3 0.00/0.00/0.00, CGE 0.00/0.00/0.00, dCGE +0.00
+[   2113s] T12 DB Game top speed: n 76, lambda 4.84, rel 0.70, R2 C1/C2/C3 0.03/0.05/0.03, CGE 0.15/0.25/0.13, dCGE -0.12
+[   2148s] bootstrap bias diagnostic: {"T1": {"duplicated_rows_refit_B1": -0.07021621243839962, "weighted_refit": 0.023612313572666355, "fixed_forecasts_PH5": 0.16923461534122664}, "T4": {"duplicated_rows_refit_B1": -0.1964191756077287, "weighted_refit": -0.06116120156114667, "fixed_forecasts_PH5": 0.10382355911348924}, "T6": {"duplicated_rows_refit_B1": -0.016432076290370228, "weighted_refit": 0.08655249714767746, "fixed_forecasts_PH5": 0.16541711412105953}, "T8": {"duplicated_rows_refit_B1": -0.07111677001142055, "weighted_refit": -0.00484739899893268, "fixed_forecasts_PH5": 0.15990408495438854}}
+[   2153s] validation 1: formula CGE inside the crossover CI for 36 / 36
+[   2160s] H1: 2.143 vs 7.590 (diff -5.447 [-8.347, -3.172]), p 0.0000, q 0.0000, n 81
+[   2160s] H2: 1.901 vs 3.962 (diff -2.061 [-3.055, -1.205]), p 0.0000, q 0.0000, n 76
+[   2160s] H3: 2.187 vs 2.143 (diff +0.044 [+0.008, +0.081]), p 0.9904, q 0.9904, n 81
+[   2161s] done: /Users/jasonli/Documents/GitHub/NFL-Big-Data-Bowl-2027/experiments/results/E012.json
+     2161.98 real      6262.91 user        23.70 sys
+          3320774656  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              819773  page reclaims
+                  41  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                4684  voluntary context switches
+              982606  involuntary context switches
+       1821758790861  instructions retired
+        513349669360  cycles elapsed
+          2929398224  peak memory footprint

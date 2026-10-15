@@ -11,6 +11,64 @@ Template:
 - Decision: keep / kill / revisit — why
 ```
 
+## 2026-10-15 — GATE 2b: the framing becomes Combine Game Equivalents (E012), with the transfer map as its evidence
+- **E012** (preregistered; amendment A1 fixed my blend-weight algebra before any real-data run; reviewed by 2 skeptics, both 'weakened'; the responder accepted almost every point):
+  - In season, a player's own qualifying games outweigh any pre-season prior within 2–7 games for the 9 reliably measured traits.
+  - On 2025 rookies (pseudo-prospective: fit on 2023–24 only), shrinkage toward the position average delivers 99% of the blend's 72% error cut after one game (H1 ratio 0.28 [0.20, 0.40]).
+  - The stopwatch + draft slot prior adds ~5% before the first game (post hoc, BH q 0.29) and ~2.5% after one.
+  - **Combine tracking adds nothing** (H3 ratio 1.021 [1.004, 1.039], slightly worse).
+  - In game units the Combine is worth 0 to ~1.2 games where measurable; every interval includes 0. T4, T8 and T10 are not identified (reliability < 0.5).
+- **Decision:** the writeup is rebuilt around CGE and the in-season rule (usable week to week: how much to trust a rookie's games after k games, per trait), with the transfer map, E009 and the drill reliability profile as the 'why'. WR tracked top speed stays a fragile side note. No more hypothesis rounds: the remaining work is figures, the public notebook, and the writeup (PLAN Gate 3).
+- **Open shared-module items** from the E012 review:
+  - RidgeCV's LOO alpha search sees duplicated bootstrap rows; check the E007–E011 bootstraps.
+  - `linkage._design`'s dropped year dummy depends on row order.
+  - The meaning of `nfl_position` is unverified.
+  - The orphaned loky workers were killed on 2026-10-15.
+
+## 2026-10-15 — E012: Combine Game Equivalents (preregistered; revised after two reviews)
+
+- **Hypothesis**
+  - Prereg: `experiments/results/E012_prereg.json`, plus amendment A1. A1 replaced the written blend weight with the Bayesian weight k/(k+λ/(1-R²)), recorded before any real-data run.
+  - Per trait, CGE = λR²/(1-R²) counts how many games of a player's own tracking the Combine is worth.
+  - H1/H2: on 2025 rookies, a blend with the C2 prior beats games-only at k=1 and k=2.
+  - H3: the C3 prior (adds Combine tracking) beats the C2 prior.
+- **Method**
+  - Code: `src/bdb27/probes/h_game_equivalents.py` and `experiments/E012_game_equivalents.py`. Implementation choices were frozen before the data (sha 70c22471…).
+  - 12 game traits.
+  - Variance components with draft-year strata; 20×5 ridge CV for C0-C3; true-score R² = R²_CV / reliability.
+  - B1 player bootstrap.
+  - Validation 1: chronological crossover. Validation 2: fit on the 2023-24 seasons, applied to the 2025 rookies (pseudo-prospective).
+  - Post hoc after review: PH5-PH12 (listed under Review response).
+  - Full run: 16,086 s; peak RSS 3.2 GB.
+- **Result**
+  - **Preregistered tests**
+    - H1 supported: error 2.143 vs 7.590, ratio 0.28 [0.20, 0.40], p 1e-5.
+    - H2 supported: 1.901 vs 3.962, ratio 0.48.
+    - H3 not supported: ratio 1.021 [1.004, 1.039], so tracking made the prior slightly worse.
+  - **Shrinkage does the work**
+    - The position-mean (C0) blend gets 99% of the H1 gain and 98% of the H2 gain.
+    - The C2 prior vs C0 is post hoc: -5% error at k=0 (p 0.03, BH q 0.29; drivers T1 and T4) and -2.5% at k=1 (p 0.08).
+  - **Own games dominate**
+    - Half-weight on his own games comes after 2.0 (WR top speed) to 6.8 qualifying games for the identified traits.
+  - **CGE for C2** (B1 interval; calibrated one-sided bounds; 2023-24 fit)
+    - T1 WR top speed: 0.47 [0, 0.83]; calibrated [0.08, 1.6]; 2023-24 0.14; 0 without the 2023 class.
+    - T6 DL rush burst: 1.23 [0, 2.22]; calibrated [0.10, 3.9]; 2023-24 0.08. NFL position alone is worth 2.36 games, and C2 adds -0.25 beyond it, so this is role and body type.
+    - T7 0.24 and T12 0.25.
+    - 0 for T2, T3, T5, T9 and T11; calibrated upper bounds 2.5-3.6.
+    - T4, T8 and T10 are not identified (reliability or split-half below 0.5).
+  - **Combine tracking increment (ΔCGE, C3 - C2):** 0 or within noise for every trait.
+  - **Validation 1:** 36/36 by the frozen rule, but the check is weak. 13 cells could not disagree and 23 could only fail one way. The literal continuous check agrees in 33/36 (T1 fails).
+- **Review response**
+  - B1 restored as the reported interval (PH5 is now a sensitivity only).
+  - Simulation at each trait's own design (PH6): B1 at 20 repeats covered 78-82% and PH5 79% overall, both at nominal 95%.
+  - Reliability gate, leave-one-class-out, and C0/role/exposure references.
+  - Stationarity: T9 and T11 shift up to 2.2 between-player SD from season to season.
+  - Qualifying-game disclosures; outlier table relabelled; figures redrawn.
+  - Headline rewritten; it supersedes `E012_audit/summary.txt`.
+- **Decision: keep as a descriptive "in-season" section, not a hero metric.**
+  - Message: own games take over fast; shrinkage does the work; the Combine adds a few percent before game 1; Combine tracking adds nothing.
+  - Revisit if more classes arrive or a season-centred, per-play-weighted model is preregistered.
+
 ## 2026-10-15 — ROUND 3 summary (E009 beyond-stopwatch, E010 drill intensity, E011 ball tracking, writeup v1)
 - **E009:** beyond the stopwatch alone (B1), no link passes, and the same 16 links are null. Adding the draft slot moves partial r by at most 0.14 (median 0.01), so the beyond-B2 nulls are not a draft-slot artifact. WR tracked top speed: +0.42 beyond B1, criterion 4 marginal (depends on the BH family), fails leave-3-out.
 - **E010 (preregistered):** drill intensity is a reliable trait (0.74; 0.66 beyond B2) but shows no link to play intensity (−0.003 [−0.13, +0.12]) or snaps per season (−0.04 [−0.14, +0.06]); **kill**. OL "intensity" is mostly run-out speed when tracking stops.

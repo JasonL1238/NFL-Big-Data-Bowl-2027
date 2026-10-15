@@ -82,14 +82,18 @@ These guidelines are working if: fewer unnecessary changes in diffs, fewer rewri
 - **Kaggle:** https://www.kaggle.com/competitions/nfl-big-data-bowl-2027
 - **Prompt:** Build an analytical framework that uncovers *non-obvious, actionable* linkages between **10 Hz Combine sensor tracking data** and **future regular-season NFL game performance**.
 - **Format:** judged analytics writeup only (no leaderboard). Kaggle Writeup + attached **public Kaggle Notebook**.
-- **Hard limits:** ≤ 2,000 words, < 10 figures/tables, code in the notebook/appendix.
-- **Pass/fail:** the writeup **must use the Combine tracking data** to link to regular-season performance, or it is not scored.
+- **Hard limits:** ≤ 2,000 words, < 10 figures/tables (over-limit "may be subject to penalty"), code in the notebook/appendix.
+- **Pass/fail:** (1) the writeup **explicitly links Combine sensor tracking data to regular-season game performance**; (2) readable markdown, embedded visuals, and an attached **public Kaggle Notebook**.
 - **Deadline:** **Jan 6, 2027 23:59 UTC** (entry, team merge, and final). Judging Jan 7–25. Finalists present at the 2027 Scouting Combine.
-- **Tracks:** Undergraduate/Graduate and Open. Teams of up to 5.
+- **Tracks:** Open, and University (**undergraduate-only** teams). Teams of up to 5.
 - **Prizes:** $100k total (each track: 3 × $10k finalists + 3 × $5k runners-up; $10k grand prize).
-- **Judges:** NFL club analytics staff. 2027 weights are unconfirmed. In 2026 they were **Football 30% / Data Science 30% / Writeup 20% / Data Viz 20%**:
-  - Football: is it usable week to week, does it handle football's complexity, is it novel?
-  - Data Science: is it correct, are claims backed by data, are the models appropriate, is it innovative?
+- **Judges** (verified on the overview page 2026-10-15): analytics staffers of the 32 NFL teams or tracking vendors that work with them. Each component is scored 0–10: **Football 30% / Data Science 30% / Writeup 20% / Data Viz 20%**:
+  - Football: usable week to week (by teams or the league office)? Accounts for what makes football data complex? Unique ideas?
+  - Data Science: correct? Claims backed by data? Models appropriate? Applications innovative?
+  - Writeup: well written, easy to follow, motivation (metric, player evaluation) clearly defined?
+  - Data Viz: charts/tables accessible, accurate, innovative?
+- **Host guidance:** focus on one small aspect of movement, a position group, or one drill rather than everything. Example themes include "drill translation: compare sensor-based metrics with traditional drill times to see where tracking adds context".
+- **External data** (rules §6): allowed if publicly available, free, and equally accessible to all participants.
 
 ### Data (510 WR/TE/DB/OL/DL from the 2023–25 Combines: 383 drafted, 127 undrafted; ~2.3 GB; CC BY-NC 4.0)
 
