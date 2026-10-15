@@ -110,8 +110,8 @@ Build this in order. Each step has a verification.
 - **Multiple testing:** count every test in the log. Use BH-FDR across a round's primaries and also report it across all tests in the round. Use a max-statistic permutation for the final hero claim.
 - **Go criteria for a test (all required):**
   1. Freedman–Lane one-sided p < 0.05 **and** partial r in the preregistered direction
-  2. excess CV ΔR² over B2, minus 1 SE, > 0
-  3. LOCO excess > 0 in ≥ 2 of 3 draft classes
+  2. excess CV ΔR² over B2, minus 1 SE, > 0, **and** in the expected direction (rev 3)
+  3. LOCO: in ≥ 2 of 3 draft classes the held-out excess exceeds 1 null SD and the class's partial r is not reversed (rev 3; `checks.loco_classes_pass`)
   4. survives BH across the round's primaries
   5. feature and target reliability ≥ 0.5 (`reliability.py`)
   6. stable across ≥ 3 CV seeds, and not driven by ≤ 3 players (leave-3-out influence check)
@@ -119,6 +119,7 @@ Build this in order. Each step has a verification.
 - **Revision notes:**
   - 2026-10-14 (rev 1): after the infrastructure review and before round 1, the Freedman–Lane null, excess ΔR², and LOCO replaced sign consistency.
   - 2026-10-14 (rev 2): after round 1 and before round 2, made the inferential test directional, seed-free and in-sample; LOCO is now judged against its null; added year dummies; added the BH and influence criteria. Round-1 decisions stand under rev 1. See `experiments/log.md` GATE 1.
+  - 2026-10-14 (rev 3): after Gate 2 and before round 3. Criterion 2 now requires the expected sign (ridge ΔR² rewarded a wrong-sign slope, E007-P3), and criterion 3 counts a class only if its held-out excess exceeds one null SD with a non-reversed partial r. The old rule passed 11 of 16 nulls; the old field is kept for reproducing E001/E007/E008. The MDE is one-sided when a sign is expected.
 - **2025 class caveat:** only one season of games. Report results with and without 2025 for game-outcome targets.
 
 ---

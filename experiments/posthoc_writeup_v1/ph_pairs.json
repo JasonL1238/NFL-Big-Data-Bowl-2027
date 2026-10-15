@@ -1,0 +1,22 @@
+{
+ "label": "post hoc (writeup v1, after mock judging); descriptive; same WRs and target as E007-P1",
+ "n_receivers_with_game_q95": 61,
+ "n_pairs": 172,
+ "n_receivers_in_pairs": 59,
+ "max_pairs_per_receiver": 12,
+ "share": 0.5930232558139535,
+ "share_ci95_receiver_bootstrap": [
+  0.42770989618852767,
+  0.7349412650602409
+ ],
+ "p_bootstrap_share_le_05": 0.1302,
+ "perm_p_one_sided": 0.06209379062093791,
+ "n_boot": 10000,
+ "n_perm": 10000,
+ "seed": 20261015,
+ "mean_game_gap_mph": 0.20454545454545434,
+ "hook_pair_is_largest_hidden_gap": true,
+ "hook_pair_game_gap_mph": 0.4295454545454547,
+ "hook_pair_game_gap_percentile": 0.5697674418604651,
+ "hook_fast_rank_hidden_of_91": 1
+}

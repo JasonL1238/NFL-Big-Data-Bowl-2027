@@ -36,6 +36,7 @@ def test_planted_signal_is_detected():
 def test_wrong_sign_effect_does_not_pass_a_directional_test():
     res = _eval(_players(signal=-0.6), expected_sign=1, **FAST)
     assert res["fl_p"] > 0.9 and res["checks"]["sign_matches"] is False
+    assert res["checks"]["excess_lb_gt_0"] is False  # a wrong-sign gain in CV R^2 must not pass
     assert res["cv_perm_p"] < 0.01  # the sign-agnostic CV statistic would have "passed"
 
 
@@ -90,3 +91,15 @@ def test_no_inference_when_residual_df_is_too_small():
                    min_df=10, **FAST)
     assert res["resid_df"] < 10 and res["fl_p"] is None and res["partial_r"] is None
     assert res["checks"]["fl_p_lt_05"] is False
+
+
+def test_loco_criterion_does_not_pass_pure_noise_often():
+    passes = [_eval(_players(signal=0.0, seed=200 + s), expected_sign=1, n_repeats=2, n_perm=100,
+                    perm_repeats=1, n_perm_fl=500, n_jobs=1, seed=s)["checks"]["loco_classes_pass"]
+              for s in range(12)]
+    assert sum(int(p.split("/")[0]) >= 2 for p in passes) <= 3  # old rule passed ~80% of nulls
+
+
+def test_planted_signal_passes_loco():
+    res = _eval(_players(n=240, signal=0.6, seed=5), expected_sign=1, **FAST)
+    assert int(res["checks"]["loco_classes_pass"].split("/")[0]) >= 2

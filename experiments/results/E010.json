@@ -1,0 +1,4109 @@
+{
+ "experiment": "E010 drill intensity",
+ "prereg": "experiments/results/E010_prereg.json",
+ "protocol": "PLAN.md section 4 rev 3",
+ "implementation_choices": {
+  "position_drills": "drill_type SKILL_DRILLS_{WR,TE,DB,DL,OL}; SKILL_DRILLS_LB excluded (its 4 players are DL who ran only LB drills, so they leave the population). The 40, shuttle and 3-cone are excluded.",
+  "drill_key": "position group + drill name, e.g. 'WR:GAUNTLET_DRILL' (GAUNTLET_DRILL, OVER_SHOULDER_ADJUST, BACK_PEDAL_AND_REACT and PASS_RUSH_DRILL are run by different position groups).",
+  "naming_variants_merged": {
+   "LINE": "LINE_DRILL",
+   "PASS_PRO-MIRROR_DRILL": "PASS_PRO_MIRROR_DRILL",
+   "SPEED_OUT_LEFT": "SPEED_OUT_ROUTE_LEFT",
+   "OVER_THE_SHOULDER_ADJUST": "OVER_SHOULDER_ADJUST"
+  },
+  "not_merged": "DL SHORT_ZONE_BREAKS (2023-24, several attempts per player) and the 2025 drills SHORT_ZONE_BREAK_FLAT_WHEEL / _FORWARD / _INSIDE are kept as named: the 2025 names are different movements, not spellings. Because z-scores are formed within drill x session and every naming variant occurs in different draft years, a merge only changes the drill label and the distinct-drill count, never a z-score.",
+  "attempt": "segments.ATTEMPT_KEYS (event_id, nfl_id, drill_name, attempt); one trajectory each (no tracking gap inside any attempt; all frames 0.1 s apart; verified).",
+  "attempt_peak": "max SG speed (kinematics.add_kinematics, window 7, poly 2) over frames [EDGE, n - EDGE), EDGE = speed.EDGE = 3, as bdb27.speed smax for the 40.",
+  "forty_peak": "c40_smax from speed.combine_speed_table(speed.forty_attempts()): mean of the same interior SG peak over the player's QC-passing 40 attempts.",
+  "attempt_qc": "keep an attempt if its x/y path length is within [0.5, 2.5] x the median path of its drill x session (drops aborted attempts and tracking overruns that continue past the drill). Fixed from Combine data only, before any game data were loaded.",
+  "sessions": "segments.combine_sessions on the attempt table with drill = the drill key (> 10 min since the previous attempt start of the same drill and draft year opens a new session).",
+  "z_scoring": "ratio z-scored within drill x session over QC-passing attempts of players with a QC-passing tracked 40; attempts alone in their drill x session (no SD) are dropped.",
+  "aggregation": "drill-level value = mean of the player's attempt z-scores in that drill; player value = mean of drill-level values; >= 2 distinct drills (drill keys).",
+  "stop_rule_input": "player x drill rows (the drill-level values above) of population players, passed to reliability.cross_drill_icc(value, drill='drill', zscore=True, center_by=['drill', 'session']); its icc1 Spearman-Browns each player's ICC to his number of drills and averages over players.",
+  "variant_no_division": "attempt peak speed smax z-scored within drill x session (same attempts and aggregation).",
+  "variant_median": "player value = median (instead of mean) of his drill-level values. A per-drill median over attempts would be nearly vacuous (most drills have 1-2 attempts, where median = mean).",
+  "play_max_speed": "max raw `s` over all tracked frames of a REG player-play, from features.reg_season_tracking() (standardized, REG only), plays with max > 12 yd/s dropped: the features.game_top_speed / E001 definition.",
+  "p1_quantiles": "q95 = polars quantile(0.95) default ('nearest', as features.game_top_speed); median = midpoint median. Players need >= 50 such plays.",
+  "p1_split_half": "reliability.split_half_estimator by odd/even game (dense rank), fn = median/q95 of the half's plays, NaN below 25 plays in the half; Spearman-Brown to full length.",
+  "p1_team_share": "reliability.team_share on the per-play value play max / player's own q95 (all his plays), team_col = [team_abbr from player_play, season]; per position, and pooled on position-centered values. The shared full-sample q95 enters both halves, so the player variance (denominator) is slightly overstated and the team share slightly understated.",
+  "p2_population": "every population player (0 snaps if he never played); seasons = 2026 - draft_year.",
+  "p2_variants": "two separate variants: (a) log(1 + snaps per season); (b) (offensive + defensive + special-teams snaps) per season.",
+  "p2_reliability": "snaps are a recorded count (no measurement error); as context, the season-to-season correlation of off+def snap counts from player_play (players with 2+ available seasons), Spearman-Brown to the class's number of seasons.",
+  "exploratory_starts": "career_games_started / seasons, linkage.evaluate with expected_sign=+1 (same settings).",
+  "exploratory_honors": "Pro Bowl + All-Pro (1st and 2nd team) count; descriptive only (no test): number of honored players and their mean feature vs the rest, within position.",
+  "leave_3_out": "drop the 3 players contributing most to sign * x_res * y_res (supportive) and, separately, the 3 contributing least (contrary), using the B2 residuals of the harness; rerun the seed-free Freedman-Lane test (CV parts at minimal settings, not used). If a primary passes criterion 1, the supportive drop is also rerun at full settings for criteria 2-3.",
+  "by_position": "linkage.evaluate on each position alone (same settings), descriptive.",
+  "multiplicity": "BH across P1-P2 (the primary family); BH across every p-valued E010 test reported alongside."
+ },
+ "eval_settings": {
+  "n_repeats": 50,
+  "n_perm": 2000,
+  "n_perm_fl": 10000
+ },
+ "combine": {
+  "stop_rule": {
+   "icc": 0.2692558188236101,
+   "reliability": 0.7438509846002226,
+   "n_players": 407,
+   "n_single": 0,
+   "n_repeated": 407,
+   "n_dropped": 0,
+   "threshold": 0.5,
+   "passes": true,
+   "n_rows": 3407,
+   "n_drills_mean": 8.371007371007371
+  },
+  "diagnostics": {
+   "by_position": {
+    "WR": {
+     "icc": 0.2738359118087019,
+     "reliability": 0.8214260217404596,
+     "n_players": 91,
+     "n_single": 0,
+     "n_repeated": 91,
+     "n_dropped": 0
+    },
+    "TE": {
+     "icc": 0.13237879742684117,
+     "reliability": 0.5546043022530626,
+     "n_players": 34,
+     "n_single": 0,
+     "n_repeated": 34,
+     "n_dropped": 0
+    },
+    "DB": {
+     "icc": 0.26887357080978536,
+     "reliability": 0.7378510342769019,
+     "n_players": 100,
+     "n_single": 0,
+     "n_repeated": 100,
+     "n_dropped": 0
+    },
+    "DL": {
+     "icc": 0.2875923848594445,
+     "reliability": 0.734863552087085,
+     "n_players": 88,
+     "n_single": 0,
+     "n_repeated": 88,
+     "n_dropped": 0
+    },
+    "OL": {
+     "icc": 0.31990676312861216,
+     "reliability": 0.749609701165241,
+     "n_players": 94,
+     "n_single": 0,
+     "n_repeated": 94,
+     "n_dropped": 0
+    }
+   },
+   "variant_no_division": {
+    "icc": 0.20845158283325838,
+    "reliability": 0.6759699838510453,
+    "n_players": 407,
+    "n_single": 0,
+    "n_repeated": 407,
+    "n_dropped": 0
+   },
+   "beyond_40_peak": {
+    "icc": 0.1819764805210977,
+    "reliability": 0.6386300956559282,
+    "n_players": 407,
+    "n_single": 0,
+    "n_repeated": 407,
+    "n_dropped": 0
+   },
+   "beyond_B2": {
+    "icc": 0.1944946188560573,
+    "reliability": 0.6570040366686143,
+    "n_players": 407,
+    "n_single": 0,
+    "n_repeated": 407,
+    "n_dropped": 0
+   },
+   "beyond_B2_no_division": {
+    "icc": 0.1593246454220248,
+    "reliability": 0.6015707911572138,
+    "n_players": 407,
+    "n_single": 0,
+    "n_repeated": 407,
+    "n_dropped": 0
+   },
+   "feature_r2_on_B2_in_sample": 0.23538565189117922,
+   "r_feature_c40_smax_within_position": -0.4492636988330305,
+   "r_feature_variant_no_division_within_position": 0.42152419992031115,
+   "r_variant_no_division_c40_smax_within_position": 0.3846347173465026,
+   "feature_year_x_position_share": -0.03787036544613235
+  },
+  "qc": {
+   "n_attempts": 5054,
+   "n_players_any_drill": 506,
+   "n_qc_fail": 5,
+   "qc_fail_attempts": [
+    {
+     "nfl_id": 55877,
+     "drill": "DL:FRONT_START_WAVE_DRILL_AND_LATERAL_REACTION",
+     "session": "DL:FRONT_START_WAVE_DRILL_AND_LATERAL_REACTION_2023_1",
+     "attempt": 1,
+     "path": 13.769191732863003,
+     "path_rel": 0.3230445251133729,
+     "smax": 6.061815446235831
+    },
+    {
+     "nfl_id": 55924,
+     "drill": "OL:OL_PULL_DRILL_FOLD_BLOCK_RIGHT",
+     "session": "OL:OL_PULL_DRILL_FOLD_BLOCK_RIGHT_2023_1",
+     "attempt": 1,
+     "path": 51.93839214764925,
+     "path_rel": 3.6757665640277395,
+     "smax": 6.9176603605740405
+    },
+    {
+     "nfl_id": 56572,
+     "drill": "OL:OL_PULL_DRILL_FOLD_BLOCK_RIGHT",
+     "session": "OL:OL_PULL_DRILL_FOLD_BLOCK_RIGHT_2023_1",
+     "attempt": 1,
+     "path": 40.38167895714202,
+     "path_rel": 2.8578787130722403,
+     "smax": 7.557189366729082
+    },
+    {
+     "nfl_id": 57141,
+     "drill": "OL:PASS_RUSH_DROP",
+     "session": "OL:PASS_RUSH_DROP_2024_0",
+     "attempt": 1,
+     "path": 35.21803593561317,
+     "path_rel": 3.125023410022005,
+     "smax": 7.336820829874651
+    },
+    {
+     "nfl_id": 58275,
+     "drill": "WR:SLOT_SAIL_ROUTE_RIGHT",
+     "session": "WR:SLOT_SAIL_ROUTE_RIGHT_2025_1",
+     "attempt": 9,
+     "path": 6.308669964233716,
+     "path_rel": 0.14115818171157352,
+     "smax": 4.201782525972915
+    }
+   ],
+   "n_players_without_tracked_40": 99,
+   "n_attempts_used": 4075,
+   "n_attempts_dropped_alone_in_session": 2,
+   "share_peak_at_last_interior_frame": 0.41452314998021367,
+   "peak_at_end_by_drill": {
+    "DB:BACK_PEDAL_AND_90_DEGREE_BREAK_TO_BALL": 0.3064516129032258,
+    "DB:BACK_PEDAL_AND_TRANSITION_45_DEGREE_REACTION": 0.35684647302904565,
+    "DB:BOX_DRILL": 0.936,
+    "DB:GAUNTLET_DRILL": 0.06504065040650407,
+    "DB:LINE_DRILL": 0.45161290322580644,
+    "DB:TERYL_AUSTIN_DRILL_1": 0.5436893203883495,
+    "DB:TERYL_AUSTIN_DRILL_2": 0.02654867256637168,
+    "DB:W_DRILL": 0.6774193548387096,
+    "DL:BACK_PEDAL_AND_REACT": 0.7241379310344828,
+    "DL:BODY_CONTROL_DRILL": 0.672566371681416,
+    "DL:FOUR_BAG_AGILITY_DRILL": 0.15178571428571427,
+    "DL:FRONT_START_WAVE_DRILL_AND_LATERAL_REACTION": 0.5803571428571429,
+    "DL:PASS_RUSH_DRILL": 0.1336405529953917,
+    "DL:RUN_AND_CLUB_DRILL": 0.6991150442477876,
+    "DL:RUN_THE_HOOP_DRILL": 0.9663865546218487,
+    "DL:SHORT_ZONE_BREAKS": 0.24761904761904763,
+    "DL:SHORT_ZONE_BREAK_FLAT_WHEEL": 0.05,
+    "DL:SHORT_ZONE_BREAK_FORWARD": 0.4,
+    "DL:SHORT_ZONE_BREAK_INSIDE": 0.2777777777777778,
+    "OL:FIVE_YARD_WAVE_DRILL_SLIDE_AND_SHUFFLE": 0.6666666666666666,
+    "OL:OL_PULL_DRILL_DEEP_SHORT_PULL_LEFT": 0.8979591836734694,
+    "OL:OL_PULL_DRILL_FOLD_BLOCK_RIGHT": 0.9411764705882353,
+    "OL:OL_PULL_DRILL_LONG_PULL_RIGHT": 0.967741935483871,
+    "OL:PASS_PRO_MIRROR_DRILL": 0.9834710743801653,
+    "OL:PASS_RUSH_DROP": 0.9790794979079498,
+    "OL:SCREEN_DRILL": 0.4166666666666667,
+    "TE:BLOCK_EXPLOSION": 0.0,
+    "TE:CORNER_ROUTE": 0.0,
+    "TE:END_ZONE_FADE_RIGHT": 0.02857142857142857,
+    "TE:FLAT_ROUTE_LEFT": 0.9285714285714286,
+    "TE:GAUNTLET_DRILL": 0.1111111111111111,
+    "TE:HOOK_ROUTE_RIGHT": 0.5777777777777777,
+    "TE:IN_ROUTE_LEFT": 0.5348837209302325,
+    "TE:OVER_SHOULDER_ADJUST": 0.021739130434782608,
+    "TE:WHEEL_ROUTE_LEFT": 0.0,
+    "WR:CIRCUS_ROUTE_LEFT": 0.023255813953488372,
+    "WR:COMEBACK_ROUTE_RIGHT": 0.00909090909090909,
+    "WR:CURL_ROUTE_RIGHT": 0.17272727272727273,
+    "WR:DAGGER_ROUTE_LEFT": 0.1565217391304348,
+    "WR:GAUNTLET_DRILL": 0.07,
+    "WR:GO_ROUTE_RIGHT": 0.0,
+    "WR:OVER_SHOULDER_ADJUST": 0.039603960396039604,
+    "WR:POST_CORNER_ROUTE_LEFT": 0.0375,
+    "WR:POST_CORNER_ROUTE_RIGHT": 0.009009009009009009,
+    "WR:RED_ZONE_FADE_RIGHT": 0.017857142857142856,
+    "WR:SLANT_ROUTE_LEFT": 0.8909090909090909,
+    "WR:SLOT_SAIL_ROUTE_RIGHT": 0.16981132075471697,
+    "WR:SLOT_STRIKE_ROUTE_LEFT": 0.803921568627451,
+    "WR:SPEED_OUT_ROUTE_LEFT": 0.07258064516129033
+   },
+   "ratio_summary": {
+    "min": 0.08720085794300389,
+    "median": 0.7419188351114596,
+    "max": 0.9931639819858392
+   },
+   "sg_vs_device_peak_r": 0.9918634594174521,
+   "sessions": {
+    "n": 236,
+    "players_per_session_median": 14.0,
+    "players_per_session_min": 1
+   },
+   "population": {
+    "n": 407,
+    "by_position": {
+     "DB": 100,
+     "DL": 88,
+     "OL": 94,
+     "TE": 34,
+     "WR": 91
+    },
+    "by_year": {
+     "2023": 132,
+     "2024": 142,
+     "2025": 133
+    },
+    "n_drills_median": 8.0,
+    "n_drills_by_position": {
+     "DB": 8.0,
+     "DL": 6.0,
+     "OL": 7.0,
+     "TE": 9.0,
+     "WR": 13.0
+    }
+   }
+  }
+ },
+ "game": {
+  "targets": {
+   "p1_n": 277,
+   "p1_by_position": {
+    "DB": 67,
+    "DL": 67,
+    "OL": 62,
+    "TE": 20,
+    "WR": 61
+   },
+   "p1_summary": {
+    "min": 0.489247311827957,
+    "median": 0.6683291770573567,
+    "max": 0.8644470868014268,
+    "sd": 0.08365509056038437
+   },
+   "p2_n": 407,
+   "p2_zero_share": 0.1941031941031941,
+   "p2_summary": {
+    "median": 151.33333333333334,
+    "mean": 275.57002457002454,
+    "max": 1101.0
+   }
+  },
+  "target_reliability": {
+   "p1": {
+    "WR": {
+     "r_half": 0.4951747945341119,
+     "reliability": 0.6623637535147262,
+     "n_players": 60
+    },
+    "TE": {
+     "r_half": 0.5201103792469116,
+     "reliability": 0.6843060692797626,
+     "n_players": 19
+    },
+    "DB": {
+     "r_half": 0.6358347687615181,
+     "reliability": 0.7773826316736199,
+     "n_players": 62
+    },
+    "DL": {
+     "r_half": 0.5709783553361655,
+     "reliability": 0.7269079849467242,
+     "n_players": 64
+    },
+    "OL": {
+     "r_half": 0.6387862396633044,
+     "reliability": 0.7795845781504069,
+     "n_players": 57
+    },
+    "weighted_by_sample": 0.7336174206096818
+   },
+   "p1_share80": {
+    "WR": {
+     "r_half": 0.38630284170032747,
+     "reliability": 0.5573137846655779,
+     "n_players": 60
+    },
+    "TE": {
+     "r_half": 0.3805801187298221,
+     "reliability": 0.5513336221007847,
+     "n_players": 19
+    },
+    "DB": {
+     "r_half": 0.3570455593736067,
+     "reliability": 0.5262101289191999,
+     "n_players": 62
+    },
+    "DL": {
+     "r_half": 0.43070002558195475,
+     "reliability": 0.6020829214800109,
+     "n_players": 64
+    },
+    "OL": {
+     "r_half": 0.5722728177484976,
+     "reliability": 0.7279561298630031,
+     "n_players": 57
+    },
+    "weighted_by_sample": 0.5983816885735352
+   },
+   "p1_team_share": {
+    "n_plays_with_team": 194692,
+    "n_plays_total": 196379,
+    "WR": {
+     "team_share": -0.09739669675374094,
+     "se": 0.20160512562151353,
+     "reliability": 0.6813297687589709,
+     "n_player_teams": 112,
+     "n_teams": 70,
+     "n_shared": 30
+    },
+    "TE": {
+     "team_share": 0.4061829643094982,
+     "se": 0.5592538933863205,
+     "reliability": 0.7112306652468996,
+     "n_player_teams": 40,
+     "n_teams": 35,
+     "n_shared": 5
+    },
+    "DB": {
+     "team_share": -0.16976865960560994,
+     "se": 0.19656009121140322,
+     "reliability": 0.7125442885710837,
+     "n_player_teams": 117,
+     "n_teams": 71,
+     "n_shared": 33
+    },
+    "DL": {
+     "team_share": -0.03411386709370573,
+     "se": 0.1816488865478699,
+     "reliability": 0.6511082615572324,
+     "n_player_teams": 117,
+     "n_teams": 67,
+     "n_shared": 34
+    },
+    "OL": {
+     "team_share": 0.1586079196528061,
+     "se": 0.16145484982782662,
+     "reliability": 0.775525744648445,
+     "n_player_teams": 100,
+     "n_teams": 65,
+     "n_shared": 26
+    },
+    "pooled_position_centered": {
+     "team_share": -0.025562717503485172,
+     "se": 0.04043980981567706,
+     "reliability": 0.7020823759010528,
+     "n_player_teams": 485,
+     "n_teams": 95,
+     "n_shared": 90
+    }
+   },
+   "p1_exposure": {
+    "r_target_log_plays_within_position": 0.007947854666758583,
+    "r_share80_log_plays_within_position": -0.13675836689106294,
+    "median_plays": 476.0
+   },
+   "p2_stability": {
+    "season_to_season": [
+     {
+      "seasons": "1->2",
+      "n": 274,
+      "r": 0.7258207288812462
+     },
+     {
+      "seasons": "2->3",
+      "n": 132,
+      "r": 0.7733197711777233
+     }
+    ],
+    "note": "snaps are a recorded count; this is stability, not measurement reliability"
+   }
+  },
+  "X2_honors_descriptive": {
+   "label": "prelisted exploratory (descriptive only, no test)",
+   "n_honored": 8,
+   "n_total": 407,
+   "honored": [
+    {
+     "display_name": "Quinyon Mitchell",
+     "position": "DB",
+     "draft_year": 2024,
+     "g_honors": 2.0,
+     "fc": -0.7662101553729542
+    },
+    {
+     "display_name": "Darnell Wright",
+     "position": "OL",
+     "draft_year": 2023,
+     "g_honors": 1.0,
+     "fc": -0.6905997501735265
+    },
+    {
+     "display_name": "Byron Young",
+     "position": "DL",
+     "draft_year": 2023,
+     "g_honors": 1.0,
+     "fc": -0.6071446367340032
+    },
+    {
+     "display_name": "Chimere Dike",
+     "position": "WR",
+     "draft_year": 2025,
+     "g_honors": 2.0,
+     "fc": -0.3037451840953297
+    },
+    {
+     "display_name": "Joe Alt",
+     "position": "OL",
+     "draft_year": 2024,
+     "g_honors": 1.0,
+     "fc": -0.07336857382229083
+    },
+    {
+     "display_name": "Marvin Mims",
+     "position": "WR",
+     "draft_year": 2023,
+     "g_honors": 3.0,
+     "fc": -0.07162642053939287
+    },
+    {
+     "display_name": "Jared Verse",
+     "position": "DL",
+     "draft_year": 2024,
+     "g_honors": 2.0,
+     "fc": 0.21054459125952868
+    },
+    {
+     "display_name": "Brian Branch",
+     "position": "DB",
+     "draft_year": 2023,
+     "g_honors": 1.0,
+     "fc": 0.3694578779717891
+    }
+   ],
+   "mean_feature_within_position_honored": -0.24158653143827247,
+   "mean_feature_within_position_rest": 0.004843840229338796
+  },
+  "post_hoc_nested_baselines": {
+   "label": "post hoc, descriptive (no test)",
+   "P1": {
+    "raw_r": 0.03825010915145183,
+    "B0_position_year": 0.010377532474057684,
+    "B1_plus_combine": -0.00030779715788850013,
+    "B2_plus_draft": -0.002973440365836526
+   },
+   "P2": {
+    "raw_r": -0.13035394046856824,
+    "B0_position_year": -0.13230042348940452,
+    "B1_plus_combine": -0.04347676975671094,
+    "B2_plus_draft": -0.04190330269418627
+   }
+  },
+  "tests": [
+   {
+    "id": "P1",
+    "label": "primary",
+    "family": "primary",
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 277,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 252,
+    "raw_r": 0.038250109151451835,
+    "partial_r": -0.0029734403658365524,
+    "partial_r_ci95": [
+     -0.1260141079963825,
+     0.12015732384812096
+    ],
+    "partial_r_mde80_one_sided": 0.15557802795442996,
+    "fl_p": 0.5212478752124787,
+    "by_class": {
+     "2023": {
+      "n": 100,
+      "partial_r": -0.07097039018441087
+     },
+     "2024": {
+      "n": 99,
+      "partial_r": 0.09694884364835693
+     },
+     "2025": {
+      "n": 78,
+      "partial_r": -0.050028642278431235
+     }
+    },
+    "cv_r2": {
+     "B0": 0.8159332604986403,
+     "B1": 0.8317035797998916,
+     "B2": 0.8333417473677888,
+     "full": 0.8321090841629565,
+     "B0+feature": 0.8146102303766272
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0012326632048323468,
+     "se": 0.0010776049693217624,
+     "null_mean": -0.0006683481277330827,
+     "excess": -0.0005643150770992641,
+     "excess_within_position": -0.003187889355770696
+    },
+    "cv_perm_p": 0.7231384307846077,
+    "loco": {
+     "2023": {
+      "delta": -0.0004542364152276823,
+      "excess": 0.0007400595572438365,
+      "null_sd": 0.003103224153996353
+     },
+     "2024": {
+      "delta": -0.0002995541275705449,
+      "excess": 0.000659275058415506,
+      "null_sd": 0.0031577013340936574
+     },
+     "2025": {
+      "delta": 0.001518896912488965,
+      "excess": 0.0013550474528974802,
+      "null_sd": 0.0036427802676295986
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    },
+    "seeds": {
+     "0": {
+      "fl_p": 0.5212478752124787,
+      "excess": -0.0005643150770992641,
+      "se": 0.0010776049693217624,
+      "cv_perm_p": 0.7231384307846077,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "1": {
+      "fl_p": 0.5206479352064793,
+      "excess": -0.0010789564373108248,
+      "se": 0.0012183011664807408,
+      "cv_perm_p": 0.7611194402798601,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "2": {
+      "fl_p": 0.5226477352264773,
+      "excess": -0.0006405585949685068,
+      "se": 0.000935161596649296,
+      "cv_perm_p": 0.47876061969015493,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     }
+    },
+    "bh_q_primaries": 0.7922207779222078
+   },
+   {
+    "id": "P2",
+    "label": "primary",
+    "family": "primary",
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": -0.1303539404685683,
+    "partial_r": -0.04190330269418628,
+    "partial_r_ci95": [
+     -0.1413880880698748,
+     0.05841939263810066
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.7922207779222078,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": -0.0160872136776299
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.09030412024480347
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": -0.01335517041591423
+     }
+    },
+    "cv_r2": {
+     "B0": -0.011142388674865993,
+     "B1": 0.01623480965104256,
+     "B2": 0.475443435571246,
+     "full": 0.47380702350605275,
+     "B0+feature": 0.0025716542143849556
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0016364120651932755,
+     "se": 0.002786103876408279,
+     "null_mean": -0.0015064636994143203,
+     "excess": -0.00012994836577895526,
+     "excess_within_position": -0.00013419427168769626
+    },
+    "cv_perm_p": 0.2703648175912044,
+    "loco": {
+     "2023": {
+      "delta": 0.0005256363818458842,
+      "excess": 0.0026100779931168753,
+      "null_sd": 0.005956107171627457
+     },
+     "2024": {
+      "delta": 0.0014541144912887383,
+      "excess": 0.002936427228711253,
+      "null_sd": 0.004753926731748173
+     },
+     "2025": {
+      "delta": -0.0010415292732524062,
+      "excess": 0.0006549122803846338,
+      "null_sd": 0.004910048600103256
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    },
+    "seeds": {
+     "0": {
+      "fl_p": 0.7922207779222078,
+      "excess": -0.00012994836577895526,
+      "se": 0.002786103876408279,
+      "cv_perm_p": 0.2703648175912044,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "1": {
+      "fl_p": 0.7991200879912009,
+      "excess": 0.0001269944795227382,
+      "se": 0.0027015623128788524,
+      "cv_perm_p": 0.3773113443278361,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "2": {
+      "fl_p": 0.7966203379662034,
+      "excess": -0.00017024194542301354,
+      "se": 0.003000163551293004,
+      "cv_perm_p": 0.7151424287856072,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     }
+    },
+    "bh_q_primaries": 0.7922207779222078
+   },
+   {
+    "id": "P1_without_2025",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 199,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 175,
+    "raw_r": 0.032791277321137985,
+    "partial_r": 0.01862711165203429,
+    "partial_r_ci95": [
+     -0.12923123618973045,
+     0.1656751863990312
+    ],
+    "partial_r_mde80_one_sided": 0.1861899430910658,
+    "fl_p": 0.4022597740225977,
+    "by_class": {
+     "2023": {
+      "n": 100,
+      "partial_r": -0.08696515499567793
+     },
+     "2024": {
+      "n": 99,
+      "partial_r": 0.12040613334383508
+     }
+    },
+    "cv_r2": {
+     "B0": 0.8320628064626492,
+     "B1": 0.8422517721991737,
+     "B2": 0.8398431354149497,
+     "full": 0.837732376172828,
+     "B0+feature": 0.8301667904490957
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0021107592421217075,
+     "se": 0.0018003369640046676,
+     "null_mean": -0.000894469285951438,
+     "excess": -0.0012162899561702694,
+     "excess_within_position": -0.007730641772725476
+    },
+    "cv_perm_p": 0.5997001499250375,
+    "loco": {
+     "2023": {
+      "delta": -0.00729600778161088,
+      "excess": -0.005583698419953342,
+      "null_sd": 0.004942980354964064
+     },
+     "2024": {
+      "delta": -0.0010604156159780276,
+      "excess": 0.001235174291152915,
+      "null_sd": 0.005777952279793506
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": true,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/2",
+     "loco_excess_positive_classes": "1/2"
+    }
+   },
+   {
+    "id": "P2_without_2025",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 274,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 250,
+    "raw_r": -0.116541822254581,
+    "partial_r": -0.05418365425274895,
+    "partial_r_ci95": [
+     -0.1765764381565738,
+     0.06985920114605565
+    ],
+    "partial_r_mde80_one_sided": 0.15619141837861045,
+    "fl_p": 0.801019898010199,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": -0.024271915195659483
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.08078215076766168
+     }
+    },
+    "cv_r2": {
+     "B0": -0.011606614785608224,
+     "B1": 0.004962008914817639,
+     "B2": 0.43356383444100577,
+     "full": 0.4321679383686967,
+     "B0+feature": -0.014926720632172963
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0013958960723091146,
+     "se": 0.004450083528651587,
+     "null_mean": -0.0032911142570240673,
+     "excess": 0.0018952181847149527,
+     "excess_within_position": 0.0019204311603013742
+    },
+    "cv_perm_p": 0.2898550724637681,
+    "loco": {
+     "2023": {
+      "delta": 0.0020688396915700125,
+      "excess": 0.00535910899406802,
+      "null_sd": 0.008644176281379312
+     },
+     "2024": {
+      "delta": 0.0026624448456726846,
+      "excess": 0.004895101233321,
+      "null_sd": 0.007932262058788971
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/2",
+     "loco_excess_positive_classes": "2/2"
+    }
+   },
+   {
+    "id": "P1_WR",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 61,
+    "positions": [
+     "WR"
+    ],
+    "resid_df": 40,
+    "raw_r": 0.04938488821137202,
+    "partial_r": 0.0957634310444245,
+    "partial_r_ci95": [
+     -0.21441389743212397,
+     0.38839538578744404
+    ],
+    "partial_r_mde80_one_sided": 0.37816651065603385,
+    "fl_p": 0.2736726327367263,
+    "by_class": {
+     "2023": {
+      "n": 25,
+      "partial_r": -0.00522908093125879
+     },
+     "2024": {
+      "n": 20,
+      "partial_r": 0.209850600800398
+     },
+     "2025": {
+      "n": 16,
+      "partial_r": 0.0999509979260612
+     }
+    },
+    "cv_r2": {
+     "B0": -0.053806536655504104,
+     "B1": -0.13719329695156032,
+     "B2": -0.1288299441373257,
+     "full": -0.13409482227165825,
+     "B0+feature": -0.05017950447873815
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.005264878134332566,
+     "se": 0.0796540919331497,
+     "null_mean": -0.012785649633442801,
+     "excess": 0.007520771499110236,
+     "excess_within_position": 0.007520771499110236
+    },
+    "cv_perm_p": 0.39030484757621187,
+    "loco": {
+     "2023": {
+      "delta": 0.06114729296202559,
+      "excess": 0.053751187286689206,
+      "null_sd": 0.05618683024597082
+     },
+     "2024": {
+      "delta": 0.08053950571851343,
+      "excess": 0.04980311166994808,
+      "null_sd": 0.06883695546126233
+     },
+     "2025": {
+      "delta": -3.895356158045704e-05,
+      "excess": 9.634368689521425e-05,
+      "null_sd": 0.00024645916935835273
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": true,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "P1_TE",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 20,
+    "positions": [
+     "TE"
+    ],
+    "resid_df": -1,
+    "raw_r": 0.04005302201722847,
+    "partial_r": null,
+    "partial_r_ci95": [
+     null,
+     null
+    ],
+    "partial_r_mde80_one_sided": null,
+    "fl_p": null,
+    "by_class": {
+     "2023": {
+      "n": 8,
+      "partial_r": null
+     },
+     "2024": {
+      "n": 7,
+      "partial_r": null
+     },
+     "2025": {
+      "n": 5,
+      "partial_r": null
+     }
+    },
+    "cv_r2": {
+     "B0": -0.13536634029890904,
+     "B1": 0.2509660742271085,
+     "B2": 0.16029361762064168,
+     "full": 0.2267704689658777,
+     "B0+feature": -0.10970735441090768
+    },
+    "delta_r2_vs_B2": {
+     "mean": 0.06647685134523601,
+     "se": 0.30656804416298955,
+     "null_mean": 0.15312573265397403,
+     "excess": -0.08664888130873802,
+     "excess_within_position": -0.086648881308738
+    },
+    "cv_perm_p": 0.3503248375812094,
+    "loco": {
+     "2023": {
+      "delta": -0.007528417785532593,
+      "excess": 4.614364446098307e-16,
+      "null_sd": 4.270848763058342e-15
+     },
+     "2024": {
+      "delta": -0.04111167720151965,
+      "excess": 6.5503158452884236e-15,
+      "null_sd": 1.1685630457619397e-14
+     },
+     "2025": {
+      "delta": 0.0004924933851727653,
+      "excess": 9.603862843876598e-16,
+      "null_sd": 3.618965198287638e-15
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "P1_DB",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 67,
+    "positions": [
+     "DB"
+    ],
+    "resid_df": 46,
+    "raw_r": 0.1868083879161771,
+    "partial_r": 0.18477215661441768,
+    "partial_r_ci95": [
+     -0.10487344750991305,
+     0.44552142825402596
+    ],
+    "partial_r_mde80_one_sided": 0.3543782021719309,
+    "fl_p": 0.10948905109489052,
+    "by_class": {
+     "2023": {
+      "n": 23,
+      "partial_r": 0.0948298773208899
+     },
+     "2024": {
+      "n": 26,
+      "partial_r": 0.2928927938832374
+     },
+     "2025": {
+      "n": 18,
+      "partial_r": 0.10134869977163853
+     }
+    },
+    "cv_r2": {
+     "B0": -0.024187740099764234,
+     "B1": -0.06764857879101215,
+     "B2": -0.07025959688442121,
+     "full": -0.06808038132460777,
+     "B0+feature": -0.0077797193905585135
+    },
+    "delta_r2_vs_B2": {
+     "mean": 0.0021792155598134378,
+     "se": 0.062189065325428984,
+     "null_mean": 0.014661603478400394,
+     "excess": -0.012482387918586958,
+     "excess_within_position": -0.012482387918586958
+    },
+    "cv_perm_p": 0.10794602698650675,
+    "loco": {
+     "2023": {
+      "delta": -0.020713582967786914,
+      "excess": 0.004184837275212093,
+      "null_sd": 0.2057710539571249
+     },
+     "2024": {
+      "delta": 0.00025063085837895294,
+      "excess": -0.01025039451900055,
+      "null_sd": 0.03807723895699504
+     },
+     "2025": {
+      "delta": 0.0460356198677776,
+      "excess": 0.034340850612122865,
+      "null_sd": 0.07925093561169635
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": true,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "2/3"
+    }
+   },
+   {
+    "id": "P1_DL",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 67,
+    "positions": [
+     "DL"
+    ],
+    "resid_df": 46,
+    "raw_r": -0.12888070126370368,
+    "partial_r": -0.11608391022613578,
+    "partial_r_ci95": [
+     -0.3874440730531317,
+     0.17378795200118122
+    ],
+    "partial_r_mde80_one_sided": 0.3543782021719309,
+    "fl_p": 0.783021697830217,
+    "by_class": {
+     "2023": {
+      "n": 24,
+      "partial_r": 0.02776383809729013
+     },
+     "2024": {
+      "n": 23,
+      "partial_r": 0.018185466346489668
+     },
+     "2025": {
+      "n": 20,
+      "partial_r": -0.33428523584973197
+     }
+    },
+    "cv_r2": {
+     "B0": -0.04391865694275082,
+     "B1": 0.29900594904313776,
+     "B2": 0.2904686927147951,
+     "full": 0.2811280774499178,
+     "B0+feature": -0.04864979935904098
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.009340615264877275,
+     "se": 0.017263535230318004,
+     "null_mean": -0.005726691441072128,
+     "excess": -0.0036139238238051463,
+     "excess_within_position": -0.0036139238238051463
+    },
+    "cv_perm_p": 0.7396301849075462,
+    "loco": {
+     "2023": {
+      "delta": 0.01035019918678648,
+      "excess": 0.02352812931136699,
+      "null_sd": 0.05071112382073063
+     },
+     "2024": {
+      "delta": -0.020716149158230168,
+      "excess": -0.01741140382487321,
+      "null_sd": 0.03818391605578692
+     },
+     "2025": {
+      "delta": -0.037283347577750536,
+      "excess": -0.03649362394143109,
+      "null_sd": 0.022078437406168945
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "1/3"
+    }
+   },
+   {
+    "id": "P1_OL",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 62,
+    "positions": [
+     "OL"
+    ],
+    "resid_df": 41,
+    "raw_r": -0.007804990367251361,
+    "partial_r": -0.18579658967868778,
+    "partial_r_ci95": [
+     -0.460450718839579,
+     0.12132272445200028
+    ],
+    "partial_r_mde80_one_sided": 0.3738687792518656,
+    "fl_p": 0.8769123087691231,
+    "by_class": {
+     "2023": {
+      "n": 20,
+      "partial_r": -0.22710562113580218
+     },
+     "2024": {
+      "n": 23,
+      "partial_r": -0.22172915112419853
+     },
+     "2025": {
+      "n": 19,
+      "partial_r": -0.09121297054157056
+     }
+    },
+    "cv_r2": {
+     "B0": -0.06430803600720078,
+     "B1": 0.06539499520861948,
+     "B2": 0.09682617477280123,
+     "full": 0.08214236885067899,
+     "B0+feature": -0.06859467065767327
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.014683805922122218,
+     "se": 0.049461487629470724,
+     "null_mean": 0.002732495592245125,
+     "excess": -0.017416301514367342,
+     "excess_within_position": -0.01741630151436734
+    },
+    "cv_perm_p": 0.42978510744627685,
+    "loco": {
+     "2023": {
+      "delta": 0.06910785746020398,
+      "excess": 0.025039731066297033,
+      "null_sd": 0.09236193721644835
+     },
+     "2024": {
+      "delta": -0.0013546664256776086,
+      "excess": -0.0012781821720390296,
+      "null_sd": 0.009364581574093573
+     },
+     "2025": {
+      "delta": -0.019436685499014894,
+      "excess": -0.018383808784336677,
+      "null_sd": 0.016082060796635666
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "1/3"
+    }
+   },
+   {
+    "id": "P2_WR",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 91,
+    "positions": [
+     "WR"
+    ],
+    "resid_df": 70,
+    "raw_r": -0.041825970320841774,
+    "partial_r": 0.046532142345548026,
+    "partial_r_ci95": [
+     -0.18715812421646508,
+     0.27523767803463034
+    ],
+    "partial_r_mde80_one_sided": 0.2905426518567032,
+    "fl_p": 0.3534646535346465,
+    "by_class": {
+     "2023": {
+      "n": 33,
+      "partial_r": 0.10792125265100919
+     },
+     "2024": {
+      "n": 25,
+      "partial_r": 0.14986523481701788
+     },
+     "2025": {
+      "n": 33,
+      "partial_r": -0.10380541873927099
+     }
+    },
+    "cv_r2": {
+     "B0": -0.0398523725499147,
+     "B1": 0.0885477668437915,
+     "B2": 0.30890632903437176,
+     "full": 0.2990597177303452,
+     "B0+feature": -0.03582138477938499
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.009846611304026582,
+     "se": 0.011561804241076732,
+     "null_mean": -0.0035898729694605266,
+     "excess": -0.006256738334566055,
+     "excess_within_position": -0.006256738334566055
+    },
+    "cv_perm_p": 0.36681659170414793,
+    "loco": {
+     "2023": {
+      "delta": 0.003191022112175923,
+      "excess": 0.007047227154986702,
+      "null_sd": 0.013094075866029987
+     },
+     "2024": {
+      "delta": 0.0005880480320490378,
+      "excess": 0.00765489080765344,
+      "null_sd": 0.015757027210983553
+     },
+     "2025": {
+      "delta": -0.013679441812250004,
+      "excess": -0.00625052153086888,
+      "null_sd": 0.019019711698945722
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": true,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "2/3"
+    }
+   },
+   {
+    "id": "P2_TE",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 34,
+    "positions": [
+     "TE"
+    ],
+    "resid_df": 13,
+    "raw_r": 0.15589047343094925,
+    "partial_r": -0.2231981909175055,
+    "partial_r_ci95": [
+     -0.6600051342156411,
+     0.3263911888113873
+    ],
+    "partial_r_mde80_one_sided": 0.6152699391458004,
+    "fl_p": 0.7878212178782121,
+    "by_class": {
+     "2023": {
+      "n": 9,
+      "partial_r": null
+     },
+     "2024": {
+      "n": 11,
+      "partial_r": -0.6597651572098996
+     },
+     "2025": {
+      "n": 14,
+      "partial_r": 0.050551367248575084
+     }
+    },
+    "cv_r2": {
+     "B0": -0.10982160117184725,
+     "B1": -0.19133063792957342,
+     "B2": 0.17815458789939936,
+     "full": 0.10748872884572382,
+     "B0+feature": -0.1663330853107224
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.07066585905367558,
+     "se": 0.38046587692537137,
+     "null_mean": -2.7537382557891677e-05,
+     "excess": -0.07063832167111768,
+     "excess_within_position": -0.07063832167111768
+    },
+    "cv_perm_p": 0.6771614192903548,
+    "loco": {
+     "2023": {
+      "delta": -0.05179744656510976,
+      "excess": -0.027853152241172505,
+      "null_sd": 0.03665184192124681
+     },
+     "2024": {
+      "delta": -0.09093178803017432,
+      "excess": -0.04824605577707527,
+      "null_sd": 0.23742751412265553
+     },
+     "2025": {
+      "delta": 0.16681456297821295,
+      "excess": 0.4902336017581131,
+      "null_sd": 0.8678257412334637
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "1/3"
+    }
+   },
+   {
+    "id": "P2_DB",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 100,
+    "positions": [
+     "DB"
+    ],
+    "resid_df": 79,
+    "raw_r": -0.08784675897838529,
+    "partial_r": -0.14573281597993398,
+    "partial_r_ci95": [
+     -0.35285773302472034,
+     0.07500729663024909
+    ],
+    "partial_r_mde80_one_sided": 0.2741733517568105,
+    "fl_p": 0.8992100789921008,
+    "by_class": {
+     "2023": {
+      "n": 32,
+      "partial_r": -0.0028515940415159667
+     },
+     "2024": {
+      "n": 39,
+      "partial_r": -0.28062434738340497
+     },
+     "2025": {
+      "n": 29,
+      "partial_r": -0.14199148471874312
+     }
+    },
+    "cv_r2": {
+     "B0": -0.023047409162583948,
+     "B1": -0.02067452399206052,
+     "B2": 0.49804835586526774,
+     "full": 0.49088163346630825,
+     "B0+feature": -0.02485874143827769
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.007166722398959394,
+     "se": 0.013357827798133182,
+     "null_mean": -0.00639259041779203,
+     "excess": -0.0007741319811673635,
+     "excess_within_position": -0.0007741319811673635
+    },
+    "cv_perm_p": 0.872063968015992,
+    "loco": {
+     "2023": {
+      "delta": 0.007479935894919243,
+      "excess": -0.001291712703665758,
+      "null_sd": 0.038350664549306315
+     },
+     "2024": {
+      "delta": -7.913510640444876e-06,
+      "excess": 0.00891701691177892,
+      "null_sd": 0.03138538106321629
+     },
+     "2025": {
+      "delta": 0.0031806564183398667,
+      "excess": 0.010616442347164315,
+      "null_sd": 0.02756002342653884
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "2/3"
+    }
+   },
+   {
+    "id": "P2_DL",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 88,
+    "positions": [
+     "DL"
+    ],
+    "resid_df": 67,
+    "raw_r": -0.14189812208583888,
+    "partial_r": -0.1315478200969167,
+    "partial_r_ci95": [
+     -0.3571138242929621,
+     0.1085157373716544
+    ],
+    "partial_r_mde80_one_sided": 0.29668650230836335,
+    "fl_p": 0.8579142085791421,
+    "by_class": {
+     "2023": {
+      "n": 28,
+      "partial_r": -0.3188635892063193
+     },
+     "2024": {
+      "n": 31,
+      "partial_r": 0.06073957253195156
+     },
+     "2025": {
+      "n": 29,
+      "partial_r": -0.08045846305268234
+     }
+    },
+    "cv_r2": {
+     "B0": -0.03287710726102094,
+     "B1": 0.0145092568991614,
+     "B2": 0.3341542992418219,
+     "full": 0.3367975342189104,
+     "B0+feature": -0.02928253091727146
+    },
+    "delta_r2_vs_B2": {
+     "mean": 0.0026432349770885584,
+     "se": 0.01851694357945909,
+     "null_mean": -0.005737186234988716,
+     "excess": 0.008380421212077275,
+     "excess_within_position": 0.008380421212077277
+    },
+    "cv_perm_p": 0.34832583708145926,
+    "loco": {
+     "2023": {
+      "delta": -0.002107707595845665,
+      "excess": 0.005014885406142405,
+      "null_sd": 0.027093019674564917
+     },
+     "2024": {
+      "delta": -0.03203374636196121,
+      "excess": -0.0209521248850604,
+      "null_sd": 0.025672119055919238
+     },
+     "2025": {
+      "delta": -8.09748857844017e-06,
+      "excess": 0.003805794716069219,
+      "null_sd": 0.027465489723087624
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "2/3"
+    }
+   },
+   {
+    "id": "P2_OL",
+    "label": "prespecified robustness (by position, descriptive)",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 94,
+    "positions": [
+     "OL"
+    ],
+    "resid_df": 73,
+    "raw_r": -0.26473562113502935,
+    "partial_r": -0.04886031821804178,
+    "partial_r_ci95": [
+     -0.2728009293077142,
+     0.18010282552990117
+    ],
+    "partial_r_mde80_one_sided": 0.28476508080771173,
+    "fl_p": 0.6552344765523448,
+    "by_class": {
+     "2023": {
+      "n": 30,
+      "partial_r": -0.09108269670417189
+     },
+     "2024": {
+      "n": 36,
+      "partial_r": 0.0013842946789997057
+     },
+     "2025": {
+      "n": 28,
+      "partial_r": -0.07591341033906945
+     }
+    },
+    "cv_r2": {
+     "B0": -0.031069251590336577,
+     "B1": 0.03698078704818723,
+     "B2": 0.5333241654270827,
+     "full": 0.5280948959804497,
+     "B0+feature": -0.0022955798244253794
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.005229269446632909,
+     "se": 0.008216049535973043,
+     "null_mean": -0.0046745905094994775,
+     "excess": -0.0005546789371334319,
+     "excess_within_position": -0.000554678937133432
+    },
+    "cv_perm_p": 0.736631684157921,
+    "loco": {
+     "2023": {
+      "delta": -0.0007729481034554064,
+      "excess": 0.009881872553446226,
+      "null_sd": 0.019869285737929513
+     },
+     "2024": {
+      "delta": -0.00023814071158045902,
+      "excess": 0.003782314268434026,
+      "null_sd": 0.016795004031868132
+     },
+     "2025": {
+      "delta": 0.0018163664602792728,
+      "excess": 0.004320179868030974,
+      "null_sd": 0.016707096732086396
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "P1_feature_no_division",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_speed_z",
+    "target": "g_play_intensity",
+    "n": 277,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 252,
+    "raw_r": 0.029183388335643077,
+    "partial_r": -0.00677408899069179,
+    "partial_r_ci95": [
+     -0.12975268877611068,
+     0.11640976125563302
+    ],
+    "partial_r_mde80_one_sided": 0.15557802795442996,
+    "fl_p": 0.5482451754824518,
+    "by_class": {
+     "2023": {
+      "n": 100,
+      "partial_r": -0.03842122824618942
+     },
+     "2024": {
+      "n": 99,
+      "partial_r": 0.035212929386569
+     },
+     "2025": {
+      "n": 78,
+      "partial_r": -0.02319224308687328
+     }
+    },
+    "cv_r2": {
+     "B0": 0.8159332604986403,
+     "B1": 0.8317035797998916,
+     "B2": 0.8333417473677888,
+     "full": 0.8320580455750994,
+     "B0+feature": 0.814252404879273
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0012837017926893833,
+     "se": 0.0011783163828373486,
+     "null_mean": -0.0005953317016295952,
+     "excess": -0.0006883700910597881,
+     "excess_within_position": -0.003888692284105668
+    },
+    "cv_perm_p": 0.7406296851574213,
+    "loco": {
+     "2023": {
+      "delta": -2.605413598089079e-06,
+      "excess": 0.0010403192571214115,
+      "null_sd": 0.0028917682117618067
+     },
+     "2024": {
+      "delta": 0.0002341934199168172,
+      "excess": 0.0010761821356532419,
+      "null_sd": 0.003236944701516632
+     },
+     "2025": {
+      "delta": 0.0012065103363464447,
+      "excess": 0.0009451038060687063,
+      "null_sd": 0.003318578104093132
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "P1_feature_median",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity_median",
+    "target": "g_play_intensity",
+    "n": 277,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 252,
+    "raw_r": -0.004917804560371477,
+    "partial_r": -0.020528880802325306,
+    "partial_r_ci95": [
+     -0.143253690196393,
+     0.10281771017084351
+    ],
+    "partial_r_mde80_one_sided": 0.15557802795442996,
+    "fl_p": 0.6255374462553744,
+    "by_class": {
+     "2023": {
+      "n": 100,
+      "partial_r": -0.09309877184307117
+     },
+     "2024": {
+      "n": 99,
+      "partial_r": 0.12847960132551675
+     },
+     "2025": {
+      "n": 78,
+      "partial_r": -0.1255189265114751
+     }
+    },
+    "cv_r2": {
+     "B0": 0.8159332604986403,
+     "B1": 0.8317035797998916,
+     "B2": 0.8333417473677888,
+     "full": 0.8321504187425496,
+     "B0+feature": 0.8145078853221105
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.001191328625239298,
+     "se": 0.0010931323982326456,
+     "null_mean": -0.0006524278445406191,
+     "excess": -0.0005389007806986789,
+     "excess_within_position": -0.0030443206859483663
+    },
+    "cv_perm_p": 0.6741629185407296,
+    "loco": {
+     "2023": {
+      "delta": -0.0005413186834376527,
+      "excess": 0.000657620573981823,
+      "null_sd": 0.00277613946365875
+     },
+     "2024": {
+      "delta": -0.0023230797022707472,
+      "excess": -0.0010992097013358094,
+      "null_sd": 0.0033311634897793007
+     },
+     "2025": {
+      "delta": 0.0007302912241587967,
+      "excess": 0.0007515821872102498,
+      "null_sd": 0.0035809212021103414
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "2/3"
+    }
+   },
+   {
+    "id": "P2_feature_no_division",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_speed_z",
+    "target": "g_snaps_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": 0.08388687908584595,
+    "partial_r": -0.02385863121316962,
+    "partial_r_ci95": [
+     -0.12364111974734007,
+     0.07640150251913226
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.6841315868413159,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": 0.04852060499677147
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.10901002446181794
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": 0.003755312842737958
+     }
+    },
+    "cv_r2": {
+     "B0": -0.011142388674865993,
+     "B1": 0.01623480965104256,
+     "B2": 0.475443435571246,
+     "full": 0.4726784525726446,
+     "B0+feature": -0.008324601271336243
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.002764982998601442,
+     "se": 0.002516330187633922,
+     "null_mean": -0.0014204245299094143,
+     "excess": -0.0013445584686920277,
+     "excess_within_position": -0.0013884902927872851
+    },
+    "cv_perm_p": 0.4707646176911544,
+    "loco": {
+     "2023": {
+      "delta": -0.003284907181129171,
+      "excess": -0.001342706474283732,
+      "null_sd": 0.005420898794841321
+     },
+     "2024": {
+      "delta": -0.0035300229246367776,
+      "excess": -0.0021069274806432897,
+      "null_sd": 0.004476334798633461
+     },
+     "2025": {
+      "delta": 0.0003474333063324675,
+      "excess": 0.0018707028973474918,
+      "null_sd": 0.004785518611141477
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "1/3"
+    }
+   },
+   {
+    "id": "P2_feature_median",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity_median",
+    "target": "g_snaps_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": -0.1224894652150214,
+    "partial_r": -0.05010869510966725,
+    "partial_r_ci95": [
+     -0.14943701240658058,
+     0.050220859171214015
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.8371162883711629,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": -0.04063644943408549
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.0933662148092306
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": -0.009408959238415008
+     }
+    },
+    "cv_r2": {
+     "B0": -0.011142388674865993,
+     "B1": 0.01623480965104256,
+     "B2": 0.475443435571246,
+     "full": 0.47430806307973683,
+     "B0+feature": -0.00038129500532977143
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0011353724915092647,
+     "se": 0.003002022998053153,
+     "null_mean": -0.0015333432623143557,
+     "excess": 0.0003979707708050911,
+     "excess_within_position": 0.00041097398509823456
+    },
+    "cv_perm_p": 0.15092453773113443,
+    "loco": {
+     "2023": {
+      "delta": 0.001960176033779182,
+      "excess": 0.00388261499156647,
+      "null_sd": 0.005781675685278149
+     },
+     "2024": {
+      "delta": 0.002277050226406341,
+      "excess": 0.003797523304811688,
+      "null_sd": 0.004792816616693301
+     },
+     "2025": {
+      "delta": -0.0030762338231841158,
+      "excess": -0.0010592944453903454,
+      "null_sd": 0.005167751534984737
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "2/3"
+    }
+   },
+   {
+    "id": "P1_target_share80",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_share80",
+    "n": 277,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 252,
+    "raw_r": 0.0411231967524281,
+    "partial_r": -0.03757887625316202,
+    "partial_r_ci95": [
+     -0.15992593243194947,
+     0.0859052630646938
+    ],
+    "partial_r_mde80_one_sided": 0.15557802795442996,
+    "fl_p": 0.732026797320268,
+    "by_class": {
+     "2023": {
+      "n": 100,
+      "partial_r": -0.06969794527345408
+     },
+     "2024": {
+      "n": 99,
+      "partial_r": 0.017219241466105765
+     },
+     "2025": {
+      "n": 78,
+      "partial_r": -0.06316399224122024
+     }
+    },
+    "cv_r2": {
+     "B0": 0.8779984175182051,
+     "B1": 0.8767898507915106,
+     "B2": 0.8747686220503043,
+     "full": 0.8741446793397137,
+     "B0+feature": 0.8772441634766794
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0006239427105904443,
+     "se": 0.0007734255557269809,
+     "null_mean": -0.0005759662066362415,
+     "excess": -4.7976503954202834e-05,
+     "excess_within_position": -0.00039955201397037646
+    },
+    "cv_perm_p": 0.5062468765617192,
+    "loco": {
+     "2023": {
+      "delta": -7.276262124744637e-05,
+      "excess": 0.0008438652452574802,
+      "null_sd": 0.002492451928404728
+     },
+     "2024": {
+      "delta": 0.0006578069811831178,
+      "excess": 0.0012213959214480573,
+      "null_sd": 0.0018865262157325318
+     },
+     "2025": {
+      "delta": -0.00019088992808058425,
+      "excess": 0.00010668774973392767,
+      "null_sd": 0.002842616234262892
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "P2_target_log",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_log_snaps_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": -0.13501473298280162,
+    "partial_r": -0.043426188646470985,
+    "partial_r_ci95": [
+     -0.14288292892821913,
+     0.05689880172834438
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.7947205279472053,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": -0.023918005030835233
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": 0.008141848417905469
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": -0.11138870856198985
+     }
+    },
+    "cv_r2": {
+     "B0": -0.007318720174711474,
+     "B1": 0.009372927155109045,
+     "B2": 0.39176920659599934,
+     "full": 0.38881972699623113,
+     "B0+feature": -0.009008830344273428
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0029494795997682447,
+     "se": 0.0032372792585277066,
+     "null_mean": -0.0018542342498329921,
+     "excess": -0.0010952453499352525,
+     "excess_within_position": -0.0010961142579000078
+    },
+    "cv_perm_p": 0.8555722138930535,
+    "loco": {
+     "2023": {
+      "delta": 0.0007944536443666994,
+      "excess": 0.0027672629263788403,
+      "null_sd": 0.006312925446010515
+     },
+     "2024": {
+      "delta": -0.0007935531726771528,
+      "excess": 0.0005975561833195353,
+      "null_sd": 0.005073759078465567
+     },
+     "2025": {
+      "delta": 0.0007662685902556365,
+      "excess": 0.0027636702264355203,
+      "null_sd": 0.006243050274637612
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "P2_target_with_st",
+    "label": "prespecified robustness",
+    "family": null,
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_st_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": -0.11389141317886359,
+    "partial_r": -0.005163006734860875,
+    "partial_r_ci95": [
+     -0.1051863652969496,
+     0.09496376977896025
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.5451454854514548,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": 0.053527298091761884
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.04099362070733129
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": -0.02216656716098801
+     }
+    },
+    "cv_r2": {
+     "B0": -0.007473246681100348,
+     "B1": 0.010727219807637755,
+     "B2": 0.45223966074462196,
+     "full": 0.44976873237613535,
+     "B0+feature": 0.00012430958451870166
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.002470928368486651,
+     "se": 0.0021428065220007717,
+     "null_mean": -0.0013110578854967697,
+     "excess": -0.0011598704829898815,
+     "excess_within_position": -0.0011913599141473098
+    },
+    "cv_perm_p": 0.6616691654172914,
+    "loco": {
+     "2023": {
+      "delta": -0.0009780643023953317,
+      "excess": 0.0025445281849442183,
+      "null_sd": 0.007109546810273675
+     },
+     "2024": {
+      "delta": -0.0008986054362117857,
+      "excess": 0.0005888139107938276,
+      "null_sd": 0.005270192984059474
+     },
+     "2025": {
+      "delta": 0.0001251173044681808,
+      "excess": 0.0018106840565819133,
+      "null_sd": 0.00522842324359688
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   },
+   {
+    "id": "X1_starts_per_season",
+    "label": "prelisted exploratory",
+    "family": "exploratory",
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_starts_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": -0.12045695857186131,
+    "partial_r": -0.02542775634752,
+    "partial_r_ci95": [
+     -0.1251868953517898,
+     0.07484040244064206
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.6921307869213079,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": -0.01239407042220908
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.0781738415705691
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": 0.015837571135309893
+     }
+    },
+    "cv_r2": {
+     "B0": 0.016393360872494395,
+     "B1": 0.03364889312185448,
+     "B2": 0.4728199240949042,
+     "full": 0.471255263048784,
+     "B0+feature": 0.025702756659867303
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0015646610461202157,
+     "se": 0.002299897246489756,
+     "null_mean": -0.0020885385273257447,
+     "excess": 0.000523877481205529,
+     "excess_within_position": 0.0005523796071180593
+    },
+    "cv_perm_p": 0.32033983008495753,
+    "loco": {
+     "2023": {
+      "delta": 0.0010475930833545588,
+      "excess": 0.002869044841702223,
+      "null_sd": 0.005676705188804494
+     },
+     "2024": {
+      "delta": 0.0006229403762103569,
+      "excess": 0.001969273128578417,
+      "null_sd": 0.005506244681782864
+     },
+     "2025": {
+      "delta": -0.0011501168238564619,
+      "excess": 0.00018616740863060168,
+      "null_sd": 0.004767902809666981
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    }
+   }
+  ],
+  "primaries": {
+   "P1": {
+    "id": "P1",
+    "label": "primary",
+    "family": "primary",
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_play_intensity",
+    "n": 277,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 252,
+    "raw_r": 0.038250109151451835,
+    "partial_r": -0.0029734403658365524,
+    "partial_r_ci95": [
+     -0.1260141079963825,
+     0.12015732384812096
+    ],
+    "partial_r_mde80_one_sided": 0.15557802795442996,
+    "fl_p": 0.5212478752124787,
+    "by_class": {
+     "2023": {
+      "n": 100,
+      "partial_r": -0.07097039018441087
+     },
+     "2024": {
+      "n": 99,
+      "partial_r": 0.09694884364835693
+     },
+     "2025": {
+      "n": 78,
+      "partial_r": -0.050028642278431235
+     }
+    },
+    "cv_r2": {
+     "B0": 0.8159332604986403,
+     "B1": 0.8317035797998916,
+     "B2": 0.8333417473677888,
+     "full": 0.8321090841629565,
+     "B0+feature": 0.8146102303766272
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0012326632048323468,
+     "se": 0.0010776049693217624,
+     "null_mean": -0.0006683481277330827,
+     "excess": -0.0005643150770992641,
+     "excess_within_position": -0.003187889355770696
+    },
+    "cv_perm_p": 0.7231384307846077,
+    "loco": {
+     "2023": {
+      "delta": -0.0004542364152276823,
+      "excess": 0.0007400595572438365,
+      "null_sd": 0.003103224153996353
+     },
+     "2024": {
+      "delta": -0.0002995541275705449,
+      "excess": 0.000659275058415506,
+      "null_sd": 0.0031577013340936574
+     },
+     "2025": {
+      "delta": 0.001518896912488965,
+      "excess": 0.0013550474528974802,
+      "null_sd": 0.0036427802676295986
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    },
+    "seeds": {
+     "0": {
+      "fl_p": 0.5212478752124787,
+      "excess": -0.0005643150770992641,
+      "se": 0.0010776049693217624,
+      "cv_perm_p": 0.7231384307846077,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "1": {
+      "fl_p": 0.5206479352064793,
+      "excess": -0.0010789564373108248,
+      "se": 0.0012183011664807408,
+      "cv_perm_p": 0.7611194402798601,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "2": {
+      "fl_p": 0.5226477352264773,
+      "excess": -0.0006405585949685068,
+      "se": 0.000935161596649296,
+      "cv_perm_p": 0.47876061969015493,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     }
+    },
+    "bh_q_primaries": 0.7922207779222078
+   },
+   "P2": {
+    "id": "P2",
+    "label": "primary",
+    "family": "primary",
+    "note": null,
+    "feature": "c_drill_intensity",
+    "target": "g_snaps_per_season",
+    "n": 407,
+    "positions": [
+     "DB",
+     "DL",
+     "OL",
+     "TE",
+     "WR"
+    ],
+    "resid_df": 382,
+    "raw_r": -0.1303539404685683,
+    "partial_r": -0.04190330269418628,
+    "partial_r_ci95": [
+     -0.1413880880698748,
+     0.05841939263810066
+    ],
+    "partial_r_mde80_one_sided": 0.12662702363725303,
+    "fl_p": 0.7922207779222078,
+    "by_class": {
+     "2023": {
+      "n": 132,
+      "partial_r": -0.0160872136776299
+     },
+     "2024": {
+      "n": 142,
+      "partial_r": -0.09030412024480347
+     },
+     "2025": {
+      "n": 133,
+      "partial_r": -0.01335517041591423
+     }
+    },
+    "cv_r2": {
+     "B0": -0.011142388674865993,
+     "B1": 0.01623480965104256,
+     "B2": 0.475443435571246,
+     "full": 0.47380702350605275,
+     "B0+feature": 0.0025716542143849556
+    },
+    "delta_r2_vs_B2": {
+     "mean": -0.0016364120651932755,
+     "se": 0.002786103876408279,
+     "null_mean": -0.0015064636994143203,
+     "excess": -0.00012994836577895526,
+     "excess_within_position": -0.00013419427168769626
+    },
+    "cv_perm_p": 0.2703648175912044,
+    "loco": {
+     "2023": {
+      "delta": 0.0005256363818458842,
+      "excess": 0.0026100779931168753,
+      "null_sd": 0.005956107171627457
+     },
+     "2024": {
+      "delta": 0.0014541144912887383,
+      "excess": 0.002936427228711253,
+      "null_sd": 0.004753926731748173
+     },
+     "2025": {
+      "delta": -0.0010415292732524062,
+      "excess": 0.0006549122803846338,
+      "null_sd": 0.004910048600103256
+     }
+    },
+    "checks": {
+     "fl_p_lt_05": false,
+     "sign_matches": false,
+     "excess_lb_gt_0": false,
+     "loco_classes_pass": "0/3",
+     "loco_excess_positive_classes": "3/3"
+    },
+    "seeds": {
+     "0": {
+      "fl_p": 0.7922207779222078,
+      "excess": -0.00012994836577895526,
+      "se": 0.002786103876408279,
+      "cv_perm_p": 0.2703648175912044,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "1": {
+      "fl_p": 0.7991200879912009,
+      "excess": 0.0001269944795227382,
+      "se": 0.0027015623128788524,
+      "cv_perm_p": 0.3773113443278361,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     },
+     "2": {
+      "fl_p": 0.7966203379662034,
+      "excess": -0.00017024194542301354,
+      "se": 0.003000163551293004,
+      "cv_perm_p": 0.7151424287856072,
+      "checks": {
+       "fl_p_lt_05": false,
+       "sign_matches": false,
+       "excess_lb_gt_0": false,
+       "loco_classes_pass": "0/3",
+       "loco_excess_positive_classes": "3/3"
+      }
+     }
+    },
+    "bh_q_primaries": 0.7922207779222078
+   }
+  },
+  "influence": {
+   "P1": {
+    "top3_supportive_share_of_partial_r": null,
+    "drop3_supportive": {
+     "dropped_nfl_id": [
+      56096,
+      57185,
+      58231
+     ],
+     "dropped_names": [
+      "Nesta Jade Silvera",
+      "Renardo Green",
+      "Josh Conerly"
+     ],
+     "n": 274,
+     "partial_r": -0.06642891213819152,
+     "partial_r_ci95": [
+      -0.18869824706655802,
+      0.05786851416459156
+     ],
+     "fl_p": 0.8443155684431557,
+     "passes_c1": false
+    },
+    "drop3_contrary": {
+     "dropped_nfl_id": [
+      58415,
+      58330,
+      57198
+     ],
+     "dropped_names": [
+      "Aeneas Peebles",
+      "Kyle Kennard",
+      "Delmar Glaze"
+     ],
+     "n": 274,
+     "partial_r": 0.04032332563316355,
+     "partial_r_ci95": [
+      -0.08391710246736998,
+      0.16332927920137424
+     ],
+     "fl_p": 0.26907309269073093,
+     "passes_c1": false
+    }
+   },
+   "P2": {
+    "top3_supportive_share_of_partial_r": null,
+    "drop3_supportive": {
+     "dropped_nfl_id": [
+      58231,
+      58229,
+      55959
+     ],
+     "dropped_names": [
+      "Josh Conerly",
+      "Malaki Starks",
+      "Michael Wilson"
+     ],
+     "n": 404,
+     "partial_r": -0.06948853151367257,
+     "partial_r_ci95": [
+      -0.1687815546530378,
+      0.03120068953184921
+     ],
+     "fl_p": 0.9094090590940906,
+     "passes_c1": false
+    },
+    "drop3_contrary": {
+     "dropped_nfl_id": [
+      58298,
+      55905,
+      59278
+     ],
+     "dropped_names": [
+      "Jonas Sanker",
+      "Isaiah Foskey",
+      "Isaiah Bond"
+     ],
+     "n": 404,
+     "partial_r": -0.010229911494290344,
+     "partial_r_ci95": [
+      -0.11058763805467971,
+      0.09033432535799632
+     ],
+     "fl_p": 0.5763423657634237,
+     "passes_c1": false
+    }
+   }
+  },
+  "bounds": {
+   "P1": {
+    "rel_x_beyond_B2": 0.6326233193538039,
+    "rel_y_beyond_B2": 0.698392206233515,
+    "corrected_ci95": [
+     -0.18958190337576256,
+     0.18077066545849468
+    ],
+    "one_sided_upper_95": 0.10050828288789268,
+    "corrected_ci95_scope": "feature and target measurement error (beyond-B2 reliabilities); bounds are pooled within-position averages"
+   },
+   "P2": {
+    "rel_x_beyond_B2": 0.6570040366686143,
+    "rel_y_beyond_B2": 1.0,
+    "corrected_ci95": [
+     -0.17443306132718742,
+     0.0720730695057052
+    ],
+    "one_sided_upper_95": 0.042315266185149816,
+    "corrected_ci95_scope": "feature measurement error only (snaps as recorded, rel_y = 1); for snaps read as a playing-time trait see post_hoc_review.p2_playing_time_trait; bounds are pooled within-position averages"
+   }
+  },
+  "criteria": {
+   "P1": {
+    "c1_fl_p_and_sign": false,
+    "c2_excess_lb_gt_0_signed": false,
+    "c3_loco_2of3": false,
+    "c4_bh_q_lt_05": false,
+    "c5_reliability_ge_05": true,
+    "c6_seeds_and_leave3out": false,
+    "c7_scout_sentence": "judgment; see decision"
+   },
+   "P2": {
+    "c1_fl_p_and_sign": false,
+    "c2_excess_lb_gt_0_signed": false,
+    "c3_loco_2of3": false,
+    "c4_bh_q_lt_05": false,
+    "c5_reliability_ge_05": true,
+    "c6_seeds_and_leave3out": false,
+    "c7_scout_sentence": "judgment; see decision"
+   }
+  },
+  "bh_all_e010_tests": {
+   "P1": 0.8992100789921008,
+   "P2": 0.8992100789921008,
+   "P1_without_2025": 0.8992100789921008,
+   "P2_without_2025": 0.8992100789921008,
+   "P1_WR": 0.8992100789921008,
+   "P1_DB": 0.8992100789921008,
+   "P1_DL": 0.8992100789921008,
+   "P1_OL": 0.8992100789921008,
+   "P2_WR": 0.8992100789921008,
+   "P2_TE": 0.8992100789921008,
+   "P2_DB": 0.8992100789921008,
+   "P2_DL": 0.8992100789921008,
+   "P2_OL": 0.8992100789921008,
+   "P1_feature_no_division": 0.8992100789921008,
+   "P1_feature_median": 0.8992100789921008,
+   "P2_feature_no_division": 0.8992100789921008,
+   "P2_feature_median": 0.8992100789921008,
+   "P1_target_share80": 0.8992100789921008,
+   "P2_target_log": 0.8992100789921008,
+   "P2_target_with_st": 0.8992100789921008,
+   "X1_starts_per_season": 0.8992100789921008
+  },
+  "n_tests_with_p": 21,
+  "post_hoc_review": {
+   "label": "post hoc, after the skeptic reviews (2026-10-15); descriptive unless a p is shown; no p here is in a prespecified BH family",
+   "choices": {
+    "literal_median": "prereg robustness 'drill-level median instead of mean', literal reading: drill value = median of the player's attempt z in that drill, player value = mean over >= 2 drills. Full harness settings (seed 0). The implemented variant (player-level median over drills) is kept as run.",
+    "post_hoc_tests": "linkage.evaluate, one-sided +, seed-free Freedman-Lane (n_perm_fl as the primaries); its CV parts run at minimal settings (n_repeats 2, n_perm 20) and are not reported.",
+    "team_share": "reliability.team_share on per-play play max / own q95: (a) the reported pooled construction (position-centered values, team_col [team_abbr, season]: most teammate pairs are cross-position); (b) same-position pairs only (team_col [team_abbr, season, position]); (c) the inverse-variance mean of the per-position estimates; (d) (b) on the role-adjusted per-play value.",
+    "play_context": "f_drill_intensity.play_context: cell = position | lined_up_position | run (player_play row with pass_result null) | route_ran | coverage (man / rush / deepzone / shortzone / na), from player_play.",
+    "role_adjusted_p1": "f_drill_intensity.role_adjusted_intensity: median(play max - cell mean + position mean) / q95 (raw), >= 50 plays; cell means over the P1 population's plays.",
+    "role_mix": "f_drill_intensity.ROLE_COVARIATES (shares over plays with a player_play row); as controls they enter position-specific (0 for other positions).",
+    "sprint_controls": "c40_smax and c40_tau (speed.combine_speed_table) added to the B1 block.",
+    "censoring_types": "per drill, share pe of used attempts whose interior peak is the last interior frame: censored-type pe >= 0.6, true-peak pe < 0.3, mixed otherwise (the football skeptic's cuts). True-peak feature = mean of the player's true-peak drill values, >= 2 such drills; threshold sensitivity with pe < 0.5 (the statistics skeptic's cut). The censored-vs-uncensored z comparison uses drills with 0.15 <= pe <= 0.85.",
+    "heterogeneity": "OLS F-test of feature x position interactions added to B2 + feature (P1 without TE, n 20).",
+    "bootstrap": "position-stratified case bootstrap of the pooled partial r, 2,000 replicates, seed 0; the design is rebuilt (and re-imputed) in every replicate.",
+    "p2_playing_time": "season-1 vs season-2 REG player_play row counts (classes 2023-24), correlated beyond B0 and beyond B2, Spearman-Brown to each player's seasons available (2026 - draft_year) and averaged. WR/TE rows are pass plays only, so this is a proxy for the snap count.",
+    "p2_decomposition": "partial r of the feature with P2 given B0 plus one block at a time (descriptive)."
+   },
+   "literal_drill_median": {
+    "label": "prespecified robustness, literal reading of the prereg's 'drill-level median' (run after review)",
+    "n_player_drill_rows": 3407,
+    "n_rows_median_differs_from_mean": 24,
+    "r_with_primary_feature": 0.999748592365795,
+    "P1": {
+     "id": "P1_feature_drill_median_literal",
+     "feature": "c_drill_intensity_drill_median",
+     "target": "g_play_intensity",
+     "n": 277,
+     "positions": [
+      "DB",
+      "DL",
+      "OL",
+      "TE",
+      "WR"
+     ],
+     "resid_df": 252,
+     "raw_r": 0.03810869767505421,
+     "partial_r": -0.0029882627837299626,
+     "partial_r_ci95": [
+      -0.12602869514323617,
+      0.12014271527725136
+     ],
+     "partial_r_mde80_one_sided": 0.15557802795442996,
+     "fl_p": 0.5209479052094791,
+     "by_class": {
+      "2023": {
+       "n": 100,
+       "partial_r": -0.07052636360163088
+      },
+      "2024": {
+       "n": 99,
+       "partial_r": 0.09630538456496911
+      },
+      "2025": {
+       "n": 78,
+       "partial_r": -0.049617408160824404
+      }
+     },
+     "cv_r2": {
+      "B0": 0.8159332604986403,
+      "B1": 0.8317035797998916,
+      "B2": 0.8333417473677888,
+      "full": 0.8321065971393632,
+      "B0+feature": 0.814611467061563
+     },
+     "delta_r2_vs_B2": {
+      "mean": -0.0012351502284255965,
+      "se": 0.001081257028744014,
+      "null_mean": -0.0006682326686275294,
+      "excess": -0.0005669175597980672,
+      "excess_within_position": -0.0032025911194321207
+     },
+     "cv_perm_p": 0.729135432283858,
+     "loco": {
+      "2023": {
+       "delta": -0.0004402551794916443,
+       "excess": 0.0007552281522300198,
+       "null_sd": 0.0031002191873119264
+      },
+      "2024": {
+       "delta": -0.0002856497421488413,
+       "excess": 0.0006804678806235024,
+       "null_sd": 0.0031641129075374408
+      },
+      "2025": {
+       "delta": 0.00152940668260515,
+       "excess": 0.0013681079662414594,
+       "null_sd": 0.0036414404370635244
+      }
+     },
+     "checks": {
+      "fl_p_lt_05": false,
+      "sign_matches": false,
+      "excess_lb_gt_0": false,
+      "loco_classes_pass": "0/3",
+      "loco_excess_positive_classes": "3/3"
+     }
+    },
+    "P2": {
+     "id": "P2_feature_drill_median_literal",
+     "feature": "c_drill_intensity_drill_median",
+     "target": "g_snaps_per_season",
+     "n": 407,
+     "positions": [
+      "DB",
+      "DL",
+      "OL",
+      "TE",
+      "WR"
+     ],
+     "resid_df": 382,
+     "raw_r": -0.13190807183074768,
+     "partial_r": -0.042907170784830584,
+     "partial_r_ci95": [
+      -0.14237352013607785,
+      0.05741708970085382
+     ],
+     "partial_r_mde80_one_sided": 0.12662702363725303,
+     "fl_p": 0.7968203179682032,
+     "by_class": {
+      "2023": {
+       "n": 132,
+       "partial_r": -0.014019544975354643
+      },
+      "2024": {
+       "n": 142,
+       "partial_r": -0.09458371634764533
+      },
+      "2025": {
+       "n": 133,
+       "partial_r": -0.013718722823159852
+      }
+     },
+     "cv_r2": {
+      "B0": -0.011142388674865993,
+      "B1": 0.01623480965104256,
+      "B2": 0.475443435571246,
+      "full": 0.4738460681364167,
+      "B0+feature": 0.003185292401109881
+     },
+     "delta_r2_vs_B2": {
+      "mean": -0.0015973674348293363,
+      "se": 0.0028179467969795613,
+      "null_mean": -0.0015096893359393296,
+      "excess": -8.767809889000675e-05,
+      "excess_within_position": -9.054287487939857e-05
+     },
+     "cv_perm_p": 0.25987006496751625,
+     "loco": {
+      "2023": {
+       "delta": 0.00041054094172943145,
+       "excess": 0.0024818805590594395,
+       "null_sd": 0.005936733184801217
+      },
+      "2024": {
+       "delta": 0.0014330555057890937,
+       "excess": 0.0029215104261184725,
+       "null_sd": 0.004727028911806502
+      },
+      "2025": {
+       "delta": -0.001082666626910589,
+       "excess": 0.0006054960324250931,
+       "null_sd": 0.004898907244628475
+      }
+     },
+     "checks": {
+      "fl_p_lt_05": false,
+      "sign_matches": false,
+      "excess_lb_gt_0": false,
+      "loco_classes_pass": "0/3",
+      "loco_excess_positive_classes": "3/3"
+     }
+    }
+   },
+   "p1_coverage": {
+    "share_tracked_plays_without_player_play_row": 0.008590531574149985,
+    "run_share_of_plays_with_row": {
+     "DB": 0.37015265518738244,
+     "DL": 0.41608556598332724,
+     "OL": 0.3973324969381964,
+     "TE": 0.0,
+     "WR": 0.0
+    },
+    "tracked_plays_per_career_off_def_snap_median": {
+     "DB": 1.0,
+     "DL": 1.0,
+     "OL": 1.0,
+     "TE": 0.4153983302858556,
+     "WR": 0.6069600818833163
+    },
+    "note": "WR/TE player_play REG rows are pass plays only, so P1 is per route for WR/TE and per snap for DB/DL/OL"
+   },
+   "p1_role_mix_within_position": {
+    "WR": {
+     "n": 61,
+     "covariates": [
+      "slot",
+      "deep_of_routes"
+     ],
+     "r2_in_sample": 0.30897685143332976,
+     "r2_cv_5fold_20rep": 0.22546013021010397,
+     "r_with_p1": {
+      "slot": -0.20529699661601458,
+      "deep_of_routes": 0.5460892227395581
+     },
+     "r_with_feature": {
+      "slot": -0.029608144284910595,
+      "deep_of_routes": -0.1331775013154027
+     }
+    },
+    "TE": {
+     "n": 20,
+     "covariates": [
+      "slot",
+      "deep_of_routes"
+     ],
+     "r2_in_sample": 0.43370719108621114,
+     "r2_cv_5fold_20rep": 0.1833706273169176,
+     "r_with_p1": {
+      "slot": 0.26476851284930203,
+      "deep_of_routes": 0.6582322101660654
+     },
+     "r_with_feature": {
+      "slot": -0.12787599033198926,
+      "deep_of_routes": -0.2528686932958112
+     }
+    },
+    "DB": {
+     "n": 67,
+     "covariates": [
+      "run",
+      "cb",
+      "slot",
+      "man"
+     ],
+     "r2_in_sample": 0.34589523268824307,
+     "r2_cv_5fold_20rep": 0.22717261773502764,
+     "r_with_p1": {
+      "run": -0.3641235490091623,
+      "cb": -0.4890162305721642,
+      "slot": 0.2031934541457322,
+      "man": -0.42275376234076945
+     },
+     "r_with_feature": {
+      "run": -0.03253568647266474,
+      "cb": -0.07381840469457107,
+      "slot": 0.07700967305464762,
+      "man": 0.006985234712508882
+     }
+    },
+    "DL": {
+     "n": 67,
+     "covariates": [
+      "run",
+      "edge"
+     ],
+     "r2_in_sample": 0.43352958832846333,
+     "r2_cv_5fold_20rep": 0.37196375694354106,
+     "r_with_p1": {
+      "run": -0.3786748230146885,
+      "edge": 0.6051707106988164
+     },
+     "r_with_feature": {
+      "run": 0.19220825226909125,
+      "edge": -0.048069305861528216
+     }
+    },
+    "OL": {
+     "n": 62,
+     "covariates": [
+      "run",
+      "tackle",
+      "center"
+     ],
+     "r2_in_sample": 0.3859374897939124,
+     "r2_cv_5fold_20rep": 0.2656674266916405,
+     "r_with_p1": {
+      "run": -0.03829915896266125,
+      "tackle": 0.6075490060090315,
+      "center": -0.3576541642881723
+     },
+     "r_with_feature": {
+      "run": -0.011576627896914318,
+      "tackle": -0.1321638480154852,
+      "center": -0.01970858232987204
+     }
+    }
+   },
+   "p1_role_adjusted": {
+    "n": 277,
+    "n_cells": 206,
+    "r_with_p1_within_position": 0.45424986571874926,
+    "split_half_by_position": {
+     "WR": {
+      "r_half": 0.35651017994342815,
+      "reliability": 0.5256284622328393,
+      "n_players": 60
+     },
+     "TE": {
+      "r_half": 0.22021101966087836,
+      "reliability": 0.360939241020917,
+      "n_players": 19
+     },
+     "DB": {
+      "r_half": 0.369698555748864,
+      "reliability": 0.5398246996715805,
+      "n_players": 62
+     },
+     "DL": {
+      "r_half": 0.7160517656610841,
+      "reliability": 0.8345339924932107,
+      "n_players": 64
+     },
+     "OL": {
+      "r_half": 0.5606553077044067,
+      "reliability": 0.7184870418684364,
+      "n_players": 57
+     }
+    }
+   },
+   "p1_team_share": {
+    "pooled_position_centered_as_reported": {
+     "team_share": -0.025562717503485172,
+     "se": 0.04043980981567706,
+     "reliability": 0.7020823759010528,
+     "n_player_teams": 485,
+     "n_teams": 95,
+     "n_shared": 90
+    },
+    "ordered_teammate_pairs_pooled": 2598,
+    "ordered_teammate_pairs_same_position": 476,
+    "same_position_pairs": {
+     "team_share": 0.0011279631691836773,
+     "se": 0.0968999675473131,
+     "reliability": 0.6918129063596385,
+     "n_player_teams": 486,
+     "n_teams": 308,
+     "n_shared": 128
+    },
+    "inverse_variance_mean_of_positions": {
+     "team_share": -0.0036050489544012724,
+     "se": 0.09040557404447756,
+     "positions": [
+      "WR",
+      "TE",
+      "DB",
+      "DL",
+      "OL"
+     ]
+    },
+    "role_adjusted_same_position_pairs": {
+     "team_share": 0.0567474379694645,
+     "se": 0.11976554292477704,
+     "reliability": 0.5966228032871771,
+     "n_player_teams": 486,
+     "n_teams": 308,
+     "n_shared": 128
+    },
+    "note": "team_share cannot separate a player from his within-team role"
+   },
+   "pooled_vs_position_bounds": {
+    "P1": {
+     "heterogeneity_F": {
+      "positions": [
+       "DB",
+       "DL",
+       "OL",
+       "WR"
+      ],
+      "n": 257,
+      "F": 1.2902682519682391,
+      "df": [
+       3,
+       230
+      ],
+      "p": 0.27847646340937143
+     },
+     "bootstrap": {
+      "reps": 2000,
+      "p2_5": -0.12869016171711753,
+      "p95_one_sided_upper": 0.11115394686628459,
+      "p97_5": 0.1302379481966485
+     },
+     "fisher_one_sided_upper_95": 0.10050828288789268,
+     "by_position": {
+      "WR": {
+       "partial_r": 0.0957634310444245,
+       "ci95": [
+        -0.21441389743212397,
+        0.38839538578744404
+       ],
+       "fl_p": 0.2736726327367263,
+       "one_sided_upper_95": 0.3447252259999261
+      },
+      "DB": {
+       "partial_r": 0.18477215661441768,
+       "ci95": [
+        -0.10487344750991305,
+        0.44552142825402596
+       ],
+       "fl_p": 0.10948905109489052,
+       "one_sided_upper_95": 0.40709096963797936
+      },
+      "DL": {
+       "partial_r": -0.11608391022613578,
+       "ci95": [
+        -0.3874440730531317,
+        0.17378795200118122
+       ],
+       "fl_p": 0.783021697830217,
+       "one_sided_upper_95": 0.1278865891119925
+      },
+      "OL": {
+       "partial_r": -0.18579658967868778,
+       "ci95": [
+        -0.460450718839579,
+        0.12132272445200028
+       ],
+       "fl_p": 0.8769123087691231,
+       "one_sided_upper_95": 0.07196963235089804
+      }
+     }
+    },
+    "P2": {
+     "heterogeneity_F": {
+      "positions": [
+       "DB",
+       "DL",
+       "OL",
+       "TE",
+       "WR"
+      ],
+      "n": 407,
+      "F": 0.7418974439316963,
+      "df": [
+       4,
+       378
+      ],
+      "p": 0.5639005108472634
+     },
+     "bootstrap": {
+      "reps": 2000,
+      "p2_5": -0.13307542760580401,
+      "p95_one_sided_upper": 0.03736200506748703,
+      "p97_5": 0.05302961992264988
+     },
+     "fisher_one_sided_upper_95": 0.042315266185149816,
+     "by_position": {
+      "WR": {
+       "partial_r": 0.046532142345548026,
+       "ci95": [
+        -0.18715812421646508,
+        0.27523767803463034
+       ],
+       "fl_p": 0.3534646535346465,
+       "one_sided_upper_95": 0.23981977176214342
+      },
+      "TE": {
+       "partial_r": -0.2231981909175055,
+       "ci95": [
+        -0.6600051342156411,
+        0.3263911888113873
+       ],
+       "fl_p": 0.7878212178782121,
+       "one_sided_upper_95": 0.24285787187602118
+      },
+      "DB": {
+       "partial_r": -0.14573281597993398,
+       "ci95": [
+        -0.35285773302472034,
+        0.07500729663024909
+       ],
+       "fl_p": 0.8992100789921008,
+       "one_sided_upper_95": 0.03944466318318122
+      },
+      "DL": {
+       "partial_r": -0.1315478200969167,
+       "ci95": [
+        -0.3571138242929621,
+        0.1085157373716544
+       ],
+       "fl_p": 0.8579142085791421,
+       "one_sided_upper_95": 0.07003802581118547
+      },
+      "OL": {
+       "partial_r": -0.04886031821804178,
+       "ci95": [
+        -0.2728009293077142,
+        0.18010282552990117
+       ],
+       "fl_p": 0.6552344765523448,
+       "one_sided_upper_95": 0.14394193416978698
+      }
+     }
+    }
+   },
+   "p2_playing_time_trait": {
+    "n": 274,
+    "beyond_B0": {
+     "r_season1_season2": 0.7259831120479942,
+     "spearman_brown_to_seasons_mean": 0.8188214482554882
+    },
+    "beyond_B2": {
+     "r_season1_season2": 0.547697232269818,
+     "spearman_brown_to_seasons_mean": 0.6802269333733664
+    },
+    "corrected_ci95_playing_time_trait": [
+     -0.21149586993616015,
+     0.08738685440764339
+    ],
+    "corrected_one_sided_upper_95_playing_time_trait": 0.06329744008551517,
+    "corrected_ci95_feature_error_only": [
+     -0.17443306132718742,
+     0.0720730695057052
+    ],
+    "corrected_one_sided_upper_95_feature_error_only": 0.05220511517139037
+   },
+   "p2_raw_r_decomposition": {
+    "raw_r": -0.13035394046856824,
+    "B0": -0.13230042348940452,
+    "B0+forty": -0.08234795282420772,
+    "B0+c40_smax": -0.06598346087606194,
+    "B0+ngs_athleticism_score": -0.06925165011785439,
+    "B0+weight_height": -0.13338956228017226,
+    "B0+B1_all_combine": -0.04347676975671094,
+    "B0+draft_slot_only": -0.01756819717209888,
+    "B2": -0.04190330269418627,
+    "path_r_feature_forty_given_B0": 0.3429626055730627,
+    "path_r_p2_forty_given_B0": -0.1632379565124921
+   },
+   "sprint_capacity": {
+    "partial_r_feature_c40_smax_given_B2": {
+     "n": 407,
+     "partial_r": -0.35726889172981136,
+     "ci95": [
+      -0.44155881838614697,
+      -0.2667279481452475
+     ]
+    },
+    "partial_r_feature_c40_vmax_given_B2": {
+     "n": 407,
+     "partial_r": -0.28073441920657205,
+     "ci95": [
+      -0.3704054901776974,
+      -0.1858790298375236
+     ]
+    },
+    "partial_r_feature_c40_tau_given_B2": {
+     "n": 407,
+     "partial_r": -0.2124948625895213,
+     "ci95": [
+      -0.3060638183126114,
+      -0.1148597616014401
+     ]
+    },
+    "r2_feature_on_tau_vmax_weight_within_position": {
+     "WR": {
+      "n": 91,
+      "r2": 0.5349661270422802
+     },
+     "TE": {
+      "n": 34,
+      "r2": 0.605140217672844
+     },
+     "DB": {
+      "n": 100,
+      "r2": 0.20278279185303616
+     },
+     "DL": {
+      "n": 88,
+      "r2": 0.1048777129723355
+     },
+     "OL": {
+      "n": 94,
+      "r2": 0.4710017078793939
+     }
+    },
+    "feature_r2_on_B2_smax_tau_in_sample": 0.3351431941811216,
+    "feature_reliability_beyond_B2_smax_tau": {
+     "icc": 0.15348786559769254,
+     "reliability": 0.5911152719124774,
+     "n_players": 407,
+     "n_single": 0,
+     "n_repeated": 407,
+     "n_dropped": 0
+    }
+   },
+   "censoring": {
+    "drill_types": [
+     {
+      "drill": "DB:BACK_PEDAL_AND_90_DEGREE_BREAK_TO_BALL",
+      "pe": 0.27722772277227725,
+      "n_att": 101,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DB:BACK_PEDAL_AND_TRANSITION_45_DEGREE_REACTION",
+      "pe": 0.350253807106599,
+      "n_att": 197,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "DB:BOX_DRILL",
+      "pe": 0.9320388349514563,
+      "n_att": 103,
+      "ctype": "censored"
+     },
+     {
+      "drill": "DB:GAUNTLET_DRILL",
+      "pe": 0.06930693069306931,
+      "n_att": 101,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DB:LINE_DRILL",
+      "pe": 0.45977011494252873,
+      "n_att": 174,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "DB:TERYL_AUSTIN_DRILL_1",
+      "pe": 0.5294117647058824,
+      "n_att": 85,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "DB:TERYL_AUSTIN_DRILL_2",
+      "pe": 0.02127659574468085,
+      "n_att": 94,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DB:W_DRILL",
+      "pe": 0.6764705882352942,
+      "n_att": 102,
+      "ctype": "censored"
+     },
+     {
+      "drill": "DL:BACK_PEDAL_AND_REACT",
+      "pe": 0.7045454545454546,
+      "n_att": 44,
+      "ctype": "censored"
+     },
+     {
+      "drill": "DL:BODY_CONTROL_DRILL",
+      "pe": 0.625,
+      "n_att": 88,
+      "ctype": "censored"
+     },
+     {
+      "drill": "DL:FOUR_BAG_AGILITY_DRILL",
+      "pe": 0.1511627906976744,
+      "n_att": 86,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DL:FRONT_START_WAVE_DRILL_AND_LATERAL_REACTION",
+      "pe": 0.5581395348837209,
+      "n_att": 86,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "DL:PASS_RUSH_DRILL",
+      "pe": 0.13333333333333333,
+      "n_att": 165,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DL:RUN_AND_CLUB_DRILL",
+      "pe": 0.7325581395348837,
+      "n_att": 86,
+      "ctype": "censored"
+     },
+     {
+      "drill": "DL:RUN_THE_HOOP_DRILL",
+      "pe": 0.967391304347826,
+      "n_att": 92,
+      "ctype": "censored"
+     },
+     {
+      "drill": "DL:SHORT_ZONE_BREAKS",
+      "pe": 0.23376623376623376,
+      "n_att": 77,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DL:SHORT_ZONE_BREAK_FLAT_WHEEL",
+      "pe": 0.07142857142857142,
+      "n_att": 14,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "DL:SHORT_ZONE_BREAK_FORWARD",
+      "pe": 0.5,
+      "n_att": 14,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "DL:SHORT_ZONE_BREAK_INSIDE",
+      "pe": 0.16666666666666666,
+      "n_att": 12,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "OL:FIVE_YARD_WAVE_DRILL_SLIDE_AND_SHUFFLE",
+      "pe": 0.6559139784946236,
+      "n_att": 93,
+      "ctype": "censored"
+     },
+     {
+      "drill": "OL:OL_PULL_DRILL_DEEP_SHORT_PULL_LEFT",
+      "pe": 0.9324324324324325,
+      "n_att": 74,
+      "ctype": "censored"
+     },
+     {
+      "drill": "OL:OL_PULL_DRILL_FOLD_BLOCK_RIGHT",
+      "pe": 0.978021978021978,
+      "n_att": 91,
+      "ctype": "censored"
+     },
+     {
+      "drill": "OL:OL_PULL_DRILL_LONG_PULL_RIGHT",
+      "pe": 0.9571428571428572,
+      "n_att": 70,
+      "ctype": "censored"
+     },
+     {
+      "drill": "OL:PASS_PRO_MIRROR_DRILL",
+      "pe": 0.9893617021276596,
+      "n_att": 94,
+      "ctype": "censored"
+     },
+     {
+      "drill": "OL:PASS_RUSH_DROP",
+      "pe": 0.9837837837837838,
+      "n_att": 185,
+      "ctype": "censored"
+     },
+     {
+      "drill": "OL:SCREEN_DRILL",
+      "pe": 0.3870967741935484,
+      "n_att": 93,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "TE:BLOCK_EXPLOSION",
+      "pe": 0.0,
+      "n_att": 33,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "TE:CORNER_ROUTE",
+      "pe": 0.0,
+      "n_att": 52,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "TE:END_ZONE_FADE_RIGHT",
+      "pe": 0.03333333333333333,
+      "n_att": 30,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "TE:FLAT_ROUTE_LEFT",
+      "pe": 0.9117647058823529,
+      "n_att": 34,
+      "ctype": "censored"
+     },
+     {
+      "drill": "TE:GAUNTLET_DRILL",
+      "pe": 0.1076923076923077,
+      "n_att": 65,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "TE:HOOK_ROUTE_RIGHT",
+      "pe": 0.5789473684210527,
+      "n_att": 38,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "TE:IN_ROUTE_LEFT",
+      "pe": 0.5142857142857142,
+      "n_att": 35,
+      "ctype": "mixed"
+     },
+     {
+      "drill": "TE:OVER_SHOULDER_ADJUST",
+      "pe": 0.02631578947368421,
+      "n_att": 38,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "TE:WHEEL_ROUTE_LEFT",
+      "pe": 0.0,
+      "n_att": 36,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:CIRCUS_ROUTE_LEFT",
+      "pe": 0.02631578947368421,
+      "n_att": 38,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:COMEBACK_ROUTE_RIGHT",
+      "pe": 0.01098901098901099,
+      "n_att": 91,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:CURL_ROUTE_RIGHT",
+      "pe": 0.1702127659574468,
+      "n_att": 94,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:DAGGER_ROUTE_LEFT",
+      "pe": 0.16326530612244897,
+      "n_att": 98,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:GAUNTLET_DRILL",
+      "pe": 0.06976744186046512,
+      "n_att": 172,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:GO_ROUTE_RIGHT",
+      "pe": 0.0,
+      "n_att": 88,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:OVER_SHOULDER_ADJUST",
+      "pe": 0.023529411764705882,
+      "n_att": 85,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:POST_CORNER_ROUTE_LEFT",
+      "pe": 0.04477611940298507,
+      "n_att": 67,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:POST_CORNER_ROUTE_RIGHT",
+      "pe": 0.010752688172043012,
+      "n_att": 93,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:RED_ZONE_FADE_RIGHT",
+      "pe": 0.010869565217391304,
+      "n_att": 92,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:SLANT_ROUTE_LEFT",
+      "pe": 0.8924731182795699,
+      "n_att": 93,
+      "ctype": "censored"
+     },
+     {
+      "drill": "WR:SLOT_SAIL_ROUTE_RIGHT",
+      "pe": 0.1724137931034483,
+      "n_att": 87,
+      "ctype": "true_peak"
+     },
+     {
+      "drill": "WR:SLOT_STRIKE_ROUTE_LEFT",
+      "pe": 0.8023255813953488,
+      "n_att": 86,
+      "ctype": "censored"
+     },
+     {
+      "drill": "WR:SPEED_OUT_ROUTE_LEFT",
+      "pe": 0.06542056074766354,
+      "n_att": 107,
+      "ctype": "true_peak"
+     }
+    ],
+    "share_of_drill_rows_censored_type_by_position": {
+     "DB": 0.2604166666666667,
+     "DL": 0.4768,
+     "OL": 0.8484349258649094,
+     "TE": 0.12099644128113879,
+     "WR": 0.15719360568383658
+    },
+    "r_censored_half_vs_true_peak_half_within_position": {
+     "WR": {
+      "n": 91,
+      "r": 0.4379067396784435
+     },
+     "TE": {
+      "n": 34,
+      "r": -0.10589331743421072
+     },
+     "DB": {
+      "n": 100,
+      "r": 0.5967030226178379
+     },
+     "DL": {
+      "n": 88,
+      "r": 0.5432443594966523
+     },
+     "OL": {
+      "n": 0,
+      "r": null
+     }
+    },
+    "reliability_censored_type_only": {
+     "icc": 0.2749156568812187,
+     "reliability": 0.498859087333376,
+     "n_players": 407,
+     "n_single": 39,
+     "n_repeated": 368,
+     "n_dropped": 0
+    },
+    "reliability_true_peak_only": {
+     "icc": 0.28263751480750904,
+     "reliability": 0.6142926773355106,
+     "n_players": 313,
+     "n_single": 1,
+     "n_repeated": 312,
+     "n_dropped": 0
+    },
+    "drills_with_both_attempt_kinds": {
+     "definition": "drills whose share of peak-at-end attempts is within F.BOTH_KINDS (0.15-0.85)",
+     "n": 21,
+     "n_censored_attempts_score_higher": 19,
+     "rows": [
+      {
+       "drill": "DB:BACK_PEDAL_AND_90_DEGREE_BREAK_TO_BALL",
+       "pe": 0.27722772277227725,
+       "z_cens": 0.30977919787780006,
+       "z_unc": -0.11881941836408827,
+       "dur_cens": 6.35,
+       "dur_unc": 6.7
+      },
+      {
+       "drill": "DB:BACK_PEDAL_AND_TRANSITION_45_DEGREE_REACTION",
+       "pe": 0.350253807106599,
+       "z_cens": -0.1312970172447292,
+       "z_unc": 0.07077729835848645,
+       "dur_cens": 6.0,
+       "dur_unc": 10.55
+      },
+      {
+       "drill": "DB:LINE_DRILL",
+       "pe": 0.45977011494252873,
+       "z_cens": 0.19353372753337567,
+       "z_unc": -0.16470955534755422,
+       "dur_cens": 6.45,
+       "dur_unc": 7.4
+      },
+      {
+       "drill": "DB:TERYL_AUSTIN_DRILL_1",
+       "pe": 0.5294117647058824,
+       "z_cens": 0.27752789499046887,
+       "z_unc": -0.31221888186427776,
+       "dur_cens": 7.2,
+       "dur_unc": 7.9
+      },
+      {
+       "drill": "DB:W_DRILL",
+       "pe": 0.6764705882352942,
+       "z_cens": 0.25546588896807054,
+       "z_unc": -0.5341559496605123,
+       "dur_cens": 8.0,
+       "dur_unc": 8.3
+      },
+      {
+       "drill": "DL:BACK_PEDAL_AND_REACT",
+       "pe": 0.7045454545454546,
+       "z_cens": 0.2989949164411407,
+       "z_unc": -0.7129878776673368,
+       "dur_cens": 10.6,
+       "dur_unc": 10.4
+      },
+      {
+       "drill": "DL:BODY_CONTROL_DRILL",
+       "pe": 0.625,
+       "z_cens": 0.27874583690881716,
+       "z_unc": -0.4645763948480314,
+       "dur_cens": 5.5,
+       "dur_unc": 5.6000000000000005
+      },
+      {
+       "drill": "DL:FOUR_BAG_AGILITY_DRILL",
+       "pe": 0.1511627906976744,
+       "z_cens": 0.7048554508988865,
+       "z_unc": -0.12552220358473284,
+       "dur_cens": 10.6,
+       "dur_unc": 10.5
+      },
+      {
+       "drill": "DL:FRONT_START_WAVE_DRILL_AND_LATERAL_REACTION",
+       "pe": 0.5581395348837209,
+       "z_cens": 0.1669056478392107,
+       "z_unc": -0.21082818674426446,
+       "dur_cens": 11.05,
+       "dur_unc": 12.55
+      },
+      {
+       "drill": "DL:RUN_AND_CLUB_DRILL",
+       "pe": 0.7325581395348837,
+       "z_cens": 0.1393965521454362,
+       "z_unc": -0.3818253384853245,
+       "dur_cens": 6.8,
+       "dur_unc": 7.5
+      },
+      {
+       "drill": "DL:SHORT_ZONE_BREAKS",
+       "pe": 0.23376623376623376,
+       "z_cens": 0.14959574738652423,
+       "z_unc": -0.04563938055860031,
+       "dur_cens": 7.550000000000001,
+       "dur_unc": 7.1000000000000005
+      },
+      {
+       "drill": "DL:SHORT_ZONE_BREAK_FORWARD",
+       "pe": 0.5,
+       "z_cens": 0.40231222943496475,
+       "z_unc": -0.402312229434966,
+       "dur_cens": 6.1000000000000005,
+       "dur_unc": 6.6000000000000005
+      },
+      {
+       "drill": "DL:SHORT_ZONE_BREAK_INSIDE",
+       "pe": 0.16666666666666666,
+       "z_cens": 0.8684912205628779,
+       "z_unc": -0.17369824411257673,
+       "dur_cens": 7.550000000000001,
+       "dur_unc": 8.05
+      },
+      {
+       "drill": "OL:FIVE_YARD_WAVE_DRILL_SLIDE_AND_SHUFFLE",
+       "pe": 0.6559139784946236,
+       "z_cens": 0.15272101632670382,
+       "z_unc": -0.29112443737277804,
+       "dur_cens": 15.3,
+       "dur_unc": 15.7
+      },
+      {
+       "drill": "OL:SCREEN_DRILL",
+       "pe": 0.3870967741935484,
+       "z_cens": 0.23987352051727154,
+       "z_unc": -0.1514990655898572,
+       "dur_cens": 6.550000000000001,
+       "dur_unc": 6.8
+      },
+      {
+       "drill": "TE:HOOK_ROUTE_RIGHT",
+       "pe": 0.5789473684210527,
+       "z_cens": 0.3884181471455367,
+       "z_unc": -0.5340749523251116,
+       "dur_cens": 6.25,
+       "dur_unc": 6.4
+      },
+      {
+       "drill": "TE:IN_ROUTE_LEFT",
+       "pe": 0.5142857142857142,
+       "z_cens": 0.552475284313837,
+       "z_unc": -0.5849738304499441,
+       "dur_cens": 6.2,
+       "dur_unc": 6.2
+      },
+      {
+       "drill": "WR:CURL_ROUTE_RIGHT",
+       "pe": 0.1702127659574468,
+       "z_cens": 0.3201728212804768,
+       "z_unc": -0.06567647616009682,
+       "dur_cens": 5.85,
+       "dur_unc": 5.4
+      },
+      {
+       "drill": "WR:DAGGER_ROUTE_LEFT",
+       "pe": 0.16326530612244897,
+       "z_cens": 0.28607102165961074,
+       "z_unc": -0.05581873593358223,
+       "dur_cens": 6.25,
+       "dur_unc": 6.3
+      },
+      {
+       "drill": "WR:SLOT_SAIL_ROUTE_RIGHT",
+       "pe": 0.1724137931034483,
+       "z_cens": -0.01402228986111267,
+       "z_unc": 0.0029213103877318656,
+       "dur_cens": 6.7,
+       "dur_unc": 6.9
+      },
+      {
+       "drill": "WR:SLOT_STRIKE_ROUTE_LEFT",
+       "pe": 0.8023255813953488,
+       "z_cens": 0.16450930618074366,
+       "z_unc": -0.6677142427336061,
+       "dur_cens": 6.0,
+       "dur_unc": 6.3
+      }
+     ]
+    },
+    "r_feature_session_centered_censoring_share_within_position": 0.2635107802706338,
+    "true_peak_feature": {
+     "n": 312,
+     "r_with_primary_feature_within_position": 0.8700144235536774
+    }
+   },
+   "tests": [
+    {
+     "id": "P1_role_adjusted",
+     "label": "post hoc (after review)",
+     "note": null,
+     "feature": "c_drill_intensity",
+     "target": "g_p1_role_adjusted",
+     "extra_controls": [],
+     "n": 277,
+     "resid_df": 252,
+     "partial_r": -0.06149149108550468,
+     "partial_r_ci95": [
+      -0.1831917389519315,
+      0.06206505396906879
+     ],
+     "fl_p": 0.8262173782621738,
+     "partial_r_mde80_one_sided": 0.15557802795442996,
+     "one_sided_upper_95": 0.0422279418163002
+    },
+    {
+     "id": "P1_given_role_mix",
+     "label": "post hoc (after review)",
+     "note": "B2 + position-specific role-mix covariates",
+     "feature": "c_drill_intensity",
+     "target": "g_play_intensity",
+     "extra_controls": [
+      "role_WR_slot",
+      "role_WR_deep_of_routes",
+      "role_TE_slot",
+      "role_TE_deep_of_routes",
+      "role_DB_run",
+      "role_DB_cb",
+      "role_DB_slot",
+      "role_DB_man",
+      "role_DL_run",
+      "role_DL_edge",
+      "role_OL_run",
+      "role_OL_tackle",
+      "role_OL_center"
+     ],
+     "n": 277,
+     "resid_df": 239,
+     "partial_r": -0.0004858991995386962,
+     "partial_r_ci95": [
+      -0.12684685740749108,
+      0.12589057771194329
+     ],
+     "fl_p": 0.511948805119488,
+     "partial_r_mde80_one_sided": 0.1596998009966931,
+     "one_sided_upper_95": 0.1057373985260609
+    },
+    {
+     "id": "P1_role_adjusted_WR",
+     "label": "post hoc (after review)",
+     "note": "by position, descriptive",
+     "feature": "c_drill_intensity",
+     "target": "g_p1_role_adjusted",
+     "extra_controls": [],
+     "n": 61,
+     "resid_df": 40,
+     "partial_r": -0.0744544502286652,
+     "partial_r_ci95": [
+      -0.370017753776199,
+      0.23479543224428182
+     ],
+     "fl_p": 0.674932506749325,
+     "partial_r_mde80_one_sided": 0.37816651065603385,
+     "one_sided_upper_95": 0.1865833083007427
+    },
+    {
+     "id": "P1_role_adjusted_TE",
+     "label": "post hoc (after review)",
+     "note": "by position, descriptive",
+     "feature": "c_drill_intensity",
+     "target": "g_p1_role_adjusted",
+     "extra_controls": [],
+     "n": 20,
+     "resid_df": -1,
+     "partial_r": null,
+     "partial_r_ci95": [
+      null,
+      null
+     ],
+     "fl_p": null,
+     "partial_r_mde80_one_sided": null,
+     "one_sided_upper_95": null
+    },
+    {
+     "id": "P1_role_adjusted_DB",
+     "label": "post hoc (after review)",
+     "note": "by position, descriptive",
+     "feature": "c_drill_intensity",
+     "target": "g_p1_role_adjusted",
+     "extra_controls": [],
+     "n": 67,
+     "resid_df": 46,
+     "partial_r": 0.2353264382730639,
+     "partial_r_ci95": [
+      -0.052310999966121846,
+      0.4869086484809511
+     ],
+     "fl_p": 0.056194380561943806,
+     "partial_r_mde80_one_sided": 0.3543782021719309,
+     "one_sided_upper_95": 0.4502557836946317
+    },
+    {
+     "id": "P1_role_adjusted_DL",
+     "label": "post hoc (after review)",
+     "note": "by position, descriptive",
+     "feature": "c_drill_intensity",
+     "target": "g_p1_role_adjusted",
+     "extra_controls": [],
+     "n": 67,
+     "resid_df": 46,
+     "partial_r": -0.14625129294637976,
+     "partial_r_ci95": [
+      -0.41321927361028754,
+      0.14386684061200605
+     ],
+     "fl_p": 0.8372162783721628,
+     "partial_r_mde80_one_sided": 0.3543782021719309,
+     "one_sided_upper_95": 0.09758116695311592
+    },
+    {
+     "id": "P1_role_adjusted_OL",
+     "label": "post hoc (after review)",
+     "note": "by position, descriptive",
+     "feature": "c_drill_intensity",
+     "target": "g_p1_role_adjusted",
+     "extra_controls": [],
+     "n": 62,
+     "resid_df": 41,
+     "partial_r": -0.24643707864246422,
+     "partial_r_ci95": [
+      -0.509103718916858,
+      0.05822134019325426
+     ],
+     "fl_p": 0.9388061193880612,
+     "partial_r_mde80_one_sided": 0.3738687792518656,
+     "one_sided_upper_95": 0.00845804062117514
+    },
+    {
+     "id": "P1_given_sprint_profile",
+     "label": "post hoc (after review)",
+     "note": "B2 + c40_smax + c40_tau",
+     "feature": "c_drill_intensity",
+     "target": "g_play_intensity",
+     "extra_controls": [
+      "c40_smax",
+      "c40_tau"
+     ],
+     "n": 277,
+     "resid_df": 250,
+     "partial_r": 0.013915866811646792,
+     "partial_r_ci95": [
+      -0.10984812966159939,
+      0.13725493137620165
+     ],
+     "fl_p": 0.42155784421557846,
+     "partial_r_mde80_one_sided": 0.15619141837861045,
+     "one_sided_upper_95": 0.11760834140024702
+    },
+    {
+     "id": "P2_given_sprint_profile",
+     "label": "post hoc (after review)",
+     "note": "B2 + c40_smax + c40_tau",
+     "feature": "c_drill_intensity",
+     "target": "g_snaps_per_season",
+     "extra_controls": [
+      "c40_smax",
+      "c40_tau"
+     ],
+     "n": 407,
+     "resid_df": 380,
+     "partial_r": -0.03497749557168839,
+     "partial_r_ci95": [
+      -0.13484389057276042,
+      0.06559235640714182
+     ],
+     "fl_p": 0.7563243675632437,
+     "partial_r_mde80_one_sided": 0.12695709992592832,
+     "one_sided_upper_95": 0.04945829907587682
+    },
+    {
+     "id": "P1_feature_true_peak_drills",
+     "label": "post hoc (after review)",
+     "note": null,
+     "feature": "c_drill_intensity_true_peak",
+     "target": "g_play_intensity",
+     "extra_controls": [],
+     "n": 215,
+     "resid_df": 191,
+     "partial_r": 0.08826988704094266,
+     "partial_r_ci95": [
+      -0.05364158767645313,
+      0.2266863792430438
+     ],
+     "fl_p": 0.1250874912508749,
+     "partial_r_mde80_one_sided": 0.17835279618234784,
+     "one_sided_upper_95": 0.2048889460602074
+    },
+    {
+     "id": "P1_feature_true_peak_given_sprint",
+     "label": "post hoc (after review)",
+     "note": "true-peak feature; B2 + c40_smax + c40_tau",
+     "feature": "c_drill_intensity_true_peak",
+     "target": "g_play_intensity",
+     "extra_controls": [
+      "c40_smax",
+      "c40_tau"
+     ],
+     "n": 215,
+     "resid_df": 189,
+     "partial_r": 0.09731186030946165,
+     "partial_r_ci95": [
+      -0.045295889823708704,
+      0.23603262805312555
+     ],
+     "fl_p": 0.10848915108489152,
+     "partial_r_mde80_one_sided": 0.1792786188230622,
+     "one_sided_upper_95": 0.21421418568852407
+    },
+    {
+     "id": "P1_feature_peak_lt50_drills",
+     "label": "post hoc (after review)",
+     "note": "threshold sensitivity: drills with peak at end in < 50% of attempts",
+     "feature": "c_drill_intensity_peak_lt50",
+     "target": "g_play_intensity",
+     "extra_controls": [],
+     "n": 215,
+     "resid_df": 191,
+     "partial_r": 0.038939179132325565,
+     "partial_r_ci95": [
+      -0.10286928852279234,
+      0.17919632125532453
+     ],
+     "fl_p": 0.3057694230576942,
+     "partial_r_mde80_one_sided": 0.17835279618234784,
+     "one_sided_upper_95": 0.15698021710931384
+    },
+    {
+     "id": "P2_feature_true_peak_drills",
+     "label": "post hoc (after review)",
+     "note": null,
+     "feature": "c_drill_intensity_true_peak",
+     "target": "g_snaps_per_season",
+     "extra_controls": [],
+     "n": 312,
+     "resid_df": 288,
+     "partial_r": -0.025952131851679702,
+     "partial_r_ci95": [
+      -0.14071319409559552,
+      0.08949707729253784
+     ],
+     "fl_p": 0.672932706729327,
+     "partial_r_mde80_one_sided": 0.14564184152972662,
+     "one_sided_upper_95": 0.07101493757134189
+    },
+    {
+     "id": "P2_feature_true_peak_given_sprint",
+     "label": "post hoc (after review)",
+     "note": "true-peak feature; B2 + c40_smax + c40_tau",
+     "feature": "c_drill_intensity_true_peak",
+     "target": "g_snaps_per_season",
+     "extra_controls": [
+      "c40_smax",
+      "c40_tau"
+     ],
+     "n": 312,
+     "resid_df": 286,
+     "partial_r": -0.017108561215931482,
+     "partial_r_ci95": [
+      -0.13242822002305293,
+      0.0986680751764098
+     ],
+     "fl_p": 0.6181381861813818,
+     "partial_r_mde80_one_sided": 0.14614468980504713,
+     "one_sided_upper_95": 0.08015019494346329
+    },
+    {
+     "id": "P2_feature_peak_lt50_drills",
+     "label": "post hoc (after review)",
+     "note": "threshold sensitivity: drills with peak at end in < 50% of attempts",
+     "feature": "c_drill_intensity_peak_lt50",
+     "target": "g_snaps_per_season",
+     "extra_controls": [],
+     "n": 312,
+     "resid_df": 288,
+     "partial_r": -0.032800166469009004,
+     "partial_r_ci95": [
+      -0.14742488201429504,
+      0.0826939329876591
+     ],
+     "fl_p": 0.7128287171282872,
+     "partial_r_mde80_one_sided": 0.14564184152972662,
+     "one_sided_upper_95": 0.06419231284244377
+    }
+   ],
+   "bh_all_including_post_hoc": {
+    "n": 37,
+    "min_p": 0.056194380561943806,
+    "q": {
+     "P1": 0.9241881367418814,
+     "P2": 0.9241881367418814,
+     "P1_without_2025": 0.9241881367418814,
+     "P2_without_2025": 0.9241881367418814,
+     "P1_WR": 0.9241881367418814,
+     "P1_DB": 0.9241881367418814,
+     "P1_DL": 0.9241881367418814,
+     "P1_OL": 0.9241881367418814,
+     "P2_WR": 0.9241881367418814,
+     "P2_TE": 0.9241881367418814,
+     "P2_DB": 0.9241881367418814,
+     "P2_DL": 0.9241881367418814,
+     "P2_OL": 0.9241881367418814,
+     "P1_feature_no_division": 0.9241881367418814,
+     "P1_feature_median": 0.9241881367418814,
+     "P2_feature_no_division": 0.9241881367418814,
+     "P2_feature_median": 0.9241881367418814,
+     "P1_target_share80": 0.9241881367418814,
+     "P2_target_log": 0.9241881367418814,
+     "P2_target_with_st": 0.9241881367418814,
+     "X1_starts_per_season": 0.9241881367418814,
+     "P1_feature_drill_median_literal": 0.9241881367418814,
+     "P2_feature_drill_median_literal": 0.9241881367418814,
+     "P1_role_adjusted": 0.9241881367418814,
+     "P1_given_role_mix": 0.9241881367418814,
+     "P1_role_adjusted_WR": 0.9241881367418814,
+     "P1_role_adjusted_DB": 0.9241881367418814,
+     "P1_role_adjusted_DL": 0.9241881367418814,
+     "P1_role_adjusted_OL": 0.9388061193880614,
+     "P1_given_sprint_profile": 0.9241881367418814,
+     "P2_given_sprint_profile": 0.9241881367418814,
+     "P1_feature_true_peak_drills": 0.9241881367418814,
+     "P1_feature_true_peak_given_sprint": 0.9241881367418814,
+     "P1_feature_peak_lt50_drills": 0.9241881367418814,
+     "P2_feature_true_peak_drills": 0.9241881367418814,
+     "P2_feature_true_peak_given_sprint": 0.9241881367418814,
+     "P2_feature_peak_lt50_drills": 0.9241881367418814
+    }
+   }
+  }
+ },
+ "decision": {
+  "P1": "P1 (median / q95 of REG play max speed: per route for WR/TE, per snap for DB/DL/OL; within position largely alignment and route-depth mix): fails c1_fl_p_and_sign, c2_excess_lb_gt_0_signed, c3_loco_2of3, c4_bh_q_lt_05, c6_seeds_and_leave3out; pooled within-position partial r -0.003 [-0.13, +0.12], one-sided p 0.521, BH q 0.79; pooled observed partial r above +0.10 ruled out (one-sided 95%; position-stratified bootstrap +0.11); per-position effects up to +0.41 (DB) not excluded (feature x position heterogeneity p 0.28, post hoc); one-sided MDE 0.16; reliability-corrected (beyond-B2) 95% interval [-0.19, +0.18]",
+  "P2": "P2 (off+def snaps per available season): fails c1_fl_p_and_sign, c2_excess_lb_gt_0_signed, c3_loco_2of3, c4_bh_q_lt_05, c6_seeds_and_leave3out; pooled within-position partial r -0.042 [-0.14, +0.06], one-sided p 0.792, BH q 0.79; pooled observed partial r above +0.04 ruled out (one-sided 95%; position-stratified bootstrap +0.04); per-position effects up to +0.24 (TE) not excluded (feature x position heterogeneity p 0.56, post hoc); one-sided MDE 0.13; reliability-corrected (beyond-B2) 95% interval [-0.17, +0.07] for feature error only (snaps as recorded); [-0.21, +0.09] if snaps per season is read as a playing-time trait (beyond-B2 stability 0.68, post hoc)",
+  "verdict": "KILL: no primary passes. feature reliability 0.74 (stop rule), 0.66 beyond B2; P1 split-half 0.73; P2 a recorded count; all >= 0.5, so the null is not a measurement failure. Bounds are pooled within-position averages."
+ }
+}

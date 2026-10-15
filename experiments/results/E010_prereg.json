@@ -1,0 +1,45 @@
+{
+  "experiment": "E010 — Drill intensity: how close to his own top speed a player runs his position drills",
+  "date": "2026-10-14",
+  "written_by": "orchestrator, before any association of this feature with any game target was computed by anyone",
+  "already_seen_before_this_prereg": [
+    "E002 diagnostic (within-Combine only): WR turn-drill stem speed correlates -0.14 with the 40 time and 0.01 with 40 peak speed, so position drills are run well below capacity and drill speed is not just athleticism.",
+    "E008 drill profile: position-drill metrics are mostly drill-specific (cross-drill ICC medians 0.29-0.39) and some carry session tempo (OL wave drill). Hence the session centering and the reliability stop rule below.",
+    "No association between any drill-speed-relative-to-capacity measure and any game measure has been computed."
+  ],
+  "hypothesis": "Players who run their position drills closer to their own measured top speed (high 'drill intensity': motor, urgency) play closer to their own ceiling on a typical snap in games and earn more playing time, beyond B2 (traditional Combine + draft slot + position + draft year).",
+  "feature": {
+    "name": "c_drill_intensity",
+    "definition": "For every position-drill attempt (drill_type SKILL_DRILLS_*; not the 40, shuttle or 3-cone): attempt peak speed (Savitzky-Golay speed, interior frames, as in bdb27.speed smax) divided by the player's Combine 40 peak speed (bdb27.speed c40_smax). Z-score these ratios within drill name x Combine session (segments.combine_sessions; naming variants of one drill merged). Player value = mean of the player's drill-level means, requiring >= 2 distinct drills.",
+    "population": "All Combine positions (WR, TE, DB, DL, OL) with a QC-passing tracked 40 and >= 2 position drills; the LB drill group is excluded (n = 4).",
+    "reliability_stop_rule": "Compute cross-drill reliability (reliability.cross_drill_icc with zscore=True and center_by=[drill, session], then Spearman-Brown to the player's number of drills, averaged over players). If it is below 0.5, STOP: report the null on measurement grounds and run no linkage tests."
+  },
+  "harness": "bdb27.linkage.evaluate, protocol rev 3, pooled across positions (position dummies, within-position Freedman-Lane), expected_sign=+1, n_repeats=50, n_perm=2000, n_perm_fl=10000, seeds 0, 1, 2; n_jobs <= 3.",
+  "primary_tests": [
+    {
+      "id": "P1",
+      "target": "g_play_intensity: the median of the player's REG play max speeds divided by his q95 of REG play max speeds (plays > 12 yd/s dropped, >= 50 REG plays). How close to his own game ceiling he plays on a typical snap; a ratio of quantiles, so exposure-invariant.",
+      "expected_sign": 1
+    },
+    {
+      "id": "P2",
+      "target": "g_snaps_per_season: (career_offensive_snaps + career_defensive_snaps) / seasons available (2026 - draft_year: 2023 class 3, 2024 class 2, 2025 class 1), from player_career_successes; every population player included (0 if he never played). An outcome: coaches choosing to play him.",
+      "expected_sign": 1
+    }
+  ],
+  "go": "PLAN.md §4 rev 3 criteria 1-7; BH across P1-P2; report by position as robustness (not separate claims).",
+  "prespecified_robustness_not_additional_claims": [
+    "seeds 0, 1, 2; leave-3-out in both directions",
+    "without the 2025 class",
+    "by position (WR, TE, DB, DL, OL), descriptive",
+    "feature variant: drill peak speed z-scored within drill x session WITHOUT dividing by 40 peak speed",
+    "feature variant: drill-level median instead of mean",
+    "target variant P1: share of plays with play max >= 80% of the player's own q95",
+    "target variant P2: log(1 + snaps per season); special-teams snaps added",
+    "team share of P1 (reliability.team_share) and split-half reliability of P1 (reliability.split_half_estimator)"
+  ],
+  "exploratory_prelisted": [
+    "c_drill_intensity -> games started per available season",
+    "c_drill_intensity -> Pro Bowl / All-Pro (count; descriptive only)"
+  ]
+}

@@ -11,6 +11,272 @@ Template:
 - Decision: keep / kill / revisit — why
 ```
 
+## 2026-10-15 — ROUND 3 summary (E009 beyond-stopwatch, E010 drill intensity, E011 ball tracking, writeup v1)
+- **E009:** beyond the stopwatch alone (B1), no link passes, and the same 16 links are null. Adding the draft slot moves partial r by at most 0.14 (median 0.01), so the beyond-B2 nulls are not a draft-slot artifact. WR tracked top speed: +0.42 beyond B1, criterion 4 marginal (depends on the BH family), fails leave-3-out.
+- **E010 (preregistered):** drill intensity is a reliable trait (0.74; 0.66 beyond B2) but shows no link to play intensity (−0.003 [−0.13, +0.12]) or snaps per season (−0.04 [−0.14, +0.06]); **kill**. OL "intensity" is mostly run-out speed when tracking stops.
+- **E011:** Combine ball tracking exists only for 2025 (54 WR/TE). It is clean (catch timing within one frame for 87%), but no catch mechanic is a stable trait (best 0.42), so the gate stopped every game test. **Park.**
+- **Writeup v1** (audit framing, 1,831 words, 174 number checks pass). Mock judges: Football 5/10, Writeup 6/10, Data Science 7/10, Data Viz 5/10 (final figures not built). New post hoc result: one game of a WR's own tracking forecasts his later game top speed about as well as his best Combine measure (r 0.56 vs 0.57); 2–8 games give 0.75–0.79 (n = 42). The three post hoc scripts were moved from the scratchpad into `experiments/posthoc_writeup_v1/`.
+- Open shared-module items: the LOCO null SD is inflated by a few degenerate ridge fits (use median + MAD); FL p near a BH threshold needs its Monte Carlo SE / adaptive permutations; HistGradientBoosting ignores the n_jobs cap (OpenMP); `team_share` pooled across positions mixes cross-position pairs (pass team_col=[team, season, position]); `cross_drill_icc(zscore=True)` silently drops zero-variance groups.
+
+## 2026-10-15 — Writeup v1 (audit framing): round-3 mock-judging fixes
+- **What:** applied two mock judges' reviews (Football/Writeup 5/6; DS/Viz 7/5; both "weakened").
+  - Every v0 number was upheld.
+  - The problems were framing, consistency and missing analyses.
+  - Files: `writeup/draft.md`, `writeup/outline.md` (§9 lists each issue as accepted, rejected or deferred), `writeup/figure_plan.md`.
+- **Main changes:**
+  1. **The WR signal follows Gate 2.**
+     - "Fits a modest link to game top speed (about +0.3) as well as none, and no link to production".
+     - "Tiebreaker" removed.
+     - Renamed hidden → **finishing speed**, because clubs can approximate it from the official 20-yard split (not in our data).
+  2. **Repeat is checked on the residual too.**
+     - Table 1 shows metric / residual reliability.
+     - DL 40 top-speed residual 0.29 fails; WR 0.62–0.75.
+  3. **Bounds as measured and error-free** (up to +0.73), with population wording.
+  4. **Fragility disclosed.**
+     - Deep-route usage control: +0.21 [−0.10, +0.49] (post hoc).
+     - The 3 supportive WRs are all 2024 draftees; 2023 shows nothing.
+     - A tracking-artifact alternative is named, since official timing doesn't corroborate (r −0.11).
+     - CV R² 0.18 → 0.23, excess +0.045 ± 0.029.
+  5. **[[TBD-REV3]] resolved.** E006-P1 as computed (AS_R = 20) passes rev-3 criteria 1–6 on seeds 0–2.
+     - Class holdout 2/3: 2023 and 2025 excess > 1 null SD; 2024 negative.
+     - It still fails BH across ~90 round-one tests (q ≈ 0.06).
+     - The AS_R = 1000 estimator (+0.51, post hoc) also passes; without 2025 +0.39, leave-three-out +0.35.
+  6. **Week to week (new; post hoc; Figure 5).** One game of a WR's own tracking forecasts his later game top speed as well as his best Combine measure (r 0.56 vs 0.57); 2–8 games 0.75–0.79.
+     - n = 42.
+     - The gap's 95% CI excludes 0 only at games 5 and 8, hence "probably better".
+     - The finishing-speed leaderboard moved to the notebook.
+  7. **Other fixes.**
+     - The 172-pairs 59% now carries a receiver-bootstrap CI of 43–73% (permutation p 0.062) and sits in the Figure 1 footer.
+     - The hook pair is disclosed as the largest-gap pair.
+     - "Drills run below full speed" removed (E010 tests it).
+     - Cushion: alignment removes 73% of between-receiver variance.
+     - Exposure check reported.
+     - Labels and process wording fixed.
+- **Error found:** v0 quoted "receiver top speed (0.92)" from the S0 target's reliability; observed top speed is 0.91 (E001-WR). Fixed.
+- **Size:** 1,831 words before fill-ins. Fill-in budgets cut to ~125, for a ceiling of ~1,970; a 7-step cut list is in the outline. 6 of 9 figures/tables, 2 reserved.
+- **Verification:** a scratch checker asserts every quoted number and string against E002/E006/E007/E007_leaderboard/E008 and the post hoc JSONs: 174 checks, 0 fails.
+- **Rejected or deferred:**
+  - Pulling the public 20-yard splits (external data; rules unchecked) goes to the user.
+  - The AS_R = 1000 estimator is not made the headline, because preregistered definitions may not change; it is quoted as post hoc.
+- **Action needed:** promote `ph_pairs`, `ph_rev3` and `ph_inseason` from the scratchpad (`round3/writeup_v1/`) into the notebook or a committed results JSON. The rev-3 pass claim and the in-season numbers currently trace only to them.
+- **Decision:** v1 replaces v0 as the base. Fill E009/E010/E011 per outline §3, then build Figures 4 and 5 first (JSON-only / light data).
+
+## 2026-10-15 — E011: Combine ball tracking at the catch point (feasibility, descriptive; 2025 class only; revised after review)
+
+- **Hypothesis:** descriptive, with no preregistered primaries. Can the Combine BALL rows yield catch-point mechanics that are stable receiver traits?
+  - Mechanics:
+    - speed retention through the catch
+    - deceleration into it
+    - catch offset from the ball's path
+    - adjustment distance and time in OVER_SHOULDER_ADJUST, CIRCUS and the fade drills
+  - The plan was written at 2026-10-15T03:59:56Z, before any mechanic, reliability or association was computed. It is copied verbatim into `E011.json` as `plan`.
+  - Only mechanics with reliability ≥ 0.5 would get at most 3 prelisted exploratory `linkage.evaluate` tests against rookie receiving outcomes: catch rate over expected, YAC over expected, and drops per target.
+  - Power was stated up front: n ≈ 24, one-sided MDE ≈ 0.54, true-score MDE above 1.
+
+- **Method:**
+  - **Code:** `src/bdb27/probes/g_catch_point.py` and `experiments/E011_catch_point.py`. Runtime 1-8 min depending on load, peak 0.7 GB. Reruns are deterministic up to last-digit floating-point differences.
+  - **Coverage:**
+    - BALL rows exist only in 2025: 551 attempts, 54 players (37 WR, 17 TE), 18 drills.
+    - That is 93% of the reps in those drills, with none in 2023-24 or any other position group.
+    - x/y only, no ball height.
+  - **Release:** first run of ≥ 3 frames with ball speed ≥ 12 yd/s. Before release the ball never exceeds 11.96 yd/s.
+  - **Contact:** the first one-frame ball-speed drop to < 0.75 × the previous frame's, i.e. the ball's first impact with anything.
+  - **Outcome:** inferred from post-contact ball–receiver distance (preregistered; no labels exist).
+  - **Receiver kinematics:** SG.
+  - **Reliability:** cross-drill ICC on player × drill means, z-scored within drill × session, with 2,000 player-bootstrap CIs.
+  - **Descriptive:** Spearman correlations with 12 Combine measures.
+  - **Game side** (exposure, reliability and power only): cross-fitted catch probability, NGS expected YAC, own drops (`dropped_pass` & target), EB shrinkage with `cluster=game_id`.
+  - **Post hoc additions after review**, labelled `revision` in the JSON; no preregistered definition changed:
+    - an unanchored contact-time check
+    - a passed_him / ball_unrelated split of not_reached
+    - retest and ICC bootstrap CIs
+    - velocity matching to estimate the clock offset, plus a clock-shift sensitivity
+    - the adjust_dist decomposition
+  - **Figures:** `E011_{qc_contact,qc_outcomes,reliability}.png`.
+
+- **Result (with uncertainty):**
+  - **The data are clean and easy to segment.**
+    - Contact time agrees with an unanchored geometric closest approach within 0.1 s, one 10 Hz frame, for 86.9% of 488 reached attempts (chance 11.6%; 92.2% within 0.15 s).
+    - The first version of this check was bounded to [-0.05, +0.15] s by construction and is withdrawn.
+    - Preregistered outcomes: 369 secured, 37 separated, 82 reached but unobserved, 34 not reached, 25 tracking ended in flight, 4 no flight.
+    - Post hoc split of the 34 not reached:
+      - 15 passed him: the ball came within 1.5 yd in flight and landed beyond him.
+      - 4 have ball rows from another throw.
+      - 15 remain, short or wide.
+    - The separated share of observed outcomes is therefore 9-13% depending on the rule.
+  - **The clock offset is not identified more tightly than about ±0.15 s.**
+    - Velocity matching on carried balls gives +0.04 to +0.06 s or -0.11 to -0.13 s depending on the window.
+    - The pooled slope test, -0.009 s, is confounded by ball handling: the within-attempt slope is +0.33 s.
+  - **No mechanic is a stable trait.**
+
+    | Mechanic | Reliability [95% CI] | ICC per drill [95% CI] |
+    |---|---|---|
+    | retention | 0.31 [0.00, 0.50] | 0.08 [-0.02, 0.16] |
+    | decel_in | 0.33 [0.00, 0.54] | 0.06 [-0.01, 0.13] |
+    | catch_offset | 0.42 [0.15, 0.56] | 0.08 [0.02, 0.14] |
+    | adjust_dist | 0 | -0.33 |
+    | adjust_time | not estimable | — |
+
+    - adjust_time is 0 s in every OVER_SHOULDER_ADJUST and fade attempt.
+    - adjust_dist mostly measures run-speed change in the fades and route curvature in CIRCUS.
+    - Reliability 0.5 for catch offset would need about 6-46 distinct drills per player.
+    - Within-drill retest ICCs cannot bound anything: CIs of about ±0.45 on 7-32 repeated cells, and 22 of 48 repeats followed a failed rep.
+    - Post hoc checks all stay below 0.5: WR only (best 0.46), 0.3/0.7 s windows, drill-centred only, ±0.1/0.15 s clock shifts, and the separated rate (ICC ≈ 0).
+  - **Descriptive:** 2 of 60 Combine-correlation CIs exclude 0, against about 3 expected by chance.
+  - **Gate failed → 0 tests spent; no Combine–game association computed.**
+    - 24 of the 54 have ≥ 10 rookie targets.
+    - Target split-half reliability: 0.39 (catch rate over expected), 0.29 (YAC over expected), below 0 (drops).
+    - The full B2 leaves resid_df = 6.
+    - `dropped_pass` is play-level: 199 of the 251 tagged player-plays with a player_play row were not the target.
+
+- **Decision:** **park.** Combine ball tracking is a clean, easily segmented data source, but the 2025 release cannot support a receiver trait or a game link.
+  - **Revisit if** there are more classes with BALL rows, ball height or a higher sampling rate, repeated catches per drill, catch labels, or a verified ball–player clock.
+  - **Writeup fill (29 words):** "The ball is tracked only in 2025 (54 receivers, 18 catching drills, no height). Catch timing is measurable to one frame, but no catch mechanic was reliable (best 0.42)."
+  - No figure slot spent.
+
+## 2026-10-15 — E010: Drill intensity (preregistered): how close to his own tracked-40 peak a player runs his position drills (revised after skeptic review)
+- **Hypothesis** (prereg `experiments/results/E010_prereg.json`, written before any association; protocol rev 3): players who run their position drills closer to their own tracked-40 peak speed (P1) play closer to their own game ceiling on a typical play and (P2) earn more playing time, beyond B2. Expected sign + for both.
+- **Method:**
+  - **Feature** `c_drill_intensity`:
+    - Per position-drill attempt (SKILL_DRILLS_{WR,TE,DB,DL,OL}; the LB group, 4 DL players, excluded): interior SG peak speed (speed.smax definition) / c40_smax.
+    - z-scored within drill x Combine session (drill key = position group + drill name; 4 naming variants merged).
+    - Drill-level mean of z, then the player mean over >= 2 drills.
+    - QC (fixed from trace plots before any reliability was computed): keep attempts with path within [0.5, 2.5] x their drill x session median. This dropped 5 (2 aborted, 3 tracking overruns).
+    - Population: 407 (WR 91, TE 34, DB 100, DL 88, OL 94).
+  - **Stop rule:** `reliability.cross_drill_icc(zscore=True, center_by=[drill, session])` on player x drill values.
+  - **Targets:**
+    - P1 `g_play_intensity` = median / q95 of REG play max speed (q95 identical to E001's game_top_speed), >= 50 plays, n 277. **Coverage:** WR/TE tracked plays are pass plays only (their player_play REG rows contain no runs; tracked plays are a median 0.61 / 0.42 of career off+def snaps), so for WR/TE P1 is per route. For DB/DL/OL it is per snap (1.00 of snaps; 37-42% runs).
+    - P2 `g_snaps_per_season` = (off + def snaps) / (2026 - draft_year), all 407 players.
+  - **Harness:** `linkage.evaluate` rev 3, pooled (position dummies, within-position Freedman-Lane), one-sided +, 10,000 FL perms, 50x5 CV, 2,000 CV perms, seeds 0-2, n_jobs 3.
+  - Every implementation choice is listed in `E010.json` (`implementation_choices`). The post hoc block added after the skeptic reviews is `game.post_hoc_review` (choices in `post_hoc_review.choices`; rerun alone with `--post-hoc`, ~7 min, 0.75 GB).
+  - Files: `src/bdb27/probes/f_drill_intensity.py`, `experiments/E010_drill_intensity.py`, `experiments/results/E010.json`, `experiments/figures/E010_{qc_traces,qc_intensity,targets,results}.png`, `data/processed/e010_{players,play_max}.parquet`.
+  - Runtime 25-65 min depending on CPU load, peak 1.46 GB.
+  - A full top-to-bottom rerun after the review reproduced `E010.json`: 2,669 of 2,687 values are bit-identical. The 18 team-share values differ below 1e-13, from floating-point summation order in polars `group_by`. Both parquets are identical.
+- **Result (with uncertainty):**
+  - **Stop rule passes.** Cross-drill ICC 0.27, SB reliability 0.74 (mean 8.4 drills).
+    - By position: WR 0.82, TE 0.55, DB 0.74, DL 0.73, OL 0.75.
+    - The feature shares its 40-peak denominator (r -0.45 within position). Reliability beyond the 40 peak is 0.64, beyond B2 0.66, and beyond B2 + c40_smax + tau 0.59 (post hoc), so criterion 5 holds every way.
+  - **What the feature is** (QC; post hoc where marked):
+    - Position drills peak at a median 74% of the player's tracked-40 peak.
+    - 41% of attempt peaks fall on the last tracked interior frame (run-out censored). Drills censored in >= 60% of attempts make up 85% of OL drill rows, 48% DL, 26% DB, 16% WR and 12% TE. So **OL "intensity" is essentially speed when tracking stops**: in the mirror, drop and wave drills the lateral phase runs at a median 2.3-3.6 yd/s (90th percentile of speed before the last 1.5 s), and the 6-7.4 yd/s peak is the run-out (post hoc check). TE block explosion is a ~2 yd/s blocking drill.
+    - Post hoc: the censored-drill and true-peak-drill halves of the feature agree within WR (r +0.44), DB (+0.60) and DL (+0.54) but not TE (-0.11, n 34), so **the TE feature has no single construct**. In 19 of 21 drills where both kinds of attempt are common, censored attempts score higher z at near-identical durations. Peak-at-end therefore partly marks players accelerating through the finish, not only a tracking cut (player feature vs his session-centered censoring share: r +0.26).
+    - Post hoc: **beyond B2 the feature is still partly sprint profile.** Partial r with c40_smax -0.36, vmax -0.28, tau -0.21. Within position, tau + vmax + weight explain R2 0.53 (WR), 0.61 (TE), 0.47 (OL), 0.20 (DB), 0.10 (DL). B2 + c40_smax + tau explain 34% of the feature in sample (B2 alone 24%).
+  - **Targets:**
+    - P1 split-half 0.73 (WR 0.66 to OL 0.78); exposure r +0.01; position explains 82% (CV R2 of B0).
+    - **P1 is largely role within position** (post hoc). Alignment and route-depth mix explain CV R2 0.18-0.37 (in sample 0.31-0.43). Single covariates: OL tackle share r +0.61, DL EDGE share +0.61, WR deep-route share +0.55, DB CB share -0.49, DB man share -0.42. A play-context-adjusted P1 (play max minus its position x alignment x run/pass x route x coverage cell mean) correlates only 0.45 with raw P1 within position. Its split-half is WR 0.53, DB 0.54, DL 0.83, OL 0.72, TE 0.36.
+    - **Team share (corrected).** The reported pooled -0.03 +- 0.04 used position-centered values across positions, so 2,122 of its 2,598 ordered teammate pairs are cross-position (e.g. a WR with an OL). It bounds a team-wide component, not scheme within a position. Same-position pairs only: +0.00 +- 0.10 (two-sided 95% upper about +0.19). Inverse-variance mean of the per-position estimates: -0.00 +- 0.09. Role-adjusted, same-position: +0.06 +- 0.12. So P1 is not a team-season effect; it is a stable player-or-role trait (team_share cannot separate the two).
+    - P2: B2 CV R2 0.48 vs B1 0.02 (draft slot dominates). Season-1 vs season-2 player_play counts: r 0.73 given B0, 0.55 beyond B2 (post hoc; Spearman-Brown to available seasons 0.68).
+  - **P1 (primary):**
+    - Pooled within-position partial r -0.003 [-0.13, +0.12]; one-sided p 0.52 (seeds 0.52/0.52/0.52); excess dR2 -0.0006 +- 0.0011; LOCO 0/3; by class -0.07/+0.10/-0.05.
+    - Leave-3-out: supportive -0.07 (p 0.84), contrary +0.04 (p 0.27).
+    - Pooled observed r above +0.10 ruled out (one-sided 95%; position-stratified case bootstrap +0.11). One-sided MDE 0.16. Reliability-corrected (beyond-B2, both sides) [-0.19, +0.18].
+  - **P2 (primary):**
+    - Pooled partial r -0.042 [-0.14, +0.06]; p 0.79 (0.79/0.80/0.80); excess -0.0001 +- 0.0028; LOCO 0/3; by class -0.02/-0.09/-0.01.
+    - Leave-3-out: -0.07 (p 0.91) / -0.01 (p 0.58).
+    - Pooled observed r above +0.04 ruled out (bootstrap +0.04). MDE 0.13. Corrected for feature error only (snaps as recorded): [-0.17, +0.07]. If snaps per season is read as a playing-time trait (beyond-B2 stability 0.68, post hoc): [-0.21, +0.09], one-sided upper +0.06.
+  - BH q (P1-P2) is 0.79 for both. Both fail criteria 1, 2, 3, 4 and 6 and pass 5.
+  - **The bounds are pooled within-position averages.** By position (prespecified, descriptive):
+    - P1: WR +0.10, DB +0.19 [-0.10, +0.45] (p 0.11), DL -0.12, OL -0.19; TE n 20 undefined.
+    - P2: WR +0.05, TE -0.22, DB -0.15, DL -0.13, OL -0.05.
+    - Per-position one-sided 95% upper bounds reach +0.41 (DB P1) and +0.34 (WR P1), and +0.24 for P2 (WR, TE). No detectable heterogeneity (post hoc feature x position F-test: P1 F(3,230) 1.29, p 0.28, without TE; P2 F(4,378) 0.74, p 0.56).
+  - **Prespecified robustness, all null:**
+    - Without 2025: P1 +0.02 [-0.13, +0.17]; P2 -0.05 [-0.18, +0.07].
+    - Feature without division -0.01 / -0.02. Player-level median over drills -0.02 / -0.05.
+    - The prereg's "drill-level median" was implemented as a player-level median, because a per-drill median over 1-2 attempts is nearly the mean. Run late after review, the literal version is near-identical to the primary (24 of 3,407 player-drill rows differ; r 0.9997): P1 -0.003 [-0.13, +0.12] p 0.52; P2 -0.043 [-0.14, +0.06] p 0.80.
+    - P1 share of plays >= 80% of q95: -0.04. P2 log: -0.04. P2 with special-teams snaps: -0.005.
+    - BH over the 21 originally reported p-valued tests: every q is 0.90.
+  - **Prelisted exploratory:** starts per season -0.025 [-0.13, +0.07], p 0.69. Honors (descriptive): 8 players, mean within-position feature -0.24 vs +0.00 (no test).
+  - **Post hoc after review (one-sided FL p; in no prespecified BH family; all null):**
+    - Role-adjusted P1: -0.06 [-0.18, +0.06], p 0.83. P1 given B2 + position-specific role mix: -0.00 [-0.13, +0.13]. Role-adjusted by position: WR -0.07, DB +0.24 [-0.05, +0.49] (p 0.06), DL -0.15, OL -0.25.
+    - B2 + c40_smax + tau: P1 +0.01 [-0.11, +0.14]; P2 -0.03 [-0.13, +0.07].
+    - Feature from true-peak drills only (peak at end in < 30% of attempts; n 215 / 312): P1 +0.09 [-0.05, +0.23], p 0.13 (+0.10, p 0.11, with sprint controls); P2 -0.03 / -0.02. With a < 50% cut: P1 +0.04 [-0.10, +0.18], p 0.31; P2 -0.03. This is the largest post hoc estimate, and it moves with an arbitrary threshold.
+    - BH over all 37 p-valued E010 tests including post hoc: min p 0.056, every q >= 0.92.
+  - **Post hoc (descriptive, no test): where P2's raw r of -0.13 goes.** It is -0.13 given B0, -0.08 with the 40 time, -0.07 with c40_smax or the NGS athleticism score, -0.04 with all traditional Combine results (B1), and -0.02 with draft slot alone. Either Combine athleticism or draft slot absorbs it: slower players run drills at a higher fraction of their own top speed (r with the 40 time +0.34 given B0), and slower players are drafted later and play less (-0.16).
+- **Decision: kill.**
+  - Drill intensity is a reliable Combine measure (0.74; 0.66 beyond B2; 0.59 beyond B2 + sprint profile). It shows no detectable link beyond B2 to the speed profile of a player's game plays (P1) or to his playing time (P2).
+  - Pooled within-position partial r above +0.10 (P1) and +0.04 (P2) is ruled out (one-sided 95%; bootstrap +0.11 / +0.04). Per-position effects up to about +0.4 (DB P1) are not.
+  - **What the two sides measure:**
+    - The feature is drill pace relative to the tracked-40 peak. It is partly sprint profile (acceleration shape and the 40 peak beyond the 40 time). In OL drills and other censored drills it is speed when tracking stops. Not effort or motor.
+    - P1 is median/q95 of play max speed, per route for WR/TE and per snap for DB/DL/OL. Within position it is largely alignment and route depth. It does not measure "how close to his ceiling he plays".
+  - **Transfer map:** list it as "a stable drill measure with no transfer". It partly overlaps E007's sprint signal, so do not count it as an independent drill trait.
+  - **Revisit** only with a preregistered DB test (role-adjusted P1; DB is the one cell where a positive link could hide, at +0.19 to +0.24 post hoc). An effort measure needs an external anchor such as pursuit speed on plays away from the ball, which these data cannot isolate.
+- **Verification (2 skeptics: 'upheld', 'weakened').** Both rebuilt the feature, targets and inference with independent code, and every number reproduced exactly. Attempts to break the null (running order, censored drills, shared denominator, rank-based r, availability, cleaner constructs) left it null.
+  - Accepted and fixed (all post hoc, labeled in `post_hoc_review`; no prespecified test or definition changed):
+    1. Same-position team share.
+    2. P2 decomposition reworded.
+    3. "Pooled within-position" qualifier, with heterogeneity, bootstrap and per-position bounds.
+    4. P2 corrected interval labeled as feature-error only, plus the playing-time-trait version.
+    5. Literal drill-level median run and flagged.
+    6. P1 described by coverage and role, with role-adjusted P1 added.
+    7. Feature described as partly sprint profile, with reliability beyond B2 + c40_smax + tau.
+    8. Construct by drill type: OL run-out speed, TE incoherent, censoring partly behavioral.
+    9. DB as the cell where an effect could hide.
+  - Rejected: none.
+  - **Corrected reading:** no detectable link, pooled. The P1 target measures role-dependent play speed, not effort. Kill stands.
+
+## 2026-10-15 — E009: Beyond the stopwatch: the 18 transfer-map links against B1 (no draft slot) — revised after round-3 review
+- **Hypothesis** (prereg `experiments/results/E009_prereg.json`; evidence labelled SECONDARY and NOT BLIND, because E008's beyond-B2 results were known and B1 is nested in B2):
+  - Does a tracking signature add anything beyond the traditional Combine stopwatch and measurements (plus position and draft year)?
+  - Same 18 links, features, targets, populations and expected signs as E008.
+- **Method:**
+  - Links: built with E008's builders, imported unchanged. n and raw r match round 1; beyond-B2 partial r matches E008.json exactly.
+  - Prereg family (18, one BH family): `linkage.evaluate(draft_controls=[])` under rev 3. One-sided Freedman–Lane with 10,000 permutations; 50×5 CV; 2,000 CV permutations; seed 0, plus seeds 1–2 when p < 0.10.
+  - Prespecified robustness:
+    - without the 2025 class (all 18);
+    - leave-3-out for links passing criterion 1;
+    - B1 − B2 difference in partial r.
+  - Post hoc:
+    - paired bootstrap of that difference, plus a Frisch–Waugh–Lovell decomposition;
+    - beyond-B1 bounds (E008's definitions);
+    - two-sided p;
+    - BH over the 36 B1 + B2 tests;
+    - E008's beyond-B2 tests re-judged under rev 3.
+  - Post hoc after review:
+    - Freedman–Lane at 2,000,000 permutations for links with p < 0.10, with the Monte Carlo SE of q;
+    - q over other families: seeds 1–2, E008's 14 primaries, the round-3 primaries (E009 + E010), all 59 round-3 tests;
+    - criterion 3 on robust null scales (median + MAD-SD; 84th percentile), from an exact replay of the harness LOCO null (44 runs, error 0);
+    - delete-one jackknife interval for the draft-slot difference;
+    - null ranges signed to the expected direction.
+  - Test count:
+    - 18 prereg tests;
+    - prespecified: 4 seed reruns, 18 without 2025, 2 leave-3-out;
+    - 38 new p-values on distinct hypotheses or samples (in the round-3 BH with E010's 21; E011 has none).
+  - Files: `experiments/E009_beyond_stopwatch.py`, `experiments/results/E009.json`, `experiments/figures/E009_transfer_map_two_baselines.png`, `data/processed/e009_{transfer_map,link_players}.parquet`.
+  - Full rerun: ~40 min, peak 0.64 GB. Harness outputs match the first run to ≤ 3e-15.
+- **Result (with uncertainty):**
+  - **No link passes criteria 1–6 beyond B1.**
+  - **Two links pass criterion 1; they are one WR speed signal** (61 shared WRs; beyond-B1 residual r 0.79 for the features, 0.82 for the targets).
+    - **E006-P1** (fitted 40 vmax → game S0, n = 61):
+      - +0.42 [+0.14, +0.63]; p 0.0025 (2M permutations: 0.00254 ± 0.00004).
+      - Excess ΔR² +0.070 ± 0.043. LOCO 2/3, also on robust scales.
+      - Without 2025: +0.35, p 0.033.
+      - **Criterion 4 is marginal (post hoc).** q18 0.045 under the prereg computation, but 0.058 at seed 1 (10k permutations). With the precise p: 0.046 [0.044, 0.047] (±2 MC SE) over the prereg family (passes); 0.035 over E008's 14 primaries; **0.051 over the round-3 primaries (fails)**; 0.15 over all 59 round-3 tests.
+      - **Fails criterion 6:** without its 3 most supportive WRs (46% of the partial r), +0.24 [−0.07, +0.51], p 0.066.
+    - **E001-WR** (n = 64): +0.29 [−0.00, +0.53], p 0.028.
+      - Fails criterion 3 under the harness rule (1/3; 2/3 on robust scales, post hoc).
+      - Fails criterion 4 (q 0.25; 0.24 precise).
+      - Fails criterion 6 (seeds, and leave-3-out p 0.15).
+  - **The other 16 links are null beyond B1** (the same 16 as beyond B2).
+    - Partial r in the expected direction: −0.17 to +0.12 (raw −0.17 to +0.14); p ≥ 0.20.
+    - Per-link ceilings +0.09 to +0.38; joint Bonferroni ceilings +0.15 to +0.47.
+    - Reliability-corrected true-score partial r up to +0.14 to +0.79 is not excluded; 0.5 or more for E002-P2, E004-P2, E005-P2, E001-DB and E001-DL.
+    - One-sided MDE 0.18–0.37. Outcome targets without 2025: all p ≥ 0.45.
+  - **What the draft slot absorbs:**
+    - Δ = r(B1) − r(B2), signed: −0.08 to +0.14 (median |Δ| 0.013).
+    - No jackknife or bootstrap 95% interval excludes 0. The largest upper limit is +0.37 (E001-DL), so the draft slot could absorb up to ~0.37 of DL top speed's partial r.
+    - The bootstrap SE is 0.9–2.0× the jackknife SE.
+    - For E006-P1 the draft slot sharpens the link: +0.42 → +0.48 (Δ −0.06 [−0.18, +0.06], jackknife).
+  - **LOCO rule (criterion 3):**
+    - The rev-3 rule passes 0 of 16 nulls under each baseline (rev 2 passed 11 of 16).
+    - On robust scales, 0–1 of 16 pass (B1: E002-P2, median rule; B2: E003-P1). No verdict changes.
+    - This is specificity on links judged null by the same data, not calibrated sensitivity. The harness's null-SD threshold, inflated by a few degenerate ridge permutations, costs sensitivity on the WR signal.
+  - **Rev-3 re-judgment of E008 (post hoc):** no verdict changes. E006-P1 passes 1–6 beyond B2 (q 0.0093 over E008's family), but fails BH across all ~90 round-1 tests (q 0.063, E008; 0.060 at 2M permutations).
+- **Decision:** **keep** as the transfer map's second column.
+  - The beyond-B2 nulls are not an artifact of the draft-slot control: beyond the stopwatch alone the same 16 links show nothing detectable.
+  - The only signal is WR tracked top speed (one signal). It is fragile: it fails leave-3-out, its criterion 4 depends on the family, and it fails BH across round 1.
+  - No hero claim. Report it as "information beyond the stopwatch", never as "market inefficiency".
+- **Writeup:** placeholder text suggested for draft lines 36 (0 words), 83 (38 words) and 140 (one clause).
+
 ## 2026-10-14 — GATE 2: hero candidate fails; the transfer map is the main finding
 - **E007 (preregistered "hidden speed", WR): no primary passes.**
   - P1 (flying 20 → game top speed): +0.31 [0.00, 0.56], q 0.075, fails leave-3-out.

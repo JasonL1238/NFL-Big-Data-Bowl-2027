@@ -14,7 +14,9 @@ Two complementary tests:
 
 History: 2026-10-14 adversarial review (Freedman-Lane null, fold R^2 normalization, excess Delta R^2);
 Gate 1 round-1 skeptics (sign-agnostic test, LOCO noise, seed-dependent p, low ridge power,
-Combine session/year artifacts -> year dummies, pooled-variance normalization).
+Combine session/year artifacts -> year dummies, pooled-variance normalization); Gate 2 skeptics
+(criterion 2 now requires the expected sign; LOCO counts a class only if its held-out excess exceeds
+one null SD and its partial r is not reversed; one-sided MDE when a sign is expected).
 """
 
 import numpy as np
@@ -158,7 +160,8 @@ def evaluate(df: pl.DataFrame, feature: str, target: str, expected_sign: int | N
     if ok_df and np.isfinite(partial_r):
         z, se_z = np.arctanh(partial_r), 1 / np.sqrt(max(resid_df - 1, 1))
         ci = [float(np.tanh(z - 1.96 * se_z)), float(np.tanh(z + 1.96 * se_z))]
-        mde = float(np.tanh((1.96 + 0.84) * se_z))  # 80% power, two-sided 5%
+        z_a = 1.645 if expected_sign is not None else 1.96  # one-sided test when a sign is expected
+        mde = float(np.tanh((z_a + 0.84) * se_z))  # 80% power at 5%
     else:
         ci, mde = [None, None], None
     by_class = {}
@@ -200,10 +203,15 @@ def evaluate(df: pl.DataFrame, feature: str, target: str, expected_sign: int | N
         nl = Parallel(n_jobs=n_jobs)(delayed(
             lambda xp: _fold_r2(np.column_stack([designs["B2"], xp]), y, [(tr, te)], var_y)[0] - base)(xp)
             for xp in perms[:n_loco])
-        loco[int(yr)] = {"delta": float(obs), "excess": float(obs - np.mean(nl))}
-    loco_pos = sum(v["excess"] > 0 for v in loco.values())
+        loco[int(yr)] = {"delta": float(obs), "excess": float(obs - np.mean(nl)), "null_sd": float(np.std(nl))}
 
     sign_ok = None if expected_sign is None or not np.isfinite(partial_r) else bool(np.sign(partial_r) == expected_sign)
+
+    def _class_ok(yr, v):  # held-out gain clearly above its null, and not in the wrong direction
+        pr = by_class[yr]["partial_r"]
+        wrong = expected_sign is not None and pr is not None and np.sign(pr) != expected_sign
+        return v["excess"] > v["null_sd"] and not wrong
+    loco_pos = sum(_class_ok(yr, v) for yr, v in loco.items())
     scale = var_y / var_within if var_within > 0 else np.nan
     return {
         "feature": feature, "target": target, "n": n, "resid_df": resid_df,
@@ -221,7 +229,9 @@ def evaluate(df: pl.DataFrame, feature: str, target: str, expected_sign: int | N
         "checks": {  # automatable go criteria (PLAN.md §4); reliability, scout story and seed stability are separate
             "fl_p_lt_05": fl_p is not None and fl_p < 0.05,
             "sign_matches": sign_ok,
-            "excess_lb_gt_0": bool(excess - se > 0),
-            "loco_excess_positive_classes": f"{loco_pos}/{len(loco)}",
+            "excess_lb_gt_0": bool(excess - se > 0) and sign_ok is not False,  # ridge Delta R^2 ignores sign
+            "loco_classes_pass": f"{loco_pos}/{len(loco)}",  # excess > 1 null SD and class sign not reversed
+            # Superseded rev-2 rule (excess > 0; passes most nulls), kept so E001/E007/E008 reproduce as logged.
+            "loco_excess_positive_classes": f"{sum(v['excess'] > 0 for v in loco.values())}/{len(loco)}",
         },
     }

@@ -1,0 +1,177 @@
+{
+ "label": "post hoc (writeup v1, after mock judging); descriptive",
+ "definitions": "POST HOC (writeup v1; answers the mock judges' 'usable week to week?' gap). Descriptive; not a protocol test.\n\nQuestion: once a receiver starts playing, how many games of his own game tracking does it take before they forecast his\nlater game top speed better than his Combine does?\n\nTarget (same definition as E001/E007-P1, bdb27.features.game_top_speed): per REG play, max tracked speed `s`; plays\nabove 12 yd/s dropped; a player's value = the 95th percentile of his play maxima.\nPopulation: Combine WRs (linkage.player_table position == 'WR'). A 'game' = a REG game in which he has >= MIN_PLAYS\ntracked plays, in chronological order from his first such game (rookie season first).\nFixed sample: WRs with >= M_MAX such games AND >= MIN_LATER tracked plays after his M_MAX-th game.\n  Y   = q95 over all plays after the M_MAX-th game (the 'later' top speed; disjoint from every X_m).\n  X_m = q95 over the plays of his first m games, m = 1..M_MAX.\nCombine comparators on the same WRs: official 40 time (sign flipped), tracked flying 20 (E007 feature, from\nE007_leaderboard.json flying20_mph), tracked 40 peak speed (combine_features.parquet combine_top_speed).\nReports Pearson r with Fisher 95% CIs, and a receiver bootstrap of r(X_m, Y) - r(best Combine measure, Y).\nValidation: full-career q95 reproduces E007_leaderboard.json game_top_speed_mph.\n",
+ "min_plays_per_game": 10,
+ "m_max": 8,
+ "min_later_plays": 50,
+ "validation_n_wr_reproduced": 61,
+ "n_sample_all": 49,
+ "n_sample_with_all_combine": 42,
+ "by_class": [
+  {
+   "draft_year": 2023,
+   "len": 18
+  },
+  {
+   "draft_year": 2024,
+   "len": 14
+  },
+  {
+   "draft_year": 2025,
+   "len": 10
+  }
+ ],
+ "median_plays_per_game_first_m": {
+  "1": 17.0,
+  "2": 19.25,
+  "3": 18.833333333333332,
+  "4": 19.75,
+  "5": 20.6,
+  "6": 22.0,
+  "7": 23.357142857142854,
+  "8": 22.5
+ },
+ "game_first_m": {
+  "1": {
+   "r": 0.5570139435130625,
+   "ci95": [
+    0.3046544004339272,
+    0.7362976185893149
+   ],
+   "n": 42,
+   "minus_best_combine": -0.01385597151810447,
+   "minus_best_combine_ci95_boot": [
+    -0.31116370996989945,
+    0.31699996501517874
+   ],
+   "p_boot_le_0": 0.5356
+  },
+  "2": {
+   "r": 0.7690668837048383,
+   "ci95": [
+    0.6070196587616469,
+    0.8697107130265053
+   ],
+   "n": 42,
+   "minus_best_combine": 0.19819696867367131,
+   "minus_best_combine_ci95_boot": [
+    -0.04363472170426644,
+    0.4869065006397006
+   ],
+   "p_boot_le_0": 0.0625
+  },
+  "3": {
+   "r": 0.7460706643838684,
+   "ci95": [
+    0.5717927514206372,
+    0.8559203262922946
+   ],
+   "n": 42,
+   "minus_best_combine": 0.17520074935270136,
+   "minus_best_combine_ci95_boot": [
+    -0.05414646763381126,
+    0.45131328651393327
+   ],
+   "p_boot_le_0": 0.0745
+  },
+  "4": {
+   "r": 0.7877598138552327,
+   "ci95": [
+    0.6361315923796563,
+    0.8808059014606208
+   ],
+   "n": 42,
+   "minus_best_combine": 0.21688989882406573,
+   "minus_best_combine_ci95_boot": [
+    -0.010707828008871035,
+    0.49378764943937836
+   ],
+   "p_boot_le_0": 0.0342
+  },
+  "5": {
+   "r": 0.7917091447332116,
+   "ci95": [
+    0.6423379281164587,
+    0.8831370238094418
+   ],
+   "n": 42,
+   "minus_best_combine": 0.22083922970204461,
+   "minus_best_combine_ci95_boot": [
+    0.007251634000479898,
+    0.48496521963762546
+   ],
+   "p_boot_le_0": 0.0203
+  },
+  "6": {
+   "r": 0.7710147885138023,
+   "ci95": [
+    0.61003311549382,
+    0.8708716590529546
+   ],
+   "n": 42,
+   "minus_best_combine": 0.20014487348263532,
+   "minus_best_combine_ci95_boot": [
+    -0.01222519246480801,
+    0.45461015933041615
+   ],
+   "p_boot_le_0": 0.0345
+  },
+  "7": {
+   "r": 0.7637213604177796,
+   "ci95": [
+    0.5987738757212058,
+    0.8665190636712619
+   ],
+   "n": 42,
+   "minus_best_combine": 0.19285144538661259,
+   "minus_best_combine_ci95_boot": [
+    -0.019245719255092067,
+    0.44577059280933856
+   ],
+   "p_boot_le_0": 0.0387
+  },
+  "8": {
+   "r": 0.7878461520276739,
+   "ci95": [
+    0.6362670625347525,
+    0.8808569114931273
+   ],
+   "n": 42,
+   "minus_best_combine": 0.21697623699650692,
+   "minus_best_combine_ci95_boot": [
+    0.012749200815623293,
+    0.46431747283500746
+   ],
+   "p_boot_le_0": 0.018
+  }
+ },
+ "combine": {
+  "neg_forty": {
+   "r": 0.35138330437807597,
+   "ci95": [
+    0.053119811887762845,
+    0.5920861389504609
+   ],
+   "n": 42
+  },
+  "flying20": {
+   "r": 0.4963849079576161,
+   "ci95": [
+    0.2266416311449412,
+    0.695405931029415
+   ],
+   "n": 42
+  },
+  "combine_top_speed": {
+   "r": 0.570869915031167,
+   "ci95": [
+    0.3229715511607476,
+    0.7454625939364398
+   ],
+   "n": 42
+  }
+ },
+ "best_combine": "combine_top_speed",
+ "median_later_plays": 396.5,
+ "runtime_s": 9.701603174209595
+}

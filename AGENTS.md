@@ -112,6 +112,10 @@ Verified caveats:
 - `dir`/`o` are degrees clockwise from +y; `s` is yd/s and matches frame-to-frame motion. Combine `dis` under-counts distance (~0.58× the x/y step), so use x/y differences, never `dis`.
 - Missing values are the string `NA`. 3-cone and shuttle are missing for 50–80% of players.
 - 2025 draftees have only one season of game data.
+- Combine **BALL** rows exist only for the 2025 class (54 WR/TE, 18 catching drills, x/y only, no height).
+- For WR/TE, tracked game plays and their `player_play` rows are **pass plays only** (no runs); DB/DL/OL are tracked on every snap.
+- `player_play.cushion` is the receiver-to-aligned-defender distance at the snap: it includes the receiver's own depth and split.
+- Pass events in game tracking (`dropped_pass`, `pass_outcome_*`) are play-level, copied onto every tracked player of the play.
 
 ---
 

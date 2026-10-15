@@ -1,0 +1,2757 @@
+{
+ "experiment": "E011",
+ "date": "2026-10-15",
+ "protocol": "PLAN.md section 4 rev 3 (descriptive track)",
+ "plan": {
+  "experiment": "E011 - Combine ball tracking at the catch point: feasibility (descriptive)",
+  "written": "2026-10-15T03:59:56Z (UTC), after the data exploration of the BALL rows and before any catch mechanic was computed as a player value, before any reliability, and before any association with any Combine measure or game outcome",
+  "already_seen_before_this_plan": [
+   "BALL rows: 2025 class only, 551 attempts, 54 players (37 WR, 17 TE), 18 drill names; ball rows share the receiver's timestamps; x/y only (no height).",
+   "Ball device speed: pre-throw < ~10 yd/s, flight 13-26 yd/s decaying smoothly, then an abrupt one-frame drop at contact. Post-catch carried ball median 0.67 yd from the receiver's tracked point, with no detectable ball-vs-player clock lag (offset along the receiver's velocity does not scale with his speed).",
+   "Post-contact behaviour is a continuum: most balls stay within ~1.3 yd of the receiver; a tail separates (ball passes him, or is dropped/deflected).",
+   "Rookie exposure (2025 REG): 17 WR and 7 TE of the 54 have >= 10 targets; 35 own-target dropped_pass events in total. dropped_pass is a play-level event attached to every tracked player on the play, so a player's drop requires target == True.",
+   "No association of any catch mechanic with anything has been computed."
+  ],
+  "detection": {
+   "release": "first frame of the first run of >= 3 frames with ball s >= 12 yd/s",
+   "contact": "first frame after release with ball s < 0.75 x the previous frame's; t_contact = 0.05 s before that frame (midpoint); none if tracking ends in flight",
+   "reached": "min ball-receiver distance over the last in-flight frame and the 3 frames after it <= 2.0 yd",
+   "outcome": "secured (inferred catch) if reached and, 0.2-0.7 s after the first post-contact frame, median ball-receiver distance <= 2.0 yd and its growth over that window <= 1.5 yd; separated (inferred incompletion: drop, deflection or ball past him) if reached and not secured; not_reached; unobserved (contact not observed, or < 0.7 s of tracking after it). Inferred, unvalidated: the data have no catch labels."
+  },
+  "mechanics": {
+   "retention": "receiver SG speed 0.5 s after contact / 0.5 s before; secured catches with speed before >= 3 yd/s and tracking through +0.5 s",
+   "decel_in": "(speed 0.5 s before contact - speed at contact) / 0.5 s, yd/s^2 (> 0 = slowing into the catch); reached attempts",
+   "catch_offset": "perpendicular distance (yd) of the receiver's tracked point at contact from the ball's 2D flight line (last 3 in-flight positions); reached attempts. 2D only: ball height unknown",
+   "adjust_dist": "distance (yd) between the receiver's position at contact and his constant-velocity extrapolation from the release frame; adjustment drills (OVER_SHOULDER_ADJUST, CIRCUS_ROUTE_LEFT, RED_ZONE_FADE_RIGHT, END_ZONE_FADE_RIGHT); reached",
+   "adjust_time": "time (s) from release until the angle between the receiver's velocity and the bearing to the eventual catch point is <= 20 deg and stays so (frames > 2 yd from the catch point, up to 0.3 s before contact); adjustment drills; reached"
+  },
+  "player_values": "per mechanic: player x drill mean, z-scored within drill x Combine session (segments.combine_sessions), mean over the player's drills",
+  "reliability": "reliability.cross_drill_icc on player x drill means, zscore=True, center_by=[drill_name, session]; Spearman-Brown to each player's number of drills, averaged (the as-used reliability). Gate: >= 0.5",
+  "exploratory_tests_if_gate_passes": {
+   "label": "prelisted exploratory (no primary tests in E011); at most 3 tests in total, chosen by the rule below",
+   "population": "the 54 ball-tracked 2025 WR/TE with >= 10 REG rookie targets (>= 5 catches for YACOE)",
+   "targets": {
+    "croe": "catch rate over expected per target: caught (pass_result C) minus a cross-fitted (GroupKFold by game) HistGradientBoosting P(catch) from pass_length (air yards), separation_at_pass_forward, team_coverage_man_zone, receiver_alignment, down, yards_to_go, yards_to_end_zone, season; trained on all study WR/TE REG targets 2023-25; shrinkage.eb_rate(cluster=game_id) with the prior fitted on all study WR/TE with >= 10 2025 REG targets",
+    "yacoe": "yards_after_catch - expected_yards_after_catch (NGS) per catch; shrinkage.eb_mean(cluster=game_id), prior on all study WR/TE with >= 5 2025 REG catches",
+    "drop_rate": "own drops per target (dropped_pass event on a play where the player is the target) over the base rate; shrinkage.eb_rate(cluster=game_id), prior on all study WR/TE with >= 10 2025 REG targets"
+   },
+   "pairing_and_sign": {
+    "catch_offset": [
+     "croe",
+     1
+    ],
+    "adjust_dist": [
+     "croe",
+     1
+    ],
+    "adjust_time": [
+     "croe",
+     -1
+    ],
+    "retention": [
+     "yacoe",
+     1
+    ],
+    "decel_in": [
+     "yacoe",
+     -1
+    ]
+   },
+   "selection_rule": "test each mechanic with reliability >= 0.5 against its paired target, in descending order of reliability, up to 3 tests; if fewer than 3 mechanics pass and catch_offset passes, also catch_offset -> drop_rate (expected sign -1)",
+   "harness": "linkage.evaluate with REDUCED controls: combine_controls=['forty'], draft_controls=DRAFT_CONTROLS (position + 40 time + draft capital; year dummies are constant). The full B2 (~15 design columns) leaves resid_df < 10 at n ~ 24, where the harness's partial correlation is degenerate. n_repeats=50, n_perm=2000, n_perm_fl=10000, seed 0, n_jobs=3. LOCO is undefined (one class).",
+   "power_stated_up_front": "n ~ 24 with 5 design columns: resid_df ~ 18, one-sided MDE (80% power, alpha 0.05) of the observed partial r ~ 0.54; with feature reliability ~0.5 and target reliability ~0.3 the true-score MDE exceeds 1. Any null here bounds nothing useful; any hit is a lead for future classes, not evidence.",
+   "also_report": "target split-half reliability (odd/even games) on all study WR/TE with enough targets, Spearman-Brown at the rookies' median count; EB mean weight for the rookies; corr(target, log n)"
+  },
+  "descriptive": "Spearman r (Fisher 95% CI) of each player mechanic with the 40 time, 10-yd split, tracked flying 20 (speed.combine_speed_table c40_v_20_40), tracked 40 peak speed (c40_smax), vertical, broad jump, 3-cone, shuttle, weight, height, hand size, arm length; Combine measures centered within position; descriptive only, no multiplicity claims"
+ },
+ "data": {
+  "ball_rows": 32095,
+  "draft_years": [
+   2025
+  ],
+  "attempts": 551,
+  "players": 54,
+  "players_by_position": {
+   "WR": 37,
+   "TE": 17
+  },
+  "drill_names": 18,
+  "attempts_by_drill": {
+   "CIRCUS_ROUTE_LEFT": 37,
+   "COMEBACK_ROUTE_RIGHT": 36,
+   "CORNER_ROUTE": 34,
+   "CURL_ROUTE_RIGHT": 33,
+   "DAGGER_ROUTE_LEFT": 37,
+   "END_ZONE_FADE_RIGHT": 19,
+   "FLAT_ROUTE_LEFT": 17,
+   "GO_ROUTE_RIGHT": 30,
+   "HOOK_ROUTE_RIGHT": 17,
+   "IN_ROUTE_LEFT": 18,
+   "OVER_SHOULDER_ADJUST": 52,
+   "POST_CORNER_ROUTE_RIGHT": 37,
+   "RED_ZONE_FADE_RIGHT": 29,
+   "SLANT_ROUTE_LEFT": 36,
+   "SLOT_SAIL_ROUTE_RIGHT": 31,
+   "SLOT_STRIKE_ROUTE_LEFT": 34,
+   "SPEED_OUT_ROUTE_LEFT": 38,
+   "WHEEL_ROUTE_LEFT": 16
+  },
+  "sessions": [
+   "CIRCUS_ROUTE_LEFT_2025_0",
+   "CIRCUS_ROUTE_LEFT_2025_1",
+   "COMEBACK_ROUTE_RIGHT_2025_0",
+   "COMEBACK_ROUTE_RIGHT_2025_1",
+   "CORNER_ROUTE_2025_0",
+   "CURL_ROUTE_RIGHT_2025_0",
+   "CURL_ROUTE_RIGHT_2025_1",
+   "DAGGER_ROUTE_LEFT_2025_0",
+   "DAGGER_ROUTE_LEFT_2025_1",
+   "END_ZONE_FADE_RIGHT_2025_0",
+   "FLAT_ROUTE_LEFT_2025_0",
+   "GO_ROUTE_RIGHT_2025_0",
+   "GO_ROUTE_RIGHT_2025_1",
+   "HOOK_ROUTE_RIGHT_2025_0",
+   "IN_ROUTE_LEFT_2025_0",
+   "OVER_SHOULDER_ADJUST_2025_0",
+   "OVER_SHOULDER_ADJUST_2025_1",
+   "OVER_SHOULDER_ADJUST_2025_2",
+   "POST_CORNER_ROUTE_RIGHT_2025_0",
+   "POST_CORNER_ROUTE_RIGHT_2025_1",
+   "RED_ZONE_FADE_RIGHT_2025_0",
+   "RED_ZONE_FADE_RIGHT_2025_1",
+   "SLANT_ROUTE_LEFT_2025_0",
+   "SLANT_ROUTE_LEFT_2025_1",
+   "SLOT_SAIL_ROUTE_RIGHT_2025_0",
+   "SLOT_SAIL_ROUTE_RIGHT_2025_1",
+   "SLOT_STRIKE_ROUTE_LEFT_2025_0",
+   "SLOT_STRIKE_ROUTE_LEFT_2025_1",
+   "SPEED_OUT_ROUTE_LEFT_2025_0",
+   "SPEED_OUT_ROUTE_LEFT_2025_1",
+   "WHEEL_ROUTE_LEFT_2025_0"
+  ],
+  "ball_rows_matching_a_receiver_frame_by_timestamp": 32095,
+  "receiver_frames_with_ball_share": 0.9904030117879405,
+  "ball_track_start_after_receiver_s": {
+   "median": 0.0,
+   "max": 2.7
+  },
+  "columns": "x, y, s, a, dis, dir only: no ball height (z)",
+  "coverage": {
+   "label": "post hoc (after review): coverage of BALL rows, for the writeup",
+   "by_class_and_drill_type": [
+    {
+     "draft_year": 2023,
+     "drill_type": "FORTY_YARD_DASH",
+     "attempts": 262,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SHORT_SHUTTLE",
+     "attempts": 65,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SKILL_DRILLS_DB",
+     "attempts": 312,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SKILL_DRILLS_DL",
+     "attempts": 295,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SKILL_DRILLS_LB",
+     "attempts": 37,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SKILL_DRILLS_OL",
+     "attempts": 284,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SKILL_DRILLS_TE",
+     "attempts": 97,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "SKILL_DRILLS_WR",
+     "attempts": 555,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2023,
+     "drill_type": "THREE_CONE_DRILL",
+     "attempts": 59,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "FORTY_YARD_DASH",
+     "attempts": 269,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "SHORT_SHUTTLE",
+     "attempts": 84,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "SKILL_DRILLS_DB",
+     "attempts": 491,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "SKILL_DRILLS_DL",
+     "attempts": 325,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "SKILL_DRILLS_OL",
+     "attempts": 322,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "SKILL_DRILLS_TE",
+     "attempts": 150,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "SKILL_DRILLS_WR",
+     "attempts": 453,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2024,
+     "drill_type": "THREE_CONE_DRILL",
+     "attempts": 77,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "FORTY_YARD_DASH",
+     "attempts": 262,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "SHORT_SHUTTLE",
+     "attempts": 74,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "SKILL_DRILLS_DB",
+     "attempts": 367,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "SKILL_DRILLS_DL",
+     "attempts": 387,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "SKILL_DRILLS_OL",
+     "attempts": 304,
+     "with_ball": 0,
+     "share": 0.0
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "SKILL_DRILLS_TE",
+     "attempts": 191,
+     "with_ball": 141,
+     "share": 0.7382198952879581
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "SKILL_DRILLS_WR",
+     "attempts": 521,
+     "with_ball": 410,
+     "share": 0.7869481765834933
+    },
+    {
+     "draft_year": 2025,
+     "drill_type": "THREE_CONE_DRILL",
+     "attempts": 67,
+     "with_ball": 0,
+     "share": 0.0
+    }
+   ],
+   "position_drill_reps_all_classes": {
+    "attempts": 5091,
+    "with_ball": 551
+   },
+   "position_drill_reps_2025": {
+    "attempts": 1770,
+    "with_ball": 551
+   },
+   "wr_te_2025_by_drill_name": [
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "BLOCK_EXPLOSION",
+     "attempts": 17,
+     "with_ball": 0
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "CORNER_ROUTE",
+     "attempts": 34,
+     "with_ball": 34
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "END_ZONE_FADE_RIGHT",
+     "attempts": 19,
+     "with_ball": 19
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "FLAT_ROUTE_LEFT",
+     "attempts": 17,
+     "with_ball": 17
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "GAUNTLET_DRILL",
+     "attempts": 32,
+     "with_ball": 0
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "HOOK_ROUTE_RIGHT",
+     "attempts": 18,
+     "with_ball": 17
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "IN_ROUTE_LEFT",
+     "attempts": 18,
+     "with_ball": 18
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "attempts": 20,
+     "with_ball": 20
+    },
+    {
+     "drill_type": "SKILL_DRILLS_TE",
+     "drill_name": "WHEEL_ROUTE_LEFT",
+     "attempts": 16,
+     "with_ball": 16
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "CIRCUS_ROUTE_LEFT",
+     "attempts": 43,
+     "with_ball": 37
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "COMEBACK_ROUTE_RIGHT",
+     "attempts": 40,
+     "with_ball": 36
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "CURL_ROUTE_RIGHT",
+     "attempts": 36,
+     "with_ball": 33
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "DAGGER_ROUTE_LEFT",
+     "attempts": 40,
+     "with_ball": 37
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "GAUNTLET_DRILL",
+     "attempts": 71,
+     "with_ball": 0
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "GO_ROUTE_RIGHT",
+     "attempts": 34,
+     "with_ball": 30
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "attempts": 34,
+     "with_ball": 32
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "POST_CORNER_ROUTE_RIGHT",
+     "attempts": 40,
+     "with_ball": 37
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "RED_ZONE_FADE_RIGHT",
+     "attempts": 33,
+     "with_ball": 29
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "SLANT_ROUTE_LEFT",
+     "attempts": 37,
+     "with_ball": 36
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "SLOT_SAIL_ROUTE_RIGHT",
+     "attempts": 35,
+     "with_ball": 31
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "SLOT_STRIKE_ROUTE_LEFT",
+     "attempts": 37,
+     "with_ball": 34
+    },
+    {
+     "drill_type": "SKILL_DRILLS_WR",
+     "drill_name": "SPEED_OUT_ROUTE_LEFT",
+     "attempts": 41,
+     "with_ball": 38
+    }
+   ],
+   "wr_te_2025_distinct_drill_names_with_ball": 18,
+   "wr_te_2025_distinct_drill_names": 20,
+   "wr_te_2025_reps_in_drills_with_ball": {
+    "attempts": 592,
+    "with_ball": 551
+   }
+  }
+ },
+ "clock_lag_check": {
+  "n_frames": 2523,
+  "n_attempts": 369,
+  "carried_distance_yd": {
+   "q25": 0.3238765832382366,
+   "median": 0.5686331307623744,
+   "q75": 0.9245933937581228
+  },
+  "note": "slope_lon_on_speed_s[*] is the original check (a ball clock lagging by tau gives slope -tau); ball handling also moves the ball along his body as his speed changes, so it does not identify a lag (see within_attempt_slope_s and the offset-free velocity_matching)",
+  "within_attempt_slope_s": {
+   "label": "post hoc (after review): lon and speed demeaned within attempt",
+   "slope": 0.329645622073511,
+   "ci95": [
+    0.2703067230905136,
+    0.40447146316102306
+   ]
+  },
+  "velocity_matching": {
+   "label": "post hoc (after review): offset-free clock check",
+   "0.3-1.5s_trim3": {
+    "window_s_after_contact": [
+     0.3,
+     1.5
+    ],
+    "trim_frames": 3,
+    "n_attempts": 248,
+    "best_tau_s": 0.04,
+    "ci95_attempt_bootstrap": [
+     0.03,
+     0.05
+    ],
+    "per_attempt_best_tau_median": 0.04
+   },
+   "0.3-1.5s_trim2": {
+    "window_s_after_contact": [
+     0.3,
+     1.5
+    ],
+    "trim_frames": 2,
+    "n_attempts": 285,
+    "best_tau_s": 0.06,
+    "ci95_attempt_bootstrap": [
+     0.05,
+     0.07
+    ],
+    "per_attempt_best_tau_median": 0.06
+   },
+   "0.6-2.0s_trim3": {
+    "window_s_after_contact": [
+     0.6,
+     2.0
+    ],
+    "trim_frames": 3,
+    "n_attempts": 198,
+    "best_tau_s": -0.13,
+    "ci95_attempt_bootstrap": [
+     -0.14,
+     -0.12
+    ],
+    "per_attempt_best_tau_median": -0.13
+   },
+   "0.6-2.0s_trim2": {
+    "window_s_after_contact": [
+     0.6,
+     2.0
+    ],
+    "trim_frames": 2,
+    "n_attempts": 224,
+    "best_tau_s": -0.11,
+    "ci95_attempt_bootstrap": [
+     -0.12,
+     -0.09
+    ],
+    "per_attempt_best_tau_median": -0.1
+   }
+  },
+  "slope_lon_on_speed_s[all]": {
+   "slope": -0.00857801904566943,
+   "ci95": [
+    -0.03326299246657563,
+    0.01744202062210855
+   ],
+   "n": 2523
+  },
+  "slope_lon_on_speed_s[CIRCUS_ROUTE_LEFT_2025_0]": {
+   "slope": 0.06055736410600523,
+   "ci95": [
+    -0.1536846067760107,
+    0.24689285480509432
+   ],
+   "n": 58
+  },
+  "slope_lon_on_speed_s[CIRCUS_ROUTE_LEFT_2025_1]": {
+   "slope": 0.16518190942513197,
+   "ci95": [
+    -0.16955234235969172,
+    1.0143475869616267
+   ],
+   "n": 47
+  },
+  "slope_lon_on_speed_s[COMEBACK_ROUTE_RIGHT_2025_0]": {
+   "slope": -0.005288228446748985,
+   "ci95": [
+    -0.13768625559013378,
+    0.16001600598370963
+   ],
+   "n": 84
+  },
+  "slope_lon_on_speed_s[COMEBACK_ROUTE_RIGHT_2025_1]": {
+   "slope": 0.09525807212846094,
+   "ci95": [
+    -0.013771485757982293,
+    0.24845431132980209
+   ],
+   "n": 70
+  },
+  "slope_lon_on_speed_s[CORNER_ROUTE_2025_0]": {
+   "slope": 0.19428680610581395,
+   "ci95": [
+    0.020390527933025777,
+    0.5600987194160992
+   ],
+   "n": 147
+  },
+  "slope_lon_on_speed_s[CURL_ROUTE_RIGHT_2025_0]": {
+   "slope": -0.041773169890218655,
+   "ci95": [
+    -0.2003094172471259,
+    0.12816546214041707
+   ],
+   "n": 112
+  },
+  "slope_lon_on_speed_s[CURL_ROUTE_RIGHT_2025_1]": {
+   "slope": -0.04279381806195111,
+   "ci95": [
+    -0.10238698171617662,
+    0.031442350889268944
+   ],
+   "n": 112
+  },
+  "slope_lon_on_speed_s[DAGGER_ROUTE_LEFT_2025_0]": {
+   "slope": -0.041093151238679466,
+   "ci95": [
+    -0.18337585153386987,
+    0.11694753194613151
+   ],
+   "n": 112
+  },
+  "slope_lon_on_speed_s[DAGGER_ROUTE_LEFT_2025_1]": {
+   "slope": 0.012603457740481609,
+   "ci95": [
+    -0.09873524682398589,
+    0.19648459711006913
+   ],
+   "n": 103
+  },
+  "slope_lon_on_speed_s[END_ZONE_FADE_RIGHT_2025_0]": {
+   "slope": 0.4873018360809931,
+   "ci95": [
+    0.16552480385973237,
+    1.541715456195304
+   ],
+   "n": 48
+  },
+  "slope_lon_on_speed_s[FLAT_ROUTE_LEFT_2025_0]": {
+   "slope": 0.2773235061714754,
+   "ci95": [
+    0.03812389240469978,
+    0.7342336494319285
+   ],
+   "n": 42
+  },
+  "slope_lon_on_speed_s[GO_ROUTE_RIGHT_2025_0]": {
+   "slope": 0.012196318127110297,
+   "ci95": [
+    -0.2319251946697445,
+    0.3648799853195481
+   ],
+   "n": 112
+  },
+  "slope_lon_on_speed_s[GO_ROUTE_RIGHT_2025_1]": {
+   "slope": -0.04359191553356033,
+   "ci95": [
+    -0.14874484042323524,
+    0.10314495597089272
+   ],
+   "n": 62
+  },
+  "slope_lon_on_speed_s[HOOK_ROUTE_RIGHT_2025_0]": {
+   "slope": 0.024074903313719778,
+   "ci95": [
+    -0.05801538447796358,
+    0.1247281163864889
+   ],
+   "n": 112
+  },
+  "slope_lon_on_speed_s[IN_ROUTE_LEFT_2025_0]": {
+   "slope": -0.10673454997326434,
+   "ci95": [
+    -0.36877355489193775,
+    0.12101236817241605
+   ],
+   "n": 105
+  },
+  "slope_lon_on_speed_s[OVER_SHOULDER_ADJUST_2025_0]": {
+   "slope": 0.11862689477351808,
+   "ci95": [
+    -0.09721493060619585,
+    0.377637261584802
+   ],
+   "n": 133
+  },
+  "slope_lon_on_speed_s[OVER_SHOULDER_ADJUST_2025_1]": {
+   "slope": -0.030776456512012017,
+   "ci95": [
+    -0.1669305213191969,
+    0.1905682377969186
+   ],
+   "n": 75
+  },
+  "slope_lon_on_speed_s[OVER_SHOULDER_ADJUST_2025_2]": {
+   "slope": 0.1143495730473243,
+   "ci95": [
+    -0.23555034313453047,
+    0.255401142170251
+   ],
+   "n": 81
+  },
+  "slope_lon_on_speed_s[POST_CORNER_ROUTE_RIGHT_2025_0]": {
+   "slope": 0.2304824206979323,
+   "ci95": [
+    0.019158098164214637,
+    0.6624842391500072
+   ],
+   "n": 61
+  },
+  "slope_lon_on_speed_s[POST_CORNER_ROUTE_RIGHT_2025_1]": {
+   "slope": 0.5616877642562954,
+   "ci95": [
+    -0.33734446551829517,
+    0.9325399432964472
+   ],
+   "n": 76
+  },
+  "slope_lon_on_speed_s[RED_ZONE_FADE_RIGHT_2025_0]": {
+   "slope": -0.0424643556540513,
+   "ci95": [
+    -0.20058200353533348,
+    0.14880655107221333
+   ],
+   "n": 95
+  },
+  "slope_lon_on_speed_s[RED_ZONE_FADE_RIGHT_2025_1]": {
+   "slope": 0.7286824870772761,
+   "ci95": [
+    -0.09191283861853722,
+    1.4123152347797447
+   ],
+   "n": 61
+  },
+  "slope_lon_on_speed_s[SLOT_SAIL_ROUTE_RIGHT_2025_0]": {
+   "slope": 0.3686386371798523,
+   "ci95": [
+    -0.11244053316984072,
+    0.7866415664192993
+   ],
+   "n": 112
+  },
+  "slope_lon_on_speed_s[SLOT_SAIL_ROUTE_RIGHT_2025_1]": {
+   "slope": 0.12918765741313365,
+   "ci95": [
+    -0.13026567899747904,
+    0.7186118303266479
+   ],
+   "n": 77
+  },
+  "slope_lon_on_speed_s[SLOT_STRIKE_ROUTE_LEFT_2025_0]": {
+   "slope": 0.13484420022690394,
+   "ci95": [
+    -0.16003118343233189,
+    0.32999479249043173
+   ],
+   "n": 126
+  },
+  "slope_lon_on_speed_s[SLOT_STRIKE_ROUTE_LEFT_2025_1]": {
+   "slope": -0.039391552719179525,
+   "ci95": [
+    -0.21616835774621865,
+    0.17697091628174222
+   ],
+   "n": 105
+  },
+  "slope_lon_on_speed_s[SPEED_OUT_ROUTE_LEFT_2025_0]": {
+   "slope": -0.18300971761786644,
+   "ci95": [
+    -0.38650321998192494,
+    0.12876311080607308
+   ],
+   "n": 88
+  },
+  "slope_lon_on_speed_s[SPEED_OUT_ROUTE_LEFT_2025_1]": {
+   "slope": -0.1193695737066836,
+   "ci95": [
+    -0.30011503558840147,
+    0.08077220529793404
+   ],
+   "n": 96
+  }
+ },
+ "detection": {
+  "rules": {
+   "V_FLIGHT": 12.0,
+   "MIN_FLIGHT_FRAMES": 3,
+   "DROP_RATIO": 0.75,
+   "REACH_DIST": 2.0,
+   "SECURE_DIST": 2.0,
+   "SECURE_GROWTH": 1.5
+  },
+  "outcomes": {
+   "no_contact": 25,
+   "no_flight": 4,
+   "not_reached": 34,
+   "reached_unobserved": 82,
+   "secured": 369,
+   "separated": 37
+  },
+  "separated_share_of_observed": 0.09113300492610837,
+  "release_speed_yds": {
+   "median": 21.770982105,
+   "q05": 15.67353185,
+   "q95": 24.2864329
+  },
+  "flight_time_s": {
+   "median": 1.4499999999999997,
+   "min": 0.4500000000000002,
+   "max": 3.3500000000000005
+  },
+  "ball_speed_outside_flight": {
+   "label": "post hoc (after review)",
+   "pre_release_max_yds": 11.96282069,
+   "pre_release_q99_yds": 11.75759888,
+   "attempts_post_contact_above_10yds": 15,
+   "attempts_with_contact": 522,
+   "attempts_with_two_flight_runs": 3
+  },
+  "contact_time_check": {
+   "label": "post hoc (after review); replaces the first version, which searched only [t_(k-1), t_(k-1) + 0.2 s] and so was bounded to [-0.05, +0.15] s around t_contact by construction (withdrawn)",
+   "what": "t of the unanchored ball-receiver closest approach minus t_contact (ball-speed drop); the tracked point is the shoulder pads, not the hands, so +-1 frame is expected",
+   "n": 488,
+   "median_s": 0.03499999999997483,
+   "q10_s": -0.035000000000048104,
+   "q90_s": 0.09499999999998154,
+   "share_within_0.1s": 0.8688524590163934,
+   "share_within_0.15s": 0.9221311475409836,
+   "share_earlier_than_-0.15s": 0.0430327868852459,
+   "share_later_than_0.15s": 0.03483606557377049,
+   "chance_share_within_0.1s": 0.115939761089377,
+   "ball_short_of_receiver_at_last_flight_frame": {
+    "what": "ball minus receiver along the ball's flight line at frame k - 1 < 0 (contact not detected late)",
+    "n": 488,
+    "share": 0.9405737704918032,
+    "median_yd": -1.1166847796965342
+   }
+  },
+  "outcome_posthoc": {
+   "label": "post hoc (after review): the preregistered `outcome` is unchanged; these classes are all not_reached and carry no mechanic",
+   "rules": {
+    "PASS_DIST": 1.5,
+    "PASS_MIN_T": 0.15,
+    "UNRELATED_DIST": 5.0
+   },
+   "counts": {
+    "ball_unrelated": 4,
+    "no_contact": 25,
+    "no_flight": 4,
+    "not_reached": 15,
+    "passed_him": 15,
+    "reached_unobserved": 82,
+    "secured": 369,
+    "separated": 37
+   },
+   "separated_share_of_observed_prereg": 0.09113300492610837,
+   "separated_share_with_passed_him": {
+    "passed_within_1.0yd": {
+     "n_passed": 10,
+     "separated_share_of_observed": 0.11298076923076923
+    },
+    "passed_within_1.5yd": {
+     "n_passed": 15,
+     "separated_share_of_observed": 0.12351543942992874
+    },
+    "passed_within_2.0yd": {
+     "n_passed": 20,
+     "separated_share_of_observed": 0.13380281690140844
+    }
+   },
+   "passed_him": {
+    "by_drill": {
+     "CIRCUS_ROUTE_LEFT": 4,
+     "COMEBACK_ROUTE_RIGHT": 4,
+     "CORNER_ROUTE": 2,
+     "END_ZONE_FADE_RIGHT": 2,
+     "GO_ROUTE_RIGHT": 1,
+     "RED_ZONE_FADE_RIGHT": 1,
+     "SPEED_OUT_ROUTE_LEFT": 1
+    },
+    "in_flight_min_dist_yd_median": 0.7724964797251871,
+    "ball_past_him_at_last_flight_frame_yd_median": 4.104024219209473
+   },
+   "ball_unrelated": {
+    "trajs": [
+     145,
+     147,
+     150,
+     218
+    ],
+    "drills": [
+     "OVER_SHOULDER_ADJUST",
+     "OVER_SHOULDER_ADJUST",
+     "OVER_SHOULDER_ADJUST",
+     "CIRCUS_ROUTE_LEFT"
+    ],
+    "min_dist_yd": 25.630059446868284
+   },
+   "reached_meeting_the_pass_rule": {
+    "counts": {
+     "reached_unobserved": 4,
+     "secured": 14,
+     "separated": 3
+    },
+    "note": "reached attempts whose 2D path also passed his tracked point >= 0.15 s before first impact (deep balls over the shoulder): the rule identifies misses only among not_reached"
+   },
+   "remaining_not_reached": {
+    "n": 15,
+    "ball_ends_beside_him": 2,
+    "note": "first impact > 2 yd from his tracked point without passing close in flight (short or wide throws); those where the ball ends beside him may be extended-arm catches or pick-ups"
+   }
+  },
+  "by_drill": [
+   {
+    "drill_name": "CIRCUS_ROUTE_LEFT",
+    "n": 37,
+    "secured": 16,
+    "separated": 9,
+    "reached_unobserved": 6,
+    "not_reached": 5,
+    "no_contact": 0,
+    "no_flight": 1,
+    "flight_time_med": 1.65,
+    "v_release_med": 22.785269415000002,
+    "v_contact_med": 6.726521505205099,
+    "tail_med": 0.9499999999999997
+   },
+   {
+    "drill_name": "COMEBACK_ROUTE_RIGHT",
+    "n": 36,
+    "secured": 22,
+    "separated": 1,
+    "reached_unobserved": 0,
+    "not_reached": 10,
+    "no_contact": 2,
+    "no_flight": 1,
+    "flight_time_med": 1.25,
+    "v_release_med": 23.65930939,
+    "v_contact_med": 3.1625340556765313,
+    "tail_med": 2.7500000000000004
+   },
+   {
+    "drill_name": "CORNER_ROUTE",
+    "n": 34,
+    "secured": 22,
+    "separated": 4,
+    "reached_unobserved": 4,
+    "not_reached": 4,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 2.4499999999999997,
+    "v_release_med": 19.32329941,
+    "v_contact_med": 8.153272210272814,
+    "tail_med": 0.9499999999999997
+   },
+   {
+    "drill_name": "CURL_ROUTE_RIGHT",
+    "n": 33,
+    "secured": 32,
+    "separated": 0,
+    "reached_unobserved": 0,
+    "not_reached": 1,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 0.8500000000000001,
+    "v_release_med": 23.54168193,
+    "v_contact_med": 3.4168358593846784,
+    "tail_med": 1.8499999999999996
+   },
+   {
+    "drill_name": "DAGGER_ROUTE_LEFT",
+    "n": 37,
+    "secured": 31,
+    "separated": 3,
+    "reached_unobserved": 0,
+    "not_reached": 3,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 1.2500000000000004,
+    "v_release_med": 23.53134664,
+    "v_contact_med": 7.5372744276004315,
+    "tail_med": 1.8499999999999996
+   },
+   {
+    "drill_name": "END_ZONE_FADE_RIGHT",
+    "n": 19,
+    "secured": 8,
+    "separated": 0,
+    "reached_unobserved": 9,
+    "not_reached": 2,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 1.4500000000000002,
+    "v_release_med": 16.19962311,
+    "v_contact_med": 6.334527210616284,
+    "tail_med": 0.7499999999999996
+   },
+   {
+    "drill_name": "FLAT_ROUTE_LEFT",
+    "n": 17,
+    "secured": 6,
+    "separated": 3,
+    "reached_unobserved": 0,
+    "not_reached": 0,
+    "no_contact": 8,
+    "no_flight": 0,
+    "flight_time_med": 0.6500000000000001,
+    "v_release_med": 22.03224945,
+    "v_contact_med": 7.0545695675248785,
+    "tail_med": 2.4499999999999997
+   },
+   {
+    "drill_name": "GO_ROUTE_RIGHT",
+    "n": 30,
+    "secured": 25,
+    "separated": 2,
+    "reached_unobserved": 1,
+    "not_reached": 1,
+    "no_contact": 1,
+    "no_flight": 0,
+    "flight_time_med": 2.95,
+    "v_release_med": 20.73876826,
+    "v_contact_med": 8.64153649117705,
+    "tail_med": 1.3499999999999996
+   },
+   {
+    "drill_name": "HOOK_ROUTE_RIGHT",
+    "n": 17,
+    "secured": 16,
+    "separated": 1,
+    "reached_unobserved": 0,
+    "not_reached": 0,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 0.6500000000000004,
+    "v_release_med": 21.74954987,
+    "v_contact_med": 3.1170001611202727,
+    "tail_med": 2.55
+   },
+   {
+    "drill_name": "IN_ROUTE_LEFT",
+    "n": 18,
+    "secured": 15,
+    "separated": 1,
+    "reached_unobserved": 1,
+    "not_reached": 1,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 0.8500000000000001,
+    "v_release_med": 20.603410085,
+    "v_contact_med": 5.641714752969717,
+    "tail_med": 2.3499999999999996
+   },
+   {
+    "drill_name": "OVER_SHOULDER_ADJUST",
+    "n": 52,
+    "secured": 43,
+    "separated": 1,
+    "reached_unobserved": 5,
+    "not_reached": 3,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 2.25,
+    "v_release_med": 16.189506535,
+    "v_contact_med": 6.685523368583271,
+    "tail_med": 1.2999999999999998
+   },
+   {
+    "drill_name": "POST_CORNER_ROUTE_RIGHT",
+    "n": 37,
+    "secured": 21,
+    "separated": 0,
+    "reached_unobserved": 12,
+    "not_reached": 2,
+    "no_contact": 2,
+    "no_flight": 0,
+    "flight_time_med": 2.7500000000000004,
+    "v_release_med": 21.38206736,
+    "v_contact_med": 8.048638202101769,
+    "tail_med": 0.8500000000000005
+   },
+   {
+    "drill_name": "RED_ZONE_FADE_RIGHT",
+    "n": 29,
+    "secured": 23,
+    "separated": 2,
+    "reached_unobserved": 3,
+    "not_reached": 1,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 1.4500000000000004,
+    "v_release_med": 18.22821172,
+    "v_contact_med": 5.427955067075724,
+    "tail_med": 1.25
+   },
+   {
+    "drill_name": "SLANT_ROUTE_LEFT",
+    "n": 36,
+    "secured": 0,
+    "separated": 0,
+    "reached_unobserved": 27,
+    "not_reached": 0,
+    "no_contact": 9,
+    "no_flight": 0,
+    "flight_time_med": 0.6500000000000004,
+    "v_release_med": 21.83729045,
+    "v_contact_med": 7.386492958787321,
+    "tail_med": 0.1499999999999999
+   },
+   {
+    "drill_name": "SLOT_SAIL_ROUTE_RIGHT",
+    "n": 31,
+    "secured": 27,
+    "separated": 3,
+    "reached_unobserved": 0,
+    "not_reached": 0,
+    "no_contact": 0,
+    "no_flight": 1,
+    "flight_time_med": 1.5500000000000003,
+    "v_release_med": 22.45464071,
+    "v_contact_med": 7.880476878111683,
+    "tail_med": 1.8499999999999996
+   },
+   {
+    "drill_name": "SLOT_STRIKE_ROUTE_LEFT",
+    "n": 34,
+    "secured": 33,
+    "separated": 1,
+    "reached_unobserved": 0,
+    "not_reached": 0,
+    "no_contact": 0,
+    "no_flight": 0,
+    "flight_time_med": 0.6499999999999999,
+    "v_release_med": 21.661801654999998,
+    "v_contact_med": 6.276629752977453,
+    "tail_med": 2.0500000000000007
+   },
+   {
+    "drill_name": "SPEED_OUT_ROUTE_LEFT",
+    "n": 38,
+    "secured": 27,
+    "separated": 5,
+    "reached_unobserved": 4,
+    "not_reached": 1,
+    "no_contact": 0,
+    "no_flight": 1,
+    "flight_time_med": 1.25,
+    "v_release_med": 23.07794952,
+    "v_contact_med": 5.849401323668826,
+    "tail_med": 1.0499999999999998
+   },
+   {
+    "drill_name": "WHEEL_ROUTE_LEFT",
+    "n": 16,
+    "secured": 2,
+    "separated": 1,
+    "reached_unobserved": 10,
+    "not_reached": 0,
+    "no_contact": 3,
+    "no_flight": 0,
+    "flight_time_med": 1.5500000000000003,
+    "v_release_med": 23.11288706,
+    "v_contact_med": 7.384703839637629,
+    "tail_med": 0.4499999999999993
+   }
+  ]
+ },
+ "mechanics": {
+  "retention": {
+   "n_attempts": 311,
+   "n_players": 54,
+   "by_drill": [
+    {
+     "drill_name": "CIRCUS_ROUTE_LEFT",
+     "n": 16,
+     "mean": 0.7769916199522328,
+     "sd": 0.13033319552723174,
+     "median": 0.7846202237090996
+    },
+    {
+     "drill_name": "COMEBACK_ROUTE_RIGHT",
+     "n": 2,
+     "mean": 1.0788972438630338,
+     "sd": 0.1553339167593838,
+     "median": 1.0788972438630338
+    },
+    {
+     "drill_name": "CORNER_ROUTE",
+     "n": 22,
+     "mean": 0.8904223844115343,
+     "sd": 0.051664859260438616,
+     "median": 0.9079406777063611
+    },
+    {
+     "drill_name": "CURL_ROUTE_RIGHT",
+     "n": 9,
+     "mean": 1.0409581115067623,
+     "sd": 0.27513969006372124,
+     "median": 1.042527800559071
+    },
+    {
+     "drill_name": "DAGGER_ROUTE_LEFT",
+     "n": 31,
+     "mean": 0.9032423013677091,
+     "sd": 0.1818007420421513,
+     "median": 0.9391048788749954
+    },
+    {
+     "drill_name": "END_ZONE_FADE_RIGHT",
+     "n": 8,
+     "mean": 0.8140875413870025,
+     "sd": 0.11086977479109415,
+     "median": 0.8035312599301014
+    },
+    {
+     "drill_name": "FLAT_ROUTE_LEFT",
+     "n": 6,
+     "mean": 1.0213340857649313,
+     "sd": 0.05813323274963455,
+     "median": 1.0360178784599625
+    },
+    {
+     "drill_name": "GO_ROUTE_RIGHT",
+     "n": 25,
+     "mean": 0.9082740818407986,
+     "sd": 0.06968690029729234,
+     "median": 0.9253512248275132
+    },
+    {
+     "drill_name": "HOOK_ROUTE_RIGHT",
+     "n": 1,
+     "mean": 1.0773359599971473,
+     "sd": null,
+     "median": 1.0773359599971473
+    },
+    {
+     "drill_name": "IN_ROUTE_LEFT",
+     "n": 15,
+     "mean": 1.3681785968210505,
+     "sd": 0.08304475265663562,
+     "median": 1.3534501164821313
+    },
+    {
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "n": 43,
+     "mean": 0.902877992216452,
+     "sd": 0.08770631684163233,
+     "median": 0.9174856065343194
+    },
+    {
+     "drill_name": "POST_CORNER_ROUTE_RIGHT",
+     "n": 21,
+     "mean": 0.8732812596033338,
+     "sd": 0.05780213805370484,
+     "median": 0.8808503299906959
+    },
+    {
+     "drill_name": "RED_ZONE_FADE_RIGHT",
+     "n": 23,
+     "mean": 0.8075902474180241,
+     "sd": 0.11999960757230506,
+     "median": 0.8182127458061094
+    },
+    {
+     "drill_name": "SLOT_SAIL_ROUTE_RIGHT",
+     "n": 27,
+     "mean": 0.8869961631723196,
+     "sd": 0.08747983397987112,
+     "median": 0.9091665654970982
+    },
+    {
+     "drill_name": "SLOT_STRIKE_ROUTE_LEFT",
+     "n": 33,
+     "mean": 1.3381234167102918,
+     "sd": 0.1711382515060618,
+     "median": 1.3405883481580714
+    },
+    {
+     "drill_name": "SPEED_OUT_ROUTE_LEFT",
+     "n": 27,
+     "mean": 0.7208800667939388,
+     "sd": 0.15243867035515665,
+     "median": 0.7373542085681705
+    },
+    {
+     "drill_name": "WHEEL_ROUTE_LEFT",
+     "n": 2,
+     "mean": 0.9027781430823425,
+     "sd": 0.027501368548813257,
+     "median": 0.9027781430823425
+    }
+   ]
+  },
+  "decel_in": {
+   "n_attempts": 488,
+   "n_players": 54,
+   "by_drill": [
+    {
+     "drill_name": "CIRCUS_ROUTE_LEFT",
+     "n": 31,
+     "mean": 1.0155257307437071,
+     "sd": 1.0239013768739536,
+     "median": 1.0201776308329347
+    },
+    {
+     "drill_name": "COMEBACK_ROUTE_RIGHT",
+     "n": 23,
+     "mean": -1.9244132625116352,
+     "sd": 1.6070929778994762,
+     "median": -2.36821887251096
+    },
+    {
+     "drill_name": "CORNER_ROUTE",
+     "n": 30,
+     "mean": 0.9188019293013657,
+     "sd": 0.5893310887385755,
+     "median": 0.7629979059614289
+    },
+    {
+     "drill_name": "CURL_ROUTE_RIGHT",
+     "n": 32,
+     "mean": -1.6584038710356868,
+     "sd": 1.0624126323637408,
+     "median": -1.626394115504421
+    },
+    {
+     "drill_name": "DAGGER_ROUTE_LEFT",
+     "n": 34,
+     "mean": 0.33942491765377464,
+     "sd": 1.4075634447090575,
+     "median": -0.011930531572213354
+    },
+    {
+     "drill_name": "END_ZONE_FADE_RIGHT",
+     "n": 17,
+     "mean": 0.6103788811543682,
+     "sd": 0.8196810866210336,
+     "median": 0.6223421923324128
+    },
+    {
+     "drill_name": "FLAT_ROUTE_LEFT",
+     "n": 9,
+     "mean": -0.3620197180623005,
+     "sd": 0.3818247494467863,
+     "median": -0.45133504688747195
+    },
+    {
+     "drill_name": "GO_ROUTE_RIGHT",
+     "n": 28,
+     "mean": 0.9518461581648924,
+     "sd": 0.7721988194906885,
+     "median": 0.6799943446156407
+    },
+    {
+     "drill_name": "HOOK_ROUTE_RIGHT",
+     "n": 17,
+     "mean": -2.1459889307189473,
+     "sd": 1.1760938296206715,
+     "median": -2.4923918777029876
+    },
+    {
+     "drill_name": "IN_ROUTE_LEFT",
+     "n": 17,
+     "mean": -2.3147030550713845,
+     "sd": 0.3875050580417219,
+     "median": -2.273751934126402
+    },
+    {
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "n": 49,
+     "mean": 0.8610311416851273,
+     "sd": 0.8906430525623484,
+     "median": 0.7834145308205631
+    },
+    {
+     "drill_name": "POST_CORNER_ROUTE_RIGHT",
+     "n": 33,
+     "mean": 1.22376492752049,
+     "sd": 0.7470618032827497,
+     "median": 1.2188019656974056
+    },
+    {
+     "drill_name": "RED_ZONE_FADE_RIGHT",
+     "n": 28,
+     "mean": 1.4097812003907415,
+     "sd": 0.7765705106731968,
+     "median": 1.3582485439527145
+    },
+    {
+     "drill_name": "SLANT_ROUTE_LEFT",
+     "n": 27,
+     "mean": -1.2562189908312855,
+     "sd": 0.5053899145005722,
+     "median": -1.4670009365305337
+    },
+    {
+     "drill_name": "SLOT_SAIL_ROUTE_RIGHT",
+     "n": 30,
+     "mean": 0.6409659875353331,
+     "sd": 0.8304715462256794,
+     "median": 0.543370575537355
+    },
+    {
+     "drill_name": "SLOT_STRIKE_ROUTE_LEFT",
+     "n": 34,
+     "mean": -2.557644656612285,
+     "sd": 0.6825949955773526,
+     "median": -2.419024893445071
+    },
+    {
+     "drill_name": "SPEED_OUT_ROUTE_LEFT",
+     "n": 36,
+     "mean": 0.825085509652145,
+     "sd": 1.3151081021226352,
+     "median": 0.7468261886254624
+    },
+    {
+     "drill_name": "WHEEL_ROUTE_LEFT",
+     "n": 13,
+     "mean": 0.9906638285129907,
+     "sd": 0.5388827492250673,
+     "median": 0.9610301904932577
+    }
+   ]
+  },
+  "catch_offset": {
+   "n_attempts": 488,
+   "n_players": 54,
+   "by_drill": [
+    {
+     "drill_name": "CIRCUS_ROUTE_LEFT",
+     "n": 31,
+     "mean": 0.38552586165328107,
+     "sd": 0.25610128146818434,
+     "median": 0.4002943026364385
+    },
+    {
+     "drill_name": "COMEBACK_ROUTE_RIGHT",
+     "n": 23,
+     "mean": 0.32170305324418313,
+     "sd": 0.28840799886502905,
+     "median": 0.2528063426421151
+    },
+    {
+     "drill_name": "CORNER_ROUTE",
+     "n": 30,
+     "mean": 0.37602347064842656,
+     "sd": 0.18679302671681286,
+     "median": 0.37448891955483476
+    },
+    {
+     "drill_name": "CURL_ROUTE_RIGHT",
+     "n": 32,
+     "mean": 0.2051664562881472,
+     "sd": 0.15845592411937479,
+     "median": 0.17607477817991768
+    },
+    {
+     "drill_name": "DAGGER_ROUTE_LEFT",
+     "n": 34,
+     "mean": 0.35761334661986527,
+     "sd": 0.26844173647744535,
+     "median": 0.38184747712981415
+    },
+    {
+     "drill_name": "END_ZONE_FADE_RIGHT",
+     "n": 17,
+     "mean": 0.48636088737019667,
+     "sd": 0.26685634159200605,
+     "median": 0.5534682029658855
+    },
+    {
+     "drill_name": "FLAT_ROUTE_LEFT",
+     "n": 9,
+     "mean": 0.19450041987477798,
+     "sd": 0.12858460649549308,
+     "median": 0.22163603812993748
+    },
+    {
+     "drill_name": "GO_ROUTE_RIGHT",
+     "n": 28,
+     "mean": 0.2759500116698813,
+     "sd": 0.2193882259533967,
+     "median": 0.24287163999299
+    },
+    {
+     "drill_name": "HOOK_ROUTE_RIGHT",
+     "n": 17,
+     "mean": 0.16524712418370122,
+     "sd": 0.14328984890501517,
+     "median": 0.10886346801915281
+    },
+    {
+     "drill_name": "IN_ROUTE_LEFT",
+     "n": 17,
+     "mean": 0.33203429904530896,
+     "sd": 0.263176249883284,
+     "median": 0.22502585271196174
+    },
+    {
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "n": 49,
+     "mean": 0.2984778905109102,
+     "sd": 0.2785050740643908,
+     "median": 0.2263390278012403
+    },
+    {
+     "drill_name": "POST_CORNER_ROUTE_RIGHT",
+     "n": 33,
+     "mean": 0.3842869891814562,
+     "sd": 0.30047635482655183,
+     "median": 0.32410328270573735
+    },
+    {
+     "drill_name": "RED_ZONE_FADE_RIGHT",
+     "n": 28,
+     "mean": 0.22877348316747798,
+     "sd": 0.17284644805137148,
+     "median": 0.18720650403056321
+    },
+    {
+     "drill_name": "SLANT_ROUTE_LEFT",
+     "n": 27,
+     "mean": 0.3601936900797327,
+     "sd": 0.3279346551765722,
+     "median": 0.25734765199817966
+    },
+    {
+     "drill_name": "SLOT_SAIL_ROUTE_RIGHT",
+     "n": 30,
+     "mean": 0.3058479173113607,
+     "sd": 0.23265690269884207,
+     "median": 0.22440182087738245
+    },
+    {
+     "drill_name": "SLOT_STRIKE_ROUTE_LEFT",
+     "n": 34,
+     "mean": 0.37315900326725904,
+     "sd": 0.24858378446453058,
+     "median": 0.3594765143420795
+    },
+    {
+     "drill_name": "SPEED_OUT_ROUTE_LEFT",
+     "n": 36,
+     "mean": 0.3640725700669937,
+     "sd": 0.25118821027571325,
+     "median": 0.329464230991338
+    },
+    {
+     "drill_name": "WHEEL_ROUTE_LEFT",
+     "n": 13,
+     "mean": 0.36331478421352126,
+     "sd": 0.2133228236390088,
+     "median": 0.32558347152163475
+    }
+   ]
+  },
+  "adjust_dist": {
+   "n_attempts": 125,
+   "n_players": 54,
+   "by_drill": [
+    {
+     "drill_name": "CIRCUS_ROUTE_LEFT",
+     "n": 31,
+     "mean": 6.456320151239769,
+     "sd": 1.306778650242463,
+     "median": 6.504974428888551
+    },
+    {
+     "drill_name": "END_ZONE_FADE_RIGHT",
+     "n": 17,
+     "mean": 1.6557703573052092,
+     "sd": 0.683555729544559,
+     "median": 1.613823890625883
+    },
+    {
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "n": 49,
+     "mean": 2.033641541270864,
+     "sd": 0.8598208033391138,
+     "median": 1.8874726709912573
+    },
+    {
+     "drill_name": "RED_ZONE_FADE_RIGHT",
+     "n": 28,
+     "mean": 1.4711463852871403,
+     "sd": 0.8560010269046935,
+     "median": 1.3140488186188821
+    }
+   ],
+   "decomposition": {
+    "label": "post hoc (after review): what adjust_dist measures",
+    "what": "along = component of (catch point - release-time extrapolation) along his release heading; share_along = median of along^2 / adjust_dist^2; corr_along_speed_change = Pearson r of along with (his speed at contact - his speed at release)",
+    "by_drill": [
+     {
+      "drill_name": "CIRCUS_ROUTE_LEFT",
+      "n": 31,
+      "adjust_dist_median": 6.504974428888551,
+      "across_median": 5.813798203893117,
+      "share_along": 0.1888310987195259,
+      "corr_along_speed_change": 0.345660673796864
+     },
+     {
+      "drill_name": "END_ZONE_FADE_RIGHT",
+      "n": 17,
+      "adjust_dist_median": 1.613823890625883,
+      "across_median": 0.5972200317564438,
+      "share_along": 0.8386644309727801,
+      "corr_along_speed_change": 0.9250195168222823
+     },
+     {
+      "drill_name": "OVER_SHOULDER_ADJUST",
+      "n": 49,
+      "adjust_dist_median": 1.8874726709912573,
+      "across_median": 1.5440315165800298,
+      "share_along": 0.2593412259893556,
+      "corr_along_speed_change": 0.8362590791522899
+     },
+     {
+      "drill_name": "RED_ZONE_FADE_RIGHT",
+      "n": 28,
+      "adjust_dist_median": 1.3140488186188821,
+      "across_median": 0.4800798911436516,
+      "share_along": 0.7383620529977135,
+      "corr_along_speed_change": 0.9240154037792545
+     }
+    ]
+   }
+  },
+  "adjust_time": {
+   "n_attempts": 125,
+   "n_players": 54,
+   "by_drill": [
+    {
+     "drill_name": "CIRCUS_ROUTE_LEFT",
+     "n": 31,
+     "mean": 0.41935483870967744,
+     "sd": 0.1740102580093286,
+     "median": 0.3999999999999999
+    },
+    {
+     "drill_name": "END_ZONE_FADE_RIGHT",
+     "n": 17,
+     "mean": 0.0,
+     "sd": 0.0,
+     "median": 0.0
+    },
+    {
+     "drill_name": "OVER_SHOULDER_ADJUST",
+     "n": 49,
+     "mean": 0.0,
+     "sd": 0.0,
+     "median": 0.0
+    },
+    {
+     "drill_name": "RED_ZONE_FADE_RIGHT",
+     "n": 28,
+     "mean": 0.0,
+     "sd": 0.0,
+     "median": 0.0
+    }
+   ],
+   "share_zero_by_drill": {
+    "CIRCUS_ROUTE_LEFT": 0.0,
+    "END_ZONE_FADE_RIGHT": 1.0,
+    "OVER_SHOULDER_ADJUST": 1.0,
+    "RED_ZONE_FADE_RIGHT": 1.0
+   }
+  }
+ },
+ "reliability": {
+  "retention": {
+   "n_attempts": 311,
+   "n_players": 54,
+   "n_drills": 17,
+   "median_drills_per_player": 6.0,
+   "cross_drill": {
+    "icc": 0.0771969761705286,
+    "reliability": 0.30654141714078637,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54,
+    "n_dropped": 0
+   },
+   "cross_drill_drill_centered": {
+    "icc": 0.07966956118572187,
+    "reliability": 0.31423699436817515,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54,
+    "n_dropped": 0
+   },
+   "within_drill_retest": {
+    "icc": -0.18562733196266346,
+    "reliability": 0.0,
+    "n_players": 299,
+    "n_single": 287,
+    "n_repeated": 12
+   },
+   "cross_drill_boot_ci95": [
+    0.0,
+    0.4996326594889026
+   ],
+   "cross_drill_icc_boot_ci95": [
+    -0.019099776575063943,
+    0.16420915455502597
+   ],
+   "p_boot_ge_05": 0.025,
+   "within_drill_retest_icc_boot_ci95": [
+    -0.6630051910038217,
+    0.27156882898240203
+   ],
+   "drills_needed_for_0.5": 11.953875263080173,
+   "drills_needed_for_0.8": 47.815501052320705,
+   "drills_needed_range_from_icc_ci": {
+    "note": "distinct drills (cross-drill ICC), not repeated catches; None = unbounded (CI reaches <= 0)",
+    "for_0.5": [
+     5.089794461884908,
+     null
+    ],
+    "for_0.8": [
+     20.35917784753964,
+     null
+    ]
+   },
+   "passes_gate": false
+  },
+  "decel_in": {
+   "n_attempts": 488,
+   "n_players": 54,
+   "n_drills": 18,
+   "median_drills_per_player": 9.0,
+   "cross_drill": {
+    "icc": 0.057671736097566255,
+    "reliability": 0.33455546597098557,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54,
+    "n_dropped": 0
+   },
+   "cross_drill_drill_centered": {
+    "icc": 0.0634797261543693,
+    "reliability": 0.3572045741255985,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54,
+    "n_dropped": 0
+   },
+   "within_drill_retest": {
+    "icc": 0.009742932589382108,
+    "reliability": 0.010413452937562668,
+    "n_players": 456,
+    "n_single": 424,
+    "n_repeated": 32
+   },
+   "cross_drill_boot_ci95": [
+    0.0,
+    0.5435941509111284
+   ],
+   "cross_drill_icc_boot_ci95": [
+    -0.005313718635171765,
+    0.1257378857181773
+   ],
+   "p_boot_ge_05": 0.067,
+   "within_drill_retest_icc_boot_ci95": [
+    -0.454935278752118,
+    0.4115388380511531
+   ],
+   "drills_needed_for_0.5": 16.339516159323665,
+   "drills_needed_for_0.8": 65.35806463729469,
+   "drills_needed_range_from_icc_ci": {
+    "note": "distinct drills (cross-drill ICC), not repeated catches; None = unbounded (CI reaches <= 0)",
+    "for_0.5": [
+     6.95305244945307,
+     null
+    ],
+    "for_0.8": [
+     27.81220979781229,
+     null
+    ]
+   },
+   "passes_gate": false
+  },
+  "catch_offset": {
+   "n_attempts": 488,
+   "n_players": 54,
+   "n_drills": 18,
+   "median_drills_per_player": 9.0,
+   "cross_drill": {
+    "icc": 0.08254868753340577,
+    "reliability": 0.42306539299034934,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54,
+    "n_dropped": 0
+   },
+   "cross_drill_drill_centered": {
+    "icc": 0.08755665143110876,
+    "reliability": 0.4385023827705145,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54,
+    "n_dropped": 0
+   },
+   "within_drill_retest": {
+    "icc": -0.1489162562111341,
+    "reliability": 0.0,
+    "n_players": 456,
+    "n_single": 424,
+    "n_repeated": 32
+   },
+   "cross_drill_boot_ci95": [
+    0.15032550083818177,
+    0.56397663124959
+   ],
+   "cross_drill_icc_boot_ci95": [
+    0.02116523049785263,
+    0.140525962850446
+   ],
+   "p_boot_ge_05": 0.148,
+   "within_drill_retest_icc_boot_ci95": [
+    -0.4761830910968149,
+    0.1665859758330851
+   ],
+   "drills_needed_for_0.5": 11.114062983682452,
+   "drills_needed_for_0.8": 44.45625193472981,
+   "drills_needed_range_from_icc_ci": {
+    "note": "distinct drills (cross-drill ICC), not repeated catches; None = unbounded (CI reaches <= 0)",
+    "for_0.5": [
+     6.116122741419994,
+     46.247300240904885
+    ],
+    "for_0.8": [
+     24.464490965679985,
+     184.98920096361957
+    ]
+   },
+   "passes_gate": false
+  },
+  "adjust_dist": {
+   "n_attempts": 125,
+   "n_players": 54,
+   "n_drills": 4,
+   "median_drills_per_player": 2.0,
+   "cross_drill": {
+    "icc": -0.32878784348174167,
+    "reliability": 0.0,
+    "n_players": 54,
+    "n_single": 8,
+    "n_repeated": 46,
+    "n_dropped": 0
+   },
+   "cross_drill_drill_centered": {
+    "icc": -0.3305911672233423,
+    "reliability": 0.0,
+    "n_players": 54,
+    "n_single": 8,
+    "n_repeated": 46,
+    "n_dropped": 0
+   },
+   "within_drill_retest": {
+    "icc": 0.05152220772910185,
+    "reliability": 0.05427909630973361,
+    "n_players": 118,
+    "n_single": 111,
+    "n_repeated": 7
+   },
+   "cross_drill_boot_ci95": [
+    0.0,
+    0.0
+   ],
+   "cross_drill_icc_boot_ci95": [
+    -0.46646218054894806,
+    -0.1260918648173465
+   ],
+   "p_boot_ge_05": 0.0,
+   "within_drill_retest_icc_boot_ci95": [
+    -0.8032336851804054,
+    0.5600807567599525
+   ],
+   "drills_needed_for_0.5": null,
+   "drills_needed_for_0.8": null,
+   "drills_needed_range_from_icc_ci": {
+    "note": "distinct drills (cross-drill ICC), not repeated catches; None = unbounded (CI reaches <= 0)",
+    "for_0.5": [
+     null,
+     null
+    ],
+    "for_0.8": [
+     null,
+     null
+    ]
+   },
+   "passes_gate": false
+  },
+  "adjust_time": {
+   "n_attempts": 125,
+   "n_players": 54,
+   "n_drills": 4,
+   "median_drills_per_player": 2.0,
+   "cross_drill": {
+    "icc": null,
+    "reliability": null,
+    "n_players": 30,
+    "n_single": 30,
+    "n_repeated": 0,
+    "n_dropped": 0
+   },
+   "cross_drill_drill_centered": {
+    "icc": null,
+    "reliability": null,
+    "n_players": 30,
+    "n_single": 30,
+    "n_repeated": 0,
+    "n_dropped": 0
+   },
+   "within_drill_retest": {
+    "icc": 0.04079933388842701,
+    "reliability": 0.04302988187809667,
+    "n_players": 118,
+    "n_single": 111,
+    "n_repeated": 7
+   },
+   "within_drill_retest_icc_boot_ci95": [
+    -0.16051040967091956,
+    0.04079933388842701
+   ],
+   "drills_needed_for_0.5": null,
+   "drills_needed_for_0.8": null,
+   "passes_gate": false
+  }
+ },
+ "robustness_post_hoc": {
+  "label": "post hoc robustness (not in the plan)",
+  "retest_cells": {
+   "label": "post hoc (after review)",
+   "repeated_player_drill_cells": 48,
+   "first_attempt_outcomes": {
+    "no_contact": 1,
+    "not_reached": 13,
+    "reached_unobserved": 6,
+    "secured": 19,
+    "separated": 9
+   },
+   "first_attempt_failed_share": 0.4583333333333333,
+   "single_attempt_cells": 453,
+   "single_attempt_failed_share": 0.08609271523178808,
+   "failed": "outcome separated or not_reached (inferred)"
+  },
+  "WR_only": {
+   "retention": {
+    "reliability": 0.32171981652929793,
+    "icc": 0.07090676034740226,
+    "n_players": 37
+   },
+   "decel_in": {
+    "reliability": 0.4560455573298599,
+    "icc": 0.08248160168775173,
+    "n_players": 37
+   },
+   "catch_offset": {
+    "reliability": 0.43484802605378636,
+    "icc": 0.07612641609960552,
+    "n_players": 37
+   },
+   "adjust_dist": {
+    "reliability": 0.0,
+    "icc": -0.29192199777524996,
+    "n_players": 37
+   },
+   "adjust_time": {
+    "reliability": null,
+    "icc": null,
+    "n_players": 37
+   }
+  },
+  "window_0.3s": {
+   "retention": {
+    "reliability": 0.1374891563105536,
+    "icc": 0.027144641934126003,
+    "n_attempts": 325
+   },
+   "decel_in": {
+    "reliability": 0.3519281887370664,
+    "icc": 0.06209548285044176,
+    "n_attempts": 488
+   }
+  },
+  "window_0.7s": {
+   "retention": {
+    "reliability": 0.35470850752979577,
+    "icc": 0.09733666371635645,
+    "n_attempts": 301
+   },
+   "decel_in": {
+    "reliability": 0.2871395293790939,
+    "icc": 0.04655787221283615,
+    "n_attempts": 488
+   }
+  },
+  "clock_shift_-0.15s": {
+   "retention": {
+    "reliability": 0.2862154109041427,
+    "icc": 0.07205031048800777
+   },
+   "decel_in": {
+    "reliability": 0.2539673657333787,
+    "icc": 0.039525813303135905
+   },
+   "catch_offset": {
+    "reliability": 0.18092087785672378,
+    "icc": 0.025852270324500166
+   }
+  },
+  "clock_shift_-0.10s": {
+   "retention": {
+    "reliability": 0.28821094400135905,
+    "icc": 0.0720529035694879
+   },
+   "decel_in": {
+    "reliability": 0.28027503565900447,
+    "icc": 0.045055652814998466
+   },
+   "catch_offset": {
+    "reliability": 0.26593690302906803,
+    "icc": 0.04199817788474838
+   }
+  },
+  "clock_shift_+0.10s": {
+   "retention": {
+    "reliability": 0.28713612818354844,
+    "icc": 0.06897246415802227
+   },
+   "decel_in": {
+    "reliability": 0.3419411472623781,
+    "icc": 0.06053069193266944
+   },
+   "catch_offset": {
+    "reliability": 0.2500037296824803,
+    "icc": 0.038722609577267586
+   }
+  },
+  "clock_shift_+0.15s": {
+   "retention": {
+    "reliability": 0.25567534643439443,
+    "icc": 0.05827938222772894
+   },
+   "decel_in": {
+    "reliability": 0.34200573804478224,
+    "icc": 0.06067602456972468
+   },
+   "catch_offset": {
+    "reliability": 0.0,
+    "icc": -0.011242322386455181
+   }
+  },
+  "separated_rate": {
+   "what": "per-player share of observed outcomes inferred 'separated' (drop / deflection)",
+   "attempt_icc_across_players": {
+    "icc": -0.03606398160486611,
+    "reliability": 0.0,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54
+   },
+   "players": 54,
+   "median_observed_per_player": 8.0,
+   "players_with_any": 29,
+   "max_per_player": 2
+  },
+  "separated_rate_with_passed_him": {
+   "what": "as separated_rate, counting the post hoc 'passed_him' class (after review) as separated",
+   "attempt_icc_across_players": {
+    "icc": -0.010873753579676211,
+    "reliability": 0.0,
+    "n_players": 54,
+    "n_single": 0,
+    "n_repeated": 54
+   },
+   "players_with_any": 34,
+   "max_per_player": 4
+  }
+ },
+ "descriptive_combine": {
+  "label": "descriptive only (no tests, no multiplicity claims); Combine measures centered within position",
+  "correlations": {
+   "retention": {
+    "forty": {
+     "n": 47,
+     "rho": -0.19063326849502957,
+     "ci95": [
+      -0.4669824418252338,
+      0.11963996360283889
+     ]
+    },
+    "ten_yd_split": {
+     "n": 47,
+     "rho": -0.24950908632722663,
+     "ci95": [
+      -0.5139619717739637,
+      0.058254713159881705
+     ]
+    },
+    "c40_v_20_40": {
+     "n": 47,
+     "rho": 0.19368640148011101,
+     "ci95": [
+      -0.11651396914022905,
+      0.46945763278561675
+     ]
+    },
+    "c40_smax": {
+     "n": 47,
+     "rho": 0.19958371877890843,
+     "ci95": [
+      -0.11045846450753509,
+      0.47422637885048435
+     ]
+    },
+    "vertical": {
+     "n": 47,
+     "rho": 0.1375181071063531,
+     "ci95": [
+      -0.17305573088347206,
+      0.4232173755471963
+     ]
+    },
+    "broad_jump": {
+     "n": 45,
+     "rho": 0.09221643908814267,
+     "ci95": [
+      -0.2242260351645659,
+      0.3910676468456555
+     ]
+    },
+    "three_cone": {
+     "n": 19,
+     "rho": 0.08435865400514446,
+     "ci95": [
+      -0.4093585310004143,
+      0.5398611525987328
+     ]
+    },
+    "short_shuttle": {
+     "n": 20,
+     "rho": 0.0475655290089183,
+     "ci95": [
+      -0.42705610236016184,
+      0.501638695239076
+     ]
+    },
+    "combine_weight": {
+     "n": 54,
+     "rho": 0.06974527764283249,
+     "ci95": [
+      -0.21753146286027614,
+      0.34590167681996437
+     ]
+    },
+    "combine_height": {
+     "n": 54,
+     "rho": 0.2058565696102886,
+     "ci95": [
+      -0.08189767180658059,
+      0.46193064345252993
+     ]
+    },
+    "hand_size": {
+     "n": 54,
+     "rho": 0.1349549143627522,
+     "ci95": [
+      -0.15390613605665826,
+      0.402564358161393
+     ]
+    },
+    "arm_length": {
+     "n": 54,
+     "rho": 0.2830390702080311,
+     "ci95": [
+      6.054398689821849e-05,
+      0.5240485897291223
+     ]
+    }
+   },
+   "decel_in": {
+    "forty": {
+     "n": 47,
+     "rho": 0.039457325982886246,
+     "ci95": [
+      -0.26709419067735546,
+      0.33875707078433376
+     ]
+    },
+    "ten_yd_split": {
+     "n": 47,
+     "rho": 0.06307813980182696,
+     "ci95": [
+      -0.24496376861127467,
+      0.3595526040607611
+     ]
+    },
+    "c40_v_20_40": {
+     "n": 47,
+     "rho": -0.03688714153561517,
+     "ci95": [
+      -0.3364765264742858,
+      0.2694828568004037
+     ]
+    },
+    "c40_smax": {
+     "n": 47,
+     "rho": -0.02000462534690102,
+     "ci95": [
+      -0.32140867612982965,
+      0.2850798973806979
+     ]
+    },
+    "vertical": {
+     "n": 47,
+     "rho": -0.20798384309942758,
+     "ci95": [
+      -0.4809912567400879,
+      0.10179308904267756
+     ]
+    },
+    "broad_jump": {
+     "n": 45,
+     "rho": -0.08713727899530505,
+     "ci95": [
+      -0.3867217084780081,
+      0.2290833275759879
+     ]
+    },
+    "three_cone": {
+     "n": 19,
+     "rho": -0.2952552890180056,
+     "ci95": [
+      -0.6770861232772083,
+      0.21182973539866726
+     ]
+    },
+    "short_shuttle": {
+     "n": 20,
+     "rho": -0.2204624519143515,
+     "ci95": [
+      -0.6218611888234998,
+      0.2726735735025491
+     ]
+    },
+    "combine_weight": {
+     "n": 54,
+     "rho": -0.09910769633336339,
+     "ci95": [
+      -0.3716673523008193,
+      0.1891814294745854
+     ]
+    },
+    "combine_height": {
+     "n": 54,
+     "rho": -0.29320930177868476,
+     "ci95": [
+      -0.5320469548603436,
+      -0.011151176854329302
+     ]
+    },
+    "hand_size": {
+     "n": 54,
+     "rho": -0.08751042463918976,
+     "ci95": [
+      -0.3615406101608516,
+      0.20043656093829892
+     ]
+    },
+    "arm_length": {
+     "n": 54,
+     "rho": -0.13791527797766343,
+     "ci95": [
+      -0.40508895092469516,
+      0.15095971257399787
+     ]
+    }
+   },
+   "catch_offset": {
+    "forty": {
+     "n": 47,
+     "rho": 0.014232407905850463,
+     "ci95": [
+      -0.2903757967334616,
+      0.316221649164287
+     ]
+    },
+    "ten_yd_split": {
+     "n": 47,
+     "rho": 0.14835043990429675,
+     "ci95": [
+      -0.16230840618854186,
+      0.4322523992068496
+     ]
+    },
+    "c40_v_20_40": {
+     "n": 47,
+     "rho": -0.09759481961147086,
+     "ci95": [
+      -0.38942022801422344,
+      0.21203723585043271
+     ]
+    },
+    "c40_smax": {
+     "n": 47,
+     "rho": -0.09932932469935246,
+     "ci95": [
+      -0.39090509001789375,
+      0.21036387672915427
+     ]
+    },
+    "vertical": {
+     "n": 47,
+     "rho": -0.10575645763164218,
+     "ci95": [
+      -0.3963939823779235,
+      0.2041474568960351
+     ]
+    },
+    "broad_jump": {
+     "n": 45,
+     "rho": -0.09472303757551707,
+     "ci95": [
+      -0.39320749547707723,
+      0.22182312167353785
+     ]
+    },
+    "three_cone": {
+     "n": 19,
+     "rho": -0.0913885418389065,
+     "ci95": [
+      -0.5448617527772445,
+      0.40344405495304125
+     ]
+    },
+    "short_shuttle": {
+     "n": 20,
+     "rho": -0.12080134351471315,
+     "ci95": [
+      -0.5547978432244348,
+      0.36487474513083623
+     ]
+    },
+    "combine_weight": {
+     "n": 54,
+     "rho": 0.19360129830107192,
+     "ci95": [
+      -0.09456278935725106,
+      0.45183070016481547
+     ]
+    },
+    "combine_height": {
+     "n": 54,
+     "rho": 0.045525605503738575,
+     "ci95": [
+      -0.24055686153487565,
+      0.3243306328732007
+     ]
+    },
+    "hand_size": {
+     "n": 54,
+     "rho": -0.04243624785910905,
+     "ci95": [
+      -0.32155811154375313,
+      0.24347090958787937
+     ]
+    },
+    "arm_length": {
+     "n": 54,
+     "rho": 0.16518558321937515,
+     "ci95": [
+      -0.12357424231363595,
+      0.42815495228286915
+     ]
+    }
+   },
+   "adjust_dist": {
+    "forty": {
+     "n": 47,
+     "rho": 0.03095259442939024,
+     "ci95": [
+      -0.27498391433453495,
+      0.33119729841618645
+     ]
+    },
+    "ten_yd_split": {
+     "n": 47,
+     "rho": 0.2308192671266853,
+     "ci95": [
+      -0.07799657558189638,
+      0.49921847324264057
+     ]
+    },
+    "c40_v_20_40": {
+     "n": 47,
+     "rho": -0.029949121184088805,
+     "ci95": [
+      -0.330302771284066,
+      0.27591211311005315
+     ]
+    },
+    "c40_smax": {
+     "n": 47,
+     "rho": -0.05353839037927845,
+     "ci95": [
+      -0.3511892042147946,
+      0.2539404015002578
+     ]
+    },
+    "vertical": {
+     "n": 47,
+     "rho": 0.12774084160320895,
+     "ci95": [
+      -0.18269317526249035,
+      0.415013278336772
+     ]
+    },
+    "broad_jump": {
+     "n": 45,
+     "rho": 0.12236158405472435,
+     "ci95": [
+      -0.19507045071954301,
+      0.416589687407864
+     ]
+    },
+    "three_cone": {
+     "n": 19,
+     "rho": 0.1282954529661572,
+     "ci95": [
+      -0.37169950619267106,
+      0.5705961808955612
+     ]
+    },
+    "short_shuttle": {
+     "n": 20,
+     "rho": 0.020385226718107843,
+     "ci95": [
+      -0.4490454252075318,
+      0.4809966181282884
+     ]
+    },
+    "combine_weight": {
+     "n": 54,
+     "rho": -0.034357843169049794,
+     "ci95": [
+      -0.31428551539333366,
+      0.2510665769589556
+     ]
+    },
+    "combine_height": {
+     "n": 54,
+     "rho": 0.061730280829608665,
+     "ci95": [
+      -0.22518680260054005,
+      0.3387953610489419
+     ]
+    },
+    "hand_size": {
+     "n": 54,
+     "rho": 0.08204341252761084,
+     "ci95": [
+      -0.20571605658745257,
+      0.35674428389331575
+     ]
+    },
+    "arm_length": {
+     "n": 54,
+     "rho": 0.03749190217147212,
+     "ci95": [
+      -0.24812396565337255,
+      0.3171108630190968
+     ]
+    }
+   },
+   "adjust_time": {
+    "forty": {
+     "n": 27,
+     "rho": 0.1766642070790271,
+     "ci95": [
+      -0.24073200464324968,
+      0.5389152827835642
+     ]
+    },
+    "ten_yd_split": {
+     "n": 27,
+     "rho": 0.1763463634508671,
+     "ci95": [
+      -0.2410410324652923,
+      0.538682457023563
+     ]
+    },
+    "c40_v_20_40": {
+     "n": 27,
+     "rho": -0.13261962851140038,
+     "ci95": [
+      -0.5061155430732994,
+      0.2827632170974023
+     ]
+    },
+    "c40_smax": {
+     "n": 27,
+     "rho": -0.15077405561620927,
+     "ci95": [
+      -0.5197671986245901,
+      0.26562978172574586
+     ]
+    },
+    "vertical": {
+     "n": 25,
+     "rho": 0.1516371080337935,
+     "ci95": [
+      -0.2822546067217338,
+      0.53402665140923
+     ]
+    },
+    "broad_jump": {
+     "n": 25,
+     "rho": 0.058652350534421686,
+     "ci95": [
+      -0.36637192398324614,
+      0.4634260202926274
+     ]
+    },
+    "three_cone": {
+     "n": 10,
+     "rho": 0.38614914049672716,
+     "ci95": [
+      -0.3609628858106425,
+      0.831360445425776
+     ]
+    },
+    "short_shuttle": {
+     "n": 10,
+     "rho": -0.028224401448677588,
+     "ci95": [
+      -0.671511505898858,
+      0.6393225178483986
+     ]
+    },
+    "combine_weight": {
+     "n": 30,
+     "rho": 0.1696744106640506,
+     "ci95": [
+      -0.2246072601113646,
+      0.5162148667440187
+     ]
+    },
+    "combine_height": {
+     "n": 30,
+     "rho": 0.13975583010520826,
+     "ci95": [
+      -0.25350760066839134,
+      0.4933745560961921
+     ]
+    },
+    "hand_size": {
+     "n": 30,
+     "rho": 0.011647732851599929,
+     "ci95": [
+      -0.3697953816660081,
+      0.3897307852091565
+     ]
+    },
+    "arm_length": {
+     "n": 30,
+     "rho": -0.24344244327817097,
+     "ci95": [
+      -0.570500471547915,
+      0.1502577458506817
+     ]
+    }
+   }
+  },
+  "between_mechanics": {
+   "retention~decel_in": {
+    "n": 54,
+    "rho": -0.621345530779493,
+    "ci95": [
+     -0.7690980463548123,
+     -0.4105492099169723
+    ]
+   },
+   "retention~catch_offset": {
+    "n": 54,
+    "rho": -0.0707070707070707,
+    "ci95": [
+     -0.3467523051647893,
+     0.2166104471137457
+    ]
+   },
+   "retention~adjust_dist": {
+    "n": 54,
+    "rho": 0.046540880503144644,
+    "ci95": [
+     -0.2395980724162573,
+     0.3252407393815617
+    ]
+   },
+   "retention~adjust_time": {
+    "n": 30,
+    "rho": 0.22787225228335953,
+    "ci95": [
+     -0.16633041137185114,
+     0.559275523637335
+    ]
+   },
+   "decel_in~catch_offset": {
+    "n": 54,
+    "rho": 0.030760434534019433,
+    "ci95": [
+     -0.2544377430629441,
+     0.3110363346783254
+    ]
+   },
+   "decel_in~adjust_dist": {
+    "n": 54,
+    "rho": -0.010024776062511908,
+    "ci95": [
+     -0.29217928424302503,
+     0.2737351436155177
+    ]
+   },
+   "decel_in~adjust_time": {
+    "n": 30,
+    "rho": -0.284952236892649,
+    "ci95": [
+     -0.5998405318843135,
+     0.10636667910140533
+    ]
+   },
+   "catch_offset~adjust_dist": {
+    "n": 54,
+    "rho": -0.0030112445206784827,
+    "ci95": [
+     -0.28575112231865185,
+     0.28021090771251367
+    ]
+   },
+   "catch_offset~adjust_time": {
+    "n": 30,
+    "rho": -0.17101611075096923,
+    "ci95": [
+     -0.5172277221328693,
+     0.22329476644376872
+    ]
+   },
+   "adjust_dist~adjust_time": {
+    "n": 30,
+    "rho": 0.6950327537719365,
+    "ci95": [
+     0.4282830654418114,
+     0.8503625598846802
+    ]
+   }
+  },
+  "n_cells": 60,
+  "n_ci_excluding_0": 2,
+  "expected_by_chance_at_5pct": 3.0
+ },
+ "rookie_outcomes": {
+  "expectation_model": {
+   "targets_all_seasons": 7838,
+   "brier": 0.19199839833616605,
+   "brier_base_rate": 0.2296542788090629,
+   "catch_rate": 0.6426384281704517,
+   "drop_rate_per_target": 0.029216636897167646
+  },
+  "exposure_54": {
+   "targets_total": 1051,
+   "drops_total": 35,
+   "median_targets": 3.0,
+   "with_ge_10_targets": {
+    "TE": 7,
+    "WR": 17
+   },
+   "with_ge_5_catches": {
+    "WR": 17,
+    "TE": 7
+   },
+   "with_any_drop": 19
+  },
+  "dropped_pass_attribution_54": {
+   "label": "post hoc (after review)",
+   "player_plays_with_event_all_seasons_and_types": 262,
+   "with_player_play_row": 251,
+   "not_the_target": 199,
+   "reg_with_player_play_row": 186,
+   "reg_not_the_target": 151
+  },
+  "target_reliability": {
+   "croe": {
+    "split_half_player_seasons": {
+     "r_half": 0.24428992289677756,
+     "reliability": 0.3926575605917578,
+     "n_players": 114
+    },
+    "median_n_per_player_season_with_ge_20": 53.0,
+    "eb_mean_weight_rookies": 0.35884746367437304
+   },
+   "drop_rate": {
+    "split_half_player_seasons": {
+     "r_half": -0.18169885735145191,
+     "reliability": -0.44408799617059735,
+     "n_players": 114
+    },
+    "median_n_per_player_season_with_ge_20": 53.0,
+    "eb_mean_weight_rookies": 0.03423994654476077
+   },
+   "yacoe": {
+    "split_half_player_seasons": {
+     "r_half": 0.16970961121450906,
+     "reliability": 0.2901739193855125,
+     "n_players": 85
+    },
+    "median_n_per_player_season_with_ge_20": 36.0,
+    "eb_mean_weight_rookies": 0.30966232384048115
+   }
+  },
+  "power": {
+   "n_croe_drop": 24,
+   "n_yacoe": 23,
+   "mde_one_sided_observed_reduced_controls": {
+    "croe_drop": 0.5389687699759056,
+    "yacoe": 0.5519977512946307
+   },
+   "full_B2_resid_df": 6,
+   "note": "full B2 leaves resid_df < 10 (harness min_df), so it cannot be used; true-score MDE = observed MDE / sqrt(rel_feature x rel_target), which exceeds 1 at the reliabilities found here",
+   "true_score_mde_best_case": 1.3832634764740674
+  },
+  "gate": {
+   "threshold": 0.5,
+   "mechanics_passing": [],
+   "decision": "STOP: no mechanic reaches reliability 0.5; per the plan no Combine-game association was computed (0 tests spent)"
+  },
+  "tests": []
+ },
+ "test_count": {
+  "primary": 0,
+  "prespecified_robustness": 0,
+  "prelisted_exploratory": 0,
+  "post_hoc": 0,
+  "note": "reliability/robustness/descriptive summaries are not tests"
+ },
+ "revision": {
+  "date": "2026-10-15",
+  "label": "post hoc, after review; no preregistered definition, gate or test changed",
+  "changes": [
+   "detection.contact_time_check: unanchored closest approach replaces the first check, which was bounded to [-0.05, +0.15] s around t_contact by construction (withdrawn: its '91% within 0.1 s' compared with ~75% for a uniform time in that window)",
+   "detection.outcome_posthoc / attempts.outcome_posthoc: not_reached split into passed_him (ball passed within 1.5 yd in flight, >= 0.15 s before its first impact), ball_unrelated (ball never within 5 yd: rows of another throw) and not_reached; preregistered `outcome` unchanged; mechanics unchanged (all three are not_reached)",
+   "detection.ball_speed_outside_flight: replaces 'handling and carrying stay <= 10 yd/s'",
+   "reliability.*.within_drill_retest_icc_boot_ci95 and robustness_post_hoc.retest_cells: retest ICCs with CIs; repeats often follow a failed first rep",
+   "reliability.*.cross_drill_icc_boot_ci95 and drills_needed_range_from_icc_ci: Spearman-Brown as ranges, in distinct drills",
+   "clock_lag_check.within_attempt_slope_s and velocity_matching: the pooled slope does not identify a lag; offset-free estimates in two windows and two edge trims; robustness_post_hoc.clock_shift_*: mechanic reliability with the receiver read +-0.1 / 0.15 s off the ball's contact time",
+   "mechanics.adjust_dist.decomposition: adjust_dist is mostly run-speed change in the two fades and route curvature in CIRCUS; mixed in OVER_SHOULDER_ADJUST",
+   "rookie_outcomes.dropped_pass_attribution_54: corrected count of non-target dropped_pass player-plays",
+   "data.coverage: BALL-row coverage by class, drill type and 2025 WR/TE drill name"
+  ]
+ },
+ "runtime_s": 183.88730192184448
+}

@@ -1,0 +1,12 @@
+{
+  "experiment": "E009 — Information value beyond the stopwatch (B1) for the 18 round-1 links",
+  "date": "2026-10-14",
+  "written_by": "orchestrator, after Gate 2",
+  "status_of_evidence": "SECONDARY and NOT BLIND. The beyond-B2 results (E008) and raw correlations for these 18 links are already known, and B1 is nested in B2 (B2 = B1 + draft pick), so these results are partly predictable. Report them as a second column of the transfer map, not as new discoveries.",
+  "question": "Beyond-B2 asks whether a tracking signature carries information the market (draft slot) had not already priced. Draft slot also reflects film and any other information clubs had, which may include tracking-derived evaluations. Beyond-B1 asks the narrower information question: does the tracking signature add anything beyond the traditional Combine stopwatch and measurements (plus position and draft year)?",
+  "links": "Exactly the 18 links in experiments/results/E008.json (E002 P1-P3, E003 P1-P3, E004 P1-P3, E005 P1-P2, E006 P1-P3, E001 WR/DB/DL/OL), with the same features, targets, populations and expected signs as E008.",
+  "harness": "bdb27.linkage.evaluate, protocol rev 3, with draft_controls=[] (baseline = position + draft-year dummies + COMBINE_CONTROLS), expected_sign as in E008, n_repeats=50, n_perm=2000, n_perm_fl=10000, seed 0 (seeds 1-2 when fl_p < 0.10).",
+  "multiplicity": "BH across the 18 links (one family), reported next to E008's beyond-B2 column.",
+  "go": "PLAN.md §4 rev 3 criteria 1-6 with B1 in place of B2; reported as 'information beyond the stopwatch', never as 'market inefficiency'.",
+  "prespecified_extras": ["without the 2025 class", "leave-3-out for any link passing criterion 1", "difference in partial r between B1 and B2 (how much the draft slot absorbs)"]
+}
