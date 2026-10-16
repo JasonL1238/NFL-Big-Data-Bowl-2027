@@ -1,7 +1,8 @@
-# Writeup outline: v2.1 (Combine Game Equivalents)
+# Writeup outline: v2.2 (Combine Game Equivalents)
 
 Companion to `writeup/draft.md` (the text), `writeup/figure_plan.md` (figures and tables), `writeup/check_numbers.py` (the number checker) and `writeup/make_figures.py` (the figures).
 
+- **v2.2 (2026-10-15)** applies the final checker's five findings: word budget, hook accuracy, selection pools, drill-reliability framing, captions. Section 11 lists each.
 - **v2.1 (2026-10-15)** applies two mock judges' reviews to v2: Football/Writeup (Football 6, Writeup 6.5) and Data Science/Data Viz (DS 7, Viz 6). Section 10 lists every judge item as applied, rejected or deferred.
 - **v2** rebuilt the writeup around E012 (Combine Game Equivalents), as decided at Gate 2b (`experiments/log.md`).
 - **v1** (the "Residual Combine" audit framing) is superseded.
@@ -20,7 +21,7 @@ Companion to `writeup/draft.md` (the text), `writeup/figure_plan.md` (figures an
 | **The trust rule** (the one equation) | w = k / (k + λ + CGE). The prior is worth λ + CGE games: its effective sample size (credibility weighting, as in baseball's "stabilization points"). Its standard error after k games is σ / √(k + λ + CGE). |
 | **Trust table** (Table 1) | Per trait: prior worth (λ + CGE), when his games outweigh the prior (95% CI), about how many rookie appearances that is, and the weights after 1 / 4 / 8 games. |
 | **Priced / not priced** | Priced: reliability and split-half ≥ 0.5 (9 traits). Not priced: T4, T8, T10 (rule PH7, post hoc). The figures use the same words. |
-| **Receiver A** | The hook: E012's preregistered case-study pick (largest WR gap between prior and season). nfl_id 59278. Names withheld pending the user (section 7). |
+| **Receiver A** | The hook: E012's preregistered case-study pick (largest WR gap between prior and season among the 11 of 15 test receivers with 10+ qualifying games). nfl_id 59278. Names withheld (orchestrator decision; section 7). |
 
 **Information sets, as named in the text:**
 - **Position average** = C0.
@@ -44,6 +45,7 @@ Companion to `writeup/draft.md` (the text), `writeup/figure_plan.md` (figures an
    - The DL value is role (roster position alone 2.4; the Combine adds −0.25 beyond it).
    - The WR value is fragile (0.14 in the 2023–24 fit; 0 without one class). It is partly usage (r 0.61 with deep share), yet the forecast adds 1.0 game beyond deep share.
 4. **Combine tracking adds nothing measurable.**
+   - For Receiver A it nudged the forecast 0.3 mph toward his season (post hoc export, `e012_case_priors.json`); across all 15 test receivers it left error after one game within noise (0.96, 0.80–1.09).
    - ΔCGE ranges from −0.24 to +0.18.
    - H3: the estimate after one game is 2.1% worse (12 traits pooled).
    - For WR top speed alone the change is within noise: ratio 0.96 (0.80–1.09).
@@ -52,13 +54,13 @@ Companion to `writeup/draft.md` (the text), `writeup/figure_plan.md` (figures an
    - The position-average blend gets 99% of that gain.
    - The Combine + draft forecast adds 5% before game 1, 3.5% on priced traits and 2.5% after one game. All post hoc; none survives multiplicity.
    - The 80% intervals held 77–81%.
-6. **Why the rate is low** (unchanged evidence).
+6. **Why the rate is low** (Section 4).
    - 16/18 links null, beyond the stopwatch and beyond stopwatch + draft slot. Median draft-slot change 0.01 (intervals allow 0.37).
-   - Nulls are bounds.
-   - Drill reliability: 28/28, 2/22, 10/68, and 55–63% session variance in the OL wave drill.
+   - Unreliable measures do not explain the nulls: 13 of 16 pass the reliability gate (E008 `nulls_passing_c5`). Power and imperfect game targets limit the tests. Nulls are bounds.
+   - **Separate finding (Section 5), not a reason for the nulls:** which Combine measurements are stable traits: 28/28, 2/22, 10/68, and 55–63% session variance in the OL wave drill; drill intensity is stable (0.74) yet predicts nothing.
 7. **Side notes.**
-   - The WR tracked top-speed signal "remains suggestive" (+0.48 / +0.42; fragile; q 0.06).
-   - E010 gets one sentence. E011 moved to league item 3.
+   - The WR tracked top-speed signal "remains suggestive" (+0.48; fragile; q 0.06). The +0.42 beyond the stopwatch alone is now figure-only (Figure 4).
+   - E010 is one sentence in the stable-traits paragraph. E011 is league item 3.
 
 **Honesty rules from Gate 2b** (all applied):
 - Shrinkage does almost all the in-season work.
@@ -71,28 +73,29 @@ Companion to `writeup/draft.md` (the text), `writeup/figure_plan.md` (figures an
 
 ## 3. Structure and word budget
 
-Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image links and `[[TBD…]]`; captions and table cells count. Budget: **≤ 1,950 words, ≤ 8 figures + tables** (competition: ≤ 2,000 and < 10). **v2.1: 1,943 words, 6 items. Margin: 7 words.**
+Counts come from `writeup/check_numbers.py`, after removing HTML comments and image links; captions and table cells count, and so does the `[[TBD…]]` placeholder (it becomes link text). Hard budgets (v2.2): **rendered words ≤ 1,900** (tokens with a letter or digit in the rendered text, table pipes as cell breaks) and **whitespace tokens ≤ 1,950**, counted both on the pasted markdown and on the rendered text; **≤ 8 figures + tables** (competition: ≤ 2,000 words and < 10 items). **v2.2: 1,888 rendered words; 1,881 / 1,914 whitespace tokens (markdown / rendered); 6 items.** v2.1 had 1,953 words by the old count and 2,137 whitespace tokens, over 2,000 for a counter that counts table pipes and symbols.
 
-| Section | Purpose | Key content | Items | Words |
+| Section | Purpose | Key content | Items | Rendered words |
 |---|---|---|---|---|
 | Title | — | "The Combine Exchange Rate: how many NFL games is a Combine worth?" | — | 12 |
-| 1. One rookie, fifteen games | Hook | 4.39; tracked finish 23.2 mph, rank 1/91; forecast 17.6 vs 17.5 (q90 explained); 18.3, 18.9 over 15; 2 SD, largest gap, preregistered pick; "no Combine failure" (worth 0.14 games; a 2-SD miss among 15 is a coin flip); official splits don't corroborate; tracking within noise (0.96); the rule caught up by game 2 | Figure 1 | 222 (caption 16) |
-| 2. The Combine Exchange Rate | Question + method | Clubs' question (old Section 2, merged); qualifying game; λ; CGE; the one equation; worked example + standard error; prior art; four priors; prereg + A1; post hoc pricing rule | — | 258 |
-| 3.1 Own games take over | Week-to-week deliverable | 2.0–6.8; λ 1.5–6.8 vs CGE 0–1.2; 3–12 appearances; outcome traits 11–23 games / 14–39 appearances / 22 for pass rushers | Table 1 | 324 (table 174, caption 19) |
-| 3.2 Fraction of a game to about one | CGE | Values; biased-low bootstrap; calibrated bounds; conservative estimator (0.4–1.7 vs C0); DL role; WR usage and fragility; not priced, and what that rule set aside | Figure 2 | 254 (caption 20) |
+| 1. One rookie, fifteen games | Hook | 4.39; tracked finish 23.2 mph, rank 1/91; forecast 17.6 vs 17.5 (q90 play peak); 18.3, 18.9 over 15; 2 SD, largest gap among the 11 of 15 test receivers with 10+ games, preregistered pick; "no Combine failure" (worth 0.14 games; a 2-SD miss among 11 ≈ 40%); tracking nudged him 0.3 mph toward his season, but across all 15 left error within noise (0.96); official splits don't corroborate; the rule caught up by game 2 | Figure 1 | 240 (caption 20) |
+| 2. The Combine Exchange Rate | Question + method | Clubs' question; qualifying game; λ; CGE; the one equation; worked example + standard error; prior art; four priors; prereg + A1; post hoc pricing rule | — | 247 |
+| 3.1 Own games take over | Week-to-week deliverable | 2.0–6.8; λ 1.5–6.8 vs CGE 0–1.2; 3–12 appearances; outcome traits 11–23 games / 14–39 appearances / 22 for pass rushers | Table 1 | 286 (cells 143, footnote 27, caption 19) |
+| 3.2 Fraction of a game to about one | CGE | 0 (five traits) to 1.2; biased-low bootstrap; calibrated bounds; conservative estimator (0.4–1.7 vs C0); the two largest are soft (DL role; WR usage and fragility); not priced, and what that rule set aside | Figure 2 | 223 (caption 20) |
 | 3.3 Tracking adds nothing measurable | H3 | ΔCGE; 2.1% after one game, 12 traits pooled; scope sentence reconciling Section 5 | — | 62 |
-| 3.4 Shrinkage works; the rule is calibrated | Validation | Pseudo-prospective; 72% (68% priced) / 52%; 77–81% coverage; 99% shrinkage; 5% / 3.5% / 2.5%, post hoc, none survives multiplicity | Figure 3 | 174 (caption 16) |
-| 4. Why so little | Evidence | Transfer map (16/18; 0.01, at most 0.14, intervals allow 0.37; bounds; MDE); drill reliability (28/28, 2/22, 10/68, 55–63%) | Figures 4, 5 | 181 (captions 34) |
-| 5. What tracking does show | Side notes | WR signal, suggestive and fragile; E010 | — | 104 |
-| 6. What to do with it | Recommendations | Clubs: trust table with your best prior (C0 weights 0.40/0.73/0.84; DL roster role 2.4 → 6.0 games); shrink first (3.5×); don't weight Combine tracking (0–1.2, > 4 ruled out); be patient with outcome traits. League: identical repeat reps (40 0.66–0.79 vs pass-rush 0.23–0.51; 2–6 reps by Spearman–Brown); fixed tempo and frozen definitions; ball tracking with height (6–46 drills) | — | 241 |
-| 7. Limitations + Code | No overclaiming | n 62–85; estimand (up to 15 in simulation); inference; game units (low-play games 2.0–3.5× noisier for 9 of 12; roles pooled); draft slot | — | 109 |
-| **Total** | | | **6 of 8** | **1,943** |
+| 3.4 Shrinkage works; the rule is calibrated | Validation | Pseudo-prospective; 72% (95% CI 60–80%; 68% priced) / 52%; 77–81% coverage; 99% shrinkage; 5% / 3.5% / 2.5%, post hoc, none survives multiplicity | Figure 3 | 171 (caption 20) |
+| 4. Why so little | Evidence | Transfer map (16/18; 0.01, at most 0.14, intervals allow 0.37); 13 of 16 nulls pass the reliability gate; power and imperfect game targets (bounds +0.09 to +0.38; MDE 0.31–0.38; six links ≥ 0.5 if error-free) | Figure 4 | 138 (caption 17) |
+| 5. What tracking does show | Separate findings | Stability is a separate question from transfer (28/28, 2/22, 10/68, 55–63%; drill intensity stable 0.74 yet predicts nothing); WR signal, suggestive and fragile | Figure 5 | 169 (caption 19) |
+| 6. What to do with it | Recommendations | Clubs: trust table with your best prior (C0 weights 0.40/0.73/0.84; DL roster role 2.4 → 6.0 games); shrink first (3.5×); don't weight Combine tracking (point estimates 0–1.2, > 4 ruled out); be patient with outcome traits. League: identical repeat reps (40 0.66–0.79 vs pass-rush 0.23–0.51; 2–6 reps by Spearman–Brown); fixed tempo and frozen definitions; ball tracking with height (6–46 drills) | — | 231 |
+| 7. Limitations + Code | No overclaiming | n 62–85; estimand (up to 15 in simulation); inference; game units (low-play games 2.0–3.5× noisier for 9 of 12; roles pooled); draft slot | — | 107 |
+| **Total** | | | **6 of 8** | **1,888** |
 
-**If words are needed** (for Figure 1's longer caption, +6, or anything else), cut in this order:
-1. Section 5, the E010 sentence (24): Figure 5 already shows drill intensity.
-2. Section 4, the parenthetical "(detectable effect 0.31–0.38 at 60–80 players)" (8): Figure 4 draws the MDE.
-3. Section 3.2, the WR usage clause (17): keep it if at all possible, because it answers a club's first question.
-4. Section 1, "(the 90th percentile of his per-play peaks, well below a sprint)" (11): Figure 1's y-axis now says it.
+**If words are needed**, cut in this order (none of these is a caveat):
+1. Section 5, "the kind Receiver A showed" (5).
+2. Figure 1 caption: shorten "then his forecasts, rookie games and in-season estimate" to "then his season" (5).
+3. Section 6, Clubs item 4 (14): Table 1's ‡ rows and Section 3.1 already say it.
+
+Never cut: "fit on 2023–24", "pseudo-prospective", "post hoc" labels, "none survives multiplicity control", "That describes our model at this sample size", the calibrated bounds, the official-splits clause, or Limitations.
 
 ## 4. Wording guardrails
 
@@ -109,6 +112,8 @@ Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image l
 - "post hoc" on every PH number
 - "error-free measures"
 - "remains suggestive" and "fragile" (the WR signal)
+- "nudged his forecast 0.3 mph toward his season average" (Receiver A, Combine tracking), always next to the 15-receiver test
+- "13 of the 16 pass the reliability gate" (the nulls); "stability is a separate question from transfer"
 - "body type and role" (the DL CGE)
 - "partly route usage" (WR top speed)
 
@@ -127,9 +132,12 @@ Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image l
 - "two reps" (the evidence supports identical reps, 2–6 by Spearman–Brown)
 - "36/36" for validation 1
 - B1/B2/C0–C3 in the text
-- Receiver A's draft status
+- Receiver A's draft status, or his stopwatch-only forecast (`prior_C1`, 17.8 mph): next to the 17.6 Combine + draft forecast it would show the draft slot lowered it. (Open: the figure builder's 20:25 Figure 1 render draws it as a post hoc marker; the orchestrator should either drop that marker or relax this rule. figure_plan, Figure 1.)
+- "Nor would tracking have helped" or any claim that tracking did nothing for Receiver A (it moved him 0.3 mph the right way)
+- a chance argument over a different pool from the selection rule (the rule chose among 11; the chance is over 11)
+- that unreliable drills explain the transfer-map nulls (13 of 16 nulls pass the reliability gate)
 
-## 5. Mock-judging self-check (AGENTS.md checklist), v2.1
+## 5. Mock-judging self-check (AGENTS.md checklist), v2.2
 
 - **Baselines beaten?**
   - The rule beats raw early games (H1/H2).
@@ -144,7 +152,9 @@ Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image l
   - Bounds and MDE for the nulls.
   - p and q values on the figures.
 - **Overclaiming?**
-  - The hook now says "no Combine failure" and gives the chance of a 2-SD miss.
+  - The hook now says "no Combine failure" and gives the chance of a 2-SD miss, over the same 11 receivers the rule chose among.
+  - The hook states what Combine tracking did for Receiver A (0.3 mph toward his season) and that it did not help across all 15.
+  - The drill-reliability paragraph no longer reads as the reason for the nulls.
   - "At most about one" is gone.
   - The H3 wording is exact.
   - The pricing rule is labelled post hoc, and the text says what it set aside.
@@ -152,7 +162,7 @@ Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image l
   - Table 1 in club units (appearances, CIs, weights, outcome traits).
   - The worked example and standard error sit under the equation.
   - Prior-specific weights (Clubs item 1).
-- **≤ 2,000 words and < 10 figures?** 1,943 words; 6 items.
+- **≤ 2,000 words and < 10 figures?** 1,888 rendered words; at most 1,914 whitespace tokens by any of the checker's counts; 6 items.
 - **Combine tracking used explicitly?** Yes: C3 is priced in games; the transfer map and drill reliability are all Combine tracking; Figure 1 animates the tracked 40 (and, per figure_plan, one of his game plays).
 
 ## 6. Provenance
@@ -162,18 +172,20 @@ Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image l
   - It asserts the quoted phrase is in the text.
   - It fails on any numeric token that no check covers.
   - It requires a `<!-- src` comment near every number-bearing paragraph. On a comment-stripped copy it skips this check and still checks every number.
-  - Last run (v2.1): **354 checks, 0 failures**, 1,943 words.
-  - Mutation test: five altered numbers gave 30 failures; all five were caught.
+  - Last run (v2.2): **374 checks, 0 failures** on the draft and on a comment-stripped copy; 1,888 rendered words, 1,881 / 1,914 whitespace tokens.
+  - Mutation test (v2.2): seven altered numbers (the 0.3 mph nudge, 40%, 13 of 16, 11 of 15, all 15, a Table 1 cell, the H1 CI) each failed the run (2–11 failures each); padding with 80 symbol tokens tripped the whitespace-token check and padding with 20 words tripped the word check.
 - **Arithmetic on committed keys** (formula in each src comment; recomputed by the checker). The E012 owner should promote these into `E012.json` so the notebook prints them from keys:
   1. Rookie appearances = half-weight (or λ) / `qualifying_share_2025_rookies[T].share`.
   2. Priced-traits H1 cut, 68%: H1's own equal-weight pooling over the 9 priced traits of `secondary_per_trait[T]["1"]`. The same pooling over all 12 traits reproduces H1's pooled values exactly.
   3. Standard error after 4 games = √(σ² / (4 + λ + CGE)) = 0.33 mph, from `traits.T1.variance.sigma2` and `half_weight_game.C2`.
   4. Half-weight with the DL role prior = λ + `cge_role_reference` = 6.0.
   5. Reps needed for reliability 0.5 = (1 − icc) / icc from `drill_profile[*].icc_unit` (DL pass-rush): 2–6.
-  6. Chance that a calibrated forecast misses at least one of 15 by 2 SD = 1 − 0.9545^15 ≈ 0.50.
+  6. Chance that a calibrated forecast misses at least one of 11 by 2 SD = 1 − 0.9545^11 = 0.40. The 11 are the receivers the selection rule chose among (`e012_case_priors.json pools.T1.n_with_10plus_games`); v2.1 used 15 (≈ 0.50), a different pool from the rule's.
+  8. Receiver A's tracking nudge = (`prior_C3` − `prior_C2`) × 3600/1760 = 0.29 mph (`e012_case_priors.json cases[59278].tracking_shift_C3_minus_C2` 0.142 yd/s).
+  9. H1's CI in percent = 1 − `ratio_ci95` = 60–80%.
   7. (Kept from v2) raw first game error / rule error = H1 `pooled_b / pooled_a` = 3.5.
-- **Sources:** `E012.json`, `E012_prereg.json`, `E008.json`, `E009.json`, `E010.json`, `E011.json`, `E007_leaderboard.json`, `experiments/posthoc_writeup_v1/ph_pairs.json` (rank cross-check).
-- **Allowlisted non-result constants** (with reasons, in the checker): data scope (2023–24, 2023–25, 2025, 10 Hz); drill names ("tracked 40", "tracked-40 speed profile", "his 40 peak"); "game 1"; the table's k values (1 / 4 / 8); CI labels ("(95% CI)", "(95% CIs)").
+- **Sources:** `E012.json`, `E012_prereg.json`, `E008.json`, `E009.json`, `E010.json`, `E011.json`, `E007_leaderboard.json`, `experiments/posthoc_writeup_v1/ph_pairs.json` (rank cross-check), `experiments/posthoc_writeup_v2/e012_case_priors.json` (post hoc export of the stored E012 forecasts: case-study priors C0–C3 and the test pools; the checker cross-checks its C0, C2 and season mean against `E012.json`).
+- **Allowlisted non-result constants** (with reasons, in the checker): data scope (2023–24, 2023–25, 2025, 10 Hz); drill names ("tracked 40", "tracked-40 speed profile", "his 40 peak", "40 vs DL pass-rush drill"); "game 1" and Figure 1's "game-1" panel; the table's k values (1/4/8); CI labels ("(95% CI)", "(95% CIs)").
 - **Prior art** (in the Section 2 src comment, for the notebook's references): Bühlmann credibility; sabermetric stabilization points; Morita, Thall & Müller (2008), "Determining the effective sample size of a parametric prior", *Biometrics*.
 - **Not quoted, figure-only:** see `figure_plan.md`, "Not quoted in the text".
 
@@ -185,12 +197,14 @@ Counts come from `writeup/check_numbers.py`. They exclude HTML comments, image l
    - Judge 1 argues anonymity buys little (a staffer can likely identify "Receiver A, 4.39, 2025 Combine") and costs hook power.
    - Recommendation: real names are acceptable if no draft information appears anywhere. This is also the precondition for R2.
 3. **R2: 2025 rookie trust board** (judge 1 item 4). It needs the names decision and about 80–120 words of cuts. The spec is in figure_plan.md.
-4. **Figure 1 game-play panel.** Adding it lengthens the caption by 6 words (7 available).
-5. **Receiver A's C1/C3 forecasts** (judge 2 item 3). Promote `prior_C1` and `prior_C3` for the case studies into `E012.json`. With them the hook could say how much of the forecast's "near average" came from the draft slot (stopwatch alone 17.76 mph vs + draft slot 17.61 vs + tracking 17.90, per judge 2 reading the gitignored parquet; unverified by this writer and not quotable until committed).
+4. **Figure 1 game-play panel.** Done by the figure builder; the v2.2 caption names it.
+5. **Receiver A's C1/C3 forecasts** (judge 2 item 3). **Resolved in v2.2** via the committed post hoc export `experiments/posthoc_writeup_v2/e012_case_priors.json` (17.76 / 17.61 / 17.90 mph confirmed). The text quotes only the tracking nudge (+0.29 mph, C3 − C2). C1 is checked (near average, far below his season) but not quoted, because next to C2 it shows the draft slot lowered his forecast, which hints at his draft status (guardrail). The E012 owner may still promote the keys into `E012.json`.
+6. **Orchestrator decisions for v2.2** (the user may change them): names stay anonymized; the name "The Combine Exchange Rate" stays; no R2 trust board and no role-specific refit in this pass.
 
 ## 8. Pre-submission checklist
 
-- Replace `[[TBD-NOTEBOOK-LINK]]`. Strip every `<!-- … -->` before pasting into Kaggle, then run `check_numbers.py <stripped copy>`: it must report 0 failures.
+- Replace `[[TBD-NOTEBOOK-LINK]]`. Strip every `<!-- … -->` before pasting into Kaggle, then run `check_numbers.py <stripped copy>`: it must report 0 failures, including both budgets (rendered words ≤ 1,900; whitespace tokens ≤ 1,950 on the markdown and the rendered text).
+- Check in the Kaggle writeup preview that Table 1's compact pipes (`|a|b|`, no spaces; valid GitHub-flavoured markdown) render as a table. Spaced pipes (`| a | b |`) would raise the markdown whitespace-token count by about 140, to about 2,020 (measured on v2.2), over the 1,950 budget, so do not re-space them without first cutting about 80 words.
 - Re-run `.venv/bin/python writeup/check_numbers.py` after every edit (exit 0).
 - Re-run `writeup/make_figures.py` after any draft number changes. Its `same(...)` asserts hard-code the draft's strings, so update them together.
 - The notebook must:
@@ -276,8 +290,8 @@ Judge 1 = Football/Writeup; Judge 2 = Data Science/Data Viz. "Figure builder" = 
    - the "estimate is conservative" sentence with the same-CV values 0.4–1.7;
    - Clubs item 3 as a bound.
    - The simulation's p_zero (64.5% at population R² 0.2) is not quoted (words), and the CV estimand itself is 0 there.
-3. **Hook attribution and statistics.** **Applied:** the T1-specific tracking test (0.96, 0.80–1.09) replaces the pooled H3 in the hook; the chance of a 2-SD miss is stated. The text uses 15, the committed count; judge 2's 11 (receivers with ≥ 10 games) has no committed key.
-   - **Deferred:** the C1/C3 decomposition (section 7, item 5).
+3. **Hook attribution and statistics.** **Applied:** the T1-specific tracking test (0.96, 0.80–1.09) replaces the pooled H3 in the hook; the chance of a 2-SD miss is stated. The text uses 15, the committed count; judge 2's 11 (receivers with ≥ 10 games) has no committed key. (Superseded in v2.2: both counts are now committed and used; section 11.)
+   - **Deferred:** the C1/C3 decomposition (section 7, item 5; resolved in v2.2).
    - Leading with the WR case among 16 picks is an editorial choice. It is the preregistered WR pick, and WR top speed is the trait the forecast prices best. Not changed.
 4. **Uncertainty in Table 1.** **Applied** (half-weight 95% CI column).
    - Weights stay at 2 dp: they are a plug-in rule, and the CI column carries the uncertainty.
@@ -330,3 +344,20 @@ Judge 1 = Football/Writeup; Judge 2 = Data Science/Data Viz. "Figure builder" = 
 - The judges' "nearly flat forecast" premise is contradicted by `c2_prior_spread_tau` 0.55.
 - My first Table 1 draft rounded OL pass-set acceleration's lower CI 3.7499 to 3.8; the checker caught it (now 3.7).
 - The DL pass-rush drill has 1 of 6 first-step metrics at 0.514, so the text says "mostly not" rather than "not".
+
+## 11. v2.2: the final checker's findings, applied
+
+1. **Word budget.** **Applied.**
+   - v2.1 as committed counted 1,953 words by its own method (over its 1,950 limit) and 2,137 whitespace tokens: table pipes, "+", "/", "≥" and "×" are tokens to most word counters.
+   - New hard checks in `check_numbers.py`: rendered words ≤ 1,900, and whitespace tokens ≤ 1,950 on both the pasted markdown and the rendered text. v2.2: 1,888 words; 1,881 / 1,914 tokens.
+   - Table 1 separators compacted (`|1.5+0.5|`, `0.34/0.67/0.80`, `≥10 plays`).
+   - Cuts, none a caveat: the trait name after "6.8 games"; the 0.67/0.33 restatement of w; "error ratio 0.28" (the CI is now in percent, as on Figure 3); Section 3.2's per-trait list (Table 1 has it); "These slow traits are where a good prior matters most"; the WR signal's +0.42 (Figure 4 shows it); E011's 54 receivers and 18 drills; "every logged test" in the Code line; shorter Section 2 phrasing and captions.
+2. **Hook accuracy.** **Applied.** "Nor would tracking have helped" was wrong for Receiver A: Combine tracking moved his forecast +0.142 yd/s (0.29 mph) toward his season (`e012_case_priors.json`). The hook now says so, then that across all 15 test receivers tracking left error after one game within noise (0.96, 0.80–1.09), with the pooled H3 in Section 3.3. The checker verifies the nudge, its direction (C2 < C3 < season), and that C3 and C1 both stay more than 1 mph below his season. C1 is checked, not quoted (guardrail, section 4).
+3. **Pools.** **Applied.** The hook selects among "the 11 of 15 rookie receivers in our 2025 test with ten or more qualifying games", and the chance argument uses the same 11: 1 − 0.9545^11 = 0.40 ("about 40% of the time"), replacing v2.1's 15-receiver 0.50. Both counts come from `e012_case_priors.json pools.T1`; the checker also confirms 15 = H1's and the T1 tracking test's n. I verified against the gitignored forecasts parquet that Receiver A has the largest absolute gap of the 11.
+4. **Framing.** **Applied.** Section 4 now says unreliable measures do not explain the nulls: 13 of the 16 pass the reliability gate (E008 `summary.transfer.nulls_passing_c5`; the checker recomputes it from each link's `rel_x` and `rel_y`), and power and imperfect game targets limit the tests. The reliability paragraph moved to Section 5 under "Stability is a separate question from transfer", with drill intensity (stable, predicts nothing) as the example.
+5. **Captions.** **Applied.** Figure 1 names the game-play panel and "his forecasts" (the figure builder added post hoc stopwatch-only and + tracking markers during this pass; see the open item in figure_plan, Figure 1); Figure 2 says the simulation-calibrated bounds are bold (primary) and the bootstrap thin; Figure 3 names the 80% coverage panel; Figure 5 names the first-step and session panels. Figure 4's caption already matched.
+
+**Errors found (for LESSONS.md; the writer role may not edit it):**
+- A word budget enforced with one counting method can pass while another common method fails (v2.1: 1,953 by the checker, 2,137 by whitespace) → enforce every plausible count, on both the markdown and the rendered text.
+- A selection rule and the chance argument for it used different pools (11 vs 15) → state the selection pool and compute any "how surprising is this" figure over that same pool.
+- A hook sentence ("Nor would tracking have helped") generalized a pooled result to an individual whose own value went the other way → check every individual-level claim against that individual's stored values.

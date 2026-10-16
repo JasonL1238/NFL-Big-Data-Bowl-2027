@@ -24,8 +24,10 @@ Every printed number is registered with its source key and, where the draft quot
 match the draft's rounding (`same(...)`). The run ends by printing that manifest; any mismatch raises.
 
 Sources: experiments/results/E007.json, E007_leaderboard.json, E008.json, E009.json, E010.json, E011.json,
-E012.json; data/processed/{combine_tracking, e007_forty_attempts, e012_game_values, game_tracking_2025, games,
-player_play}.parquet (Figure 1 only: the 40 traces and the game play).
+E012.json; experiments/posthoc_writeup_v2/e012_case_priors.json (Figure 1: Receiver A's stopwatch-only and
++ Combine tracking forecasts, a post hoc export of stored E012 values); data/processed/{combine_tracking,
+e007_forty_attempts, e012_game_values, game_tracking_2025, games, player_play}.parquet (Figure 1 only: the 40 traces
+and the game play).
 
 Run: .venv/bin/python writeup/make_figures.py [--only fig1 fig2 ...] [--no-gif]
 """
@@ -392,9 +394,26 @@ def fig1(gif: bool = True) -> None:
     pk_txt = num(F, gp["s"][gp["peak"]], ".1f", "data/processed/game_tracking_2025.parquet: max device speed of the "
                                                 "selected play (figure-only; equals the game's E012 value)")
     same(pk_txt, g1_txt, "the selected play's peak equals his game-1 value")
+    # His game-0 forecast with Combine tracking added (C3 = C2 + tracking; post hoc export of the stored E012 k = 0
+    # forecasts, 2023-24 fit as the case study). The stopwatch-only forecast (C1) is deliberately NOT drawn: beside
+    # C2 it would reveal how the draft slot moved his forecast, i.e. hint at his draft status (outline.md section 4).
+    cp = json.loads((ROOT / "experiments" / "posthoc_writeup_v2" / "e012_case_priors.json").read_text())
+    cpa = next(c for c in cp["cases"] if c["nfl_id"] == A_ID and c["trait"] == "T1")
+    for k in ("prior_C0", "prior_C2", "season_mean"):  # the export is the same case study as E012.json
+        assert cpa[k] == case[k], k
+    for k, v in (("prior_C0", 8.568), ("prior_C1", 8.683), ("prior_C2", 8.607), ("prior_C3", 8.749),
+                 ("season_mean", 9.239), ("tracking_shift_C3_minus_C2", 0.142)):
+        assert round(cpa[k], 3) == v, (k, cpa[k])  # the values the brief quotes (yd/s)
+    assert cpa["tracking_shift_C3_minus_C2"] == cpa["prior_C3"] - cpa["prior_C2"]
+    assert cp["pools"]["T1"] == {"n_test_players_k0": 15, "n_with_10plus_games": 11}
+    CPK = "experiments/posthoc_writeup_v2/e012_case_priors.json cases[nfl_id=59278,T1]"
+    c3 = cpa["prior_C3"] * MPH
+    c3_txt = num(F, c3, ".1f", f"{CPK}.prior_C3 x mph (+ Combine tracking; post hoc export)")
+    same(c3_txt, "17.9", "Receiver A forecast + Combine tracking")
+    same(f"{(cpa['prior_C3'] - cpa['prior_C2']) * MPH:.1f}", "0.3", "draft: tracking nudged his forecast 0.3 mph")
 
     # ---------------------------------------------------------------- layout: two panels on top, one below
-    fh = 7.0
+    fh = 7.43  # v2.1 7.0 + the footer's fourth line (hollow-marker note) + 0.25 in for the season panel
     fig = new_fig(fh)
     top = header(fig, "His forecast sat near average; by game 2 his own games outweighed it.",
                  "Receiver A, a 2025 rookie receiver, picked by a rule fixed in advance: the largest gap between "
@@ -402,7 +421,8 @@ def fig1(gif: bool = True) -> None:
     fb = footer(fig, f"Fastest finish for his 40 time of {n_wr} Combine receivers; official electronic splits do "
                      f"not corroborate it (post hoc). Forecast and in-season estimate fit on 2023–24 (weight on "
                      f"his first game {w_2324}); Table 1 refits on 2023–25 ({w_all}). The 95% range is for a "
-                     "15-game average under the forecast.")
+                     "15-game average under the forecast. Hollow diamond, just left of game 0 (post hoc): the same "
+                     "forecast with Combine tracking added.")
     leg_items = [(k_point("o", ORANGE, ms=4.6), "his single games"),
                  (k_point(None, ORANGE, line=(0, (4, 2)), lw=1.8), "his average so far"),
                  (k_point(None, BLUE, line="-", lw=2.2), "in-season estimate (the rule)"),
@@ -411,7 +431,7 @@ def fig1(gif: bool = True) -> None:
     ky = fb + 0.26 + (n_rows - 1) * 0.3
     key_row(fig, ky, leg_items, gap=0.28)
     s_bot = ky + 0.12 + 0.55
-    s_h = 1.65
+    s_h = 1.9  # v2.1 1.65; +0.25 in so the two hollow-marker labels stack above the 95% range
     t_bot = s_bot + s_h + 0.32 + 0.55
     t_h = top - 0.42 - t_bot
     axL = axes_in(fig, 0.62, t_bot, 3.0, t_h)
@@ -502,11 +522,18 @@ def fig1(gif: bool = True) -> None:
     cb.set_label("mph", size=FS_N, color=INK2, labelpad=2)
 
     # ---- bottom: the season
-    axR.set_xlim(-0.6, n + 0.5)
+    axR.set_xlim(-1.1, n + 0.5)  # room left of game 0 for the tracking forecast
     lo_y = min(games.min(), prior - rng95) - 0.35
     hi_y = max(games.max(), prior + rng95) + 0.35
+    # headroom for the hollow-marker label above the 95% range (5 + label + 4 pt)
+    probe = fig.text(0, 0, f"+ Combine\ntracking {c3_txt}", size=FS_N, linespacing=1.15)
+    lab_pt = probe.get_window_extent(fig.canvas.get_renderer()).height * 72 / fig.dpi
+    probe.remove()
+    f_need = (5 + lab_pt + 4) / (s_h * 72)  # share of the panel height above the range's top
+    hi_y = max(hi_y, (prior + rng95 - f_need * lo_y) / (1 - f_need))
     axR.set_ylim(lo_y, hi_y)
     axR.set_xticks([0, 5, 10, 15])
+    axR.yaxis.set_major_locator(plt.MultipleLocator(2))  # 2-mph grid as in v2.1 (the label headroom added 21)
     axR.set_xlabel("Qualifying games (10+ tracked plays)", labelpad=3)
     axR.set_ylabel("mph", labelpad=3)
     axR.grid(axis="y", color=GRID, lw=0.8)
@@ -518,6 +545,19 @@ def fig1(gif: bool = True) -> None:
     axR.plot([0], [prior], "s", ms=MS, color=BLUE, mec=SURF, mew=1.0, zorder=5)
     axR.annotate(f"Forecast {p_txt}", xy=(0.12, prior - 0.06), xytext=(0.8, lo_y + 0.3), size=FS, color=INK,
                  va="center", ha="left", arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8, shrinkA=0, shrinkB=3))
+    # His tracking forecast (post hoc, so hollow), set just left of game 0 because it sits within 0.3 mph of the
+    # forecast, with a vertical leader up to its label above the forecast's 95% range.
+    rend = fig.canvas.get_renderer()
+    mph_per_pt = (hi_y - lo_y) / (axR.get_window_extent(rend).height * 72 / fig.dpi)
+    yl = prior + rng95 + 5 * mph_per_pt  # bottom of the lower label, 5 pt above the range's top
+    for xm, ym, mk, ms_, colr, txt in ((-0.5, c3, "D", 5.0, NAVY, f"+ Combine\ntracking {c3_txt}"),):
+        axR.plot([xm], [ym], marker=mk, ms=ms_, mfc=SURF, mec=colr, mew=1.5, ls="none", zorder=5)
+        axR.plot([xm, xm], [ym + 5.5 * mph_per_pt, yl - 1.5 * mph_per_pt], color=INK2, lw=0.8, zorder=2,
+                 solid_capstyle="butt")
+        lab = axR.text(xm - 0.1, yl, txt, size=FS_N, color=INK, ha="left", va="bottom", linespacing=1.15)
+        lab_top = axR.transData.inverted().transform(lab.get_window_extent(rend))[1, 1]  # rendered top (mph)
+        yl = lab_top + 6 * mph_per_pt  # the next label stacks 6 pt above
+    assert lab_top < hi_y - 3 * mph_per_pt, (lab_top, hi_y)  # the label sits inside the panel
     g_dots = axR.plot([], [], "o", ms=4.6, color=ORANGE, mec=SURF, mew=0.6, zorder=2)[0]
     g_run = axR.plot([], [], color=ORANGE, lw=1.8, ls=(0, (4, 2)), zorder=3)[0]
     g_est = axR.plot([], [], color=BLUE, lw=2.2, zorder=4)[0]
@@ -586,9 +626,9 @@ def fig1(gif: bool = True) -> None:
            f"({v20[A_ID]} vs {v20[B_ID]} mph), the fastest finish for his 40 time of {n_wr} Combine receivers, though "
            f"official electronic splits do not corroborate it. Top right: a typical top-speed play from his first "
            f"game drawn on the field and coloured by speed, a deep route peaking at {pk_txt} mph. Bottom: his {n} "
-           f"rookie qualifying games. The forecast of {p_txt} mph sits by the {a_txt} mph {PA}; his games average "
-           f"{s_txt} mph, just above the forecast's 95% range; the in-season estimate rises toward his games and "
-           f"gives them more than half the weight from game {half}.")
+           f"rookie qualifying games. The forecast of {p_txt} mph sits by the {a_txt} mph {PA}; beside it, a hollow "
+           f"diamond (post hoc) shows the forecast with Combine tracking added ({c3_txt}). His games average {s_txt} mph, just above the forecast's 95% range; the in-season estimate "
+           f"rises toward his games and gives them more than half the weight from game {half}.")
     check_inside(fig, "fig1_receiver_a.png")
     fig.savefig(OUT / "fig1_receiver_a.png", dpi=DPI, metadata={"Title": "fig1_receiver_a.png", "Description": alt})
     print(f"wrote {OUT / 'fig1_receiver_a.png'}")
@@ -634,6 +674,17 @@ def fig1(gif: bool = True) -> None:
     pal = frames[-1].quantize(colors=255, method=Image.Quantize.MEDIANCUT)
     P = np.array(pal.getpalette()[: 3 * 255], dtype=np.int32).reshape(-1, 3)
     P[np.argmin(((P - 255) ** 2).sum(1))] = 255  # the entry nearest white is pure white
+    # Every house colour gets an exact entry: median cut drops colours with few pixels (the navy diamond's outline
+    # came out slate grey). Each missing one replaces the least-used entry of the final frame (ties: lower index).
+    house = np.array([[int(c[i:i + 2], 16) for i in (1, 3, 5)]
+                      for c in (INK, INK2, GREY, GRID, BASE, BAND, BLUE, NAVY, ORANGE)])
+    has = lambda c: bool((P == c).all(1).any())  # noqa: E731
+    keep = {int(i) for c in [*house, [255, 255, 255]] for i in np.flatnonzero((P == c).all(1))}
+    free = [int(i) for i in np.argsort(np.bincount(np.asarray(pal).ravel(), minlength=255)[:255], kind="stable")
+            if int(i) not in keep]
+    for c, i in zip([c for c in house if not has(c)], free):
+        P[i] = c
+    assert all(has(c) for c in house)
     flat_pal = P.flatten().tolist()
 
     def to_p(frame):
@@ -737,7 +788,7 @@ def fig2() -> None:
                 bands[t] = (y + 0.04, ypos[t] + 0.075 + len(wrapped[t]) * LH + 0.07)
                 y = bands[t][1] + 0.04
     H_plot = y + 0.04
-    title = (f"The {PA} is worth {l1} to {l2} games of a player’s own record; the Combine and draft add 0 to "
+    title = (f"For priced traits, the {PA} is worth {l1} to {l2} games of a player’s own record; the Combine and draft add 0 to "
              f"{c2}")
     sub = ("Qualifying games of his own NFL record that each prior is worth when forecasting his level (fit on "
            "2023–25). The Combine’s estimate is clipped at 0, so it reads low when its true worth is small. Its "
