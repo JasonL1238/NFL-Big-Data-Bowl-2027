@@ -181,7 +181,7 @@ def run_b2_rev3(L: list[dict], e8: dict) -> tuple[dict, dict]:
             got = _clean(v)
             dmax = max([dmax] + [_max_diff(got[kk], ref[kk]) for kk in _SAME_KEYS]
                        + [_max_diff({y: {"delta": u["delta"], "excess": u["excess"]} for y, u in got["loco"].items()},
-                                    ref["loco"])])
+                                    {y: {"delta": u["delta"], "excess": u["excess"]} for y, u in ref["loco"].items()})])
         diffs[lk["id"]] = dmax
         if not QUICK:
             assert dmax < 1e-12, f"{lk['id']}: rev-3 rerun differs from E008.json by {dmax}"

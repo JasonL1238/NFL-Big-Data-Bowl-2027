@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-R = Path("/Users/jasonli/Documents/GitHub/NFL-Big-Data-Bowl-2027/experiments/results")
+R = Path(__file__).resolve().parents[2] / "experiments" / "results"
 OUT = Path(__file__).with_name("ph_pairs.json")
 lb = json.loads((R / "E007_leaderboard.json").read_text())
 e7 = json.loads((R / "E007.json").read_text())

@@ -215,8 +215,8 @@ def analysis_table(F) -> pl.DataFrame:
 
 
 def _slim(r: dict) -> dict:
-    keep = ("feature", "target", "n", "raw_r", "partial_r", "delta_r2_vs_B0", "delta_r2_vs_B2", "perm_p",
-            "loco_delta_r2", "by_class", "checks", "cv_r2")
+    keep = ("feature", "target", "n", "raw_r", "partial_r", "delta_r2_vs_B0", "delta_r2_vs_B2", "cv_perm_p",
+            "loco", "by_class", "checks", "cv_r2")
     return {k: r[k] for k in keep}
 
 
@@ -248,7 +248,7 @@ def run_linkage(F, R) -> dict:
             entry["seeds"][s] = _slim(r)
             print(f"[primary] {f} -> {y} seed {s}: n={r['n']} raw_r={r['raw_r']:+.3f} partial_r={r['partial_r']} "
                   f"dR2_B2={r['delta_r2_vs_B2']['mean']:+.4f}±{r['delta_r2_vs_B2']['se']:.4f} "
-                  f"excess={r['delta_r2_vs_B2']['excess']:+.4f} p={r['perm_p']:.4f} loco={r['checks']['loco_positive_classes']}", flush=True)
+                  f"excess={r['delta_r2_vs_B2']['excess']:+.4f} p={r['cv_perm_p']:.4f} loco={r['checks']['loco_excess_positive_classes']}", flush=True)
         if y in OUTCOME_TARGETS:
             d23 = df.filter(pl.col("draft_year") != 2025)
             entry["without_2025"] = {}
@@ -256,16 +256,16 @@ def run_linkage(F, R) -> dict:
                 r = linkage.evaluate(d23, f, y, n_repeats=50, n_perm=2000, seed=s, n_jobs=N_JOBS)
                 entry["without_2025"][s] = _slim(r)
                 print(f"[primary no2025] {f} -> {y} seed {s}: n={r['n']} excess={r['delta_r2_vs_B2']['excess']:+.4f} "
-                      f"p={r['perm_p']:.4f} partial_r={r['partial_r']}", flush=True)
+                      f"p={r['cv_perm_p']:.4f} partial_r={r['partial_r']}", flush=True)
         out["primary"].append(entry)
     for f, y, note in EXPLORATORY:
         r = linkage.evaluate(df, f, y, n_repeats=20, n_perm=500, seed=0, n_jobs=N_JOBS)
         out["exploratory"].append({"note": note, **_slim(r)})
         print(f"[exploratory] {f} -> {y}: n={r['n']} raw_r={r['raw_r']:+.3f} partial_r={r['partial_r']} "
-              f"excess={r['delta_r2_vs_B2']['excess']:+.4f} p={r['perm_p']:.4f} loco={r['checks']['loco_positive_classes']}", flush=True)
+              f"excess={r['delta_r2_vs_B2']['excess']:+.4f} p={r['cv_perm_p']:.4f} loco={r['checks']['loco_excess_positive_classes']}", flush=True)
     out["n_exploratory"] = len(out["exploratory"])
     # BH-FDR over the primary tests (seed 0 p-values)
-    ps = np.array([e["seeds"][0]["perm_p"] for e in out["primary"]])
+    ps = np.array([e["seeds"][0]["cv_perm_p"] for e in out["primary"]])
     order = np.argsort(ps); q = np.empty_like(ps); m = len(ps)
     q[order] = np.minimum.accumulate((ps[order] * m / np.arange(1, m + 1))[::-1])[::-1]
     out["primary_bh_q_seed0"] = q.tolist()
@@ -306,7 +306,7 @@ def result_figure(F, L):
         b = np.polyfit(rx, ry, 1); xs = np.linspace(rx.min(), rx.max(), 10); ax.plot(xs, np.polyval(b, xs), "k-", lw=1)
         s0 = e["seeds"][0]
         ax.set_title(f"{f}\n→ {y} (partial, given B2)\nn={s0['n']}, partial r={s0['partial_r']:+.2f}, "
-                     f"excess ΔR²={s0['delta_r2_vs_B2']['excess']:+.3f}, p={s0['perm_p']:.3f}", fontsize=8)
+                     f"excess ΔR²={s0['delta_r2_vs_B2']['excess']:+.3f}, p={s0['cv_perm_p']:.3f}", fontsize=8)
         ax.set_xlabel("Combine feature residual"); ax.set_ylabel("game target residual"); ax.legend(fontsize=7)
     plt.tight_layout(); plt.savefig(FIG / "E004_result.png", dpi=80); plt.close()
 

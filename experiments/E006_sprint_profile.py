@@ -177,7 +177,7 @@ def population(pops):
 
 def summarize(r):
     d = r["delta_r2_vs_B2"]
-    return {k: r[k] for k in ("feature", "target", "n", "raw_r", "partial_r", "perm_p", "loco_delta_r2", "checks",
+    return {k: r[k] for k in ("feature", "target", "n", "raw_r", "partial_r", "cv_perm_p", "loco", "checks",
                               "by_class", "cv_r2")} | {"delta_r2_vs_B2": d, "delta_r2_vs_B0": r["delta_r2_vs_B0"]}
 
 
@@ -185,8 +185,8 @@ def fmt(r):
     d = r["delta_r2_vs_B2"]
     pr = "n/a" if r["partial_r"] is None else f"{r['partial_r']:+.2f}"
     return (f"{r['feature']}->{r['target']} n={r['n']} raw_r={r['raw_r']:+.2f} partial_r={pr} "
-            f"dR2_B2={d['mean']:+.3f}±{d['se']:.3f} excess={d['excess']:+.3f} p={r['perm_p']:.4f} "
-            f"loco+={r['checks']['loco_positive_classes']}")
+            f"dR2_B2={d['mean']:+.3f}±{d['se']:.3f} excess={d['excess']:+.3f} p={r['cv_perm_p']:.4f} "
+            f"loco+={r['checks']['loco_excess_positive_classes']}")
 
 
 PRIMARY = [("P1", "c40_vmax", "game_S0", ["WR"]),
@@ -210,9 +210,9 @@ for pid, f, t, pops in PRIMARY:
     rel = [combine_rel[f.removeprefix("c40_")][p]["reliability"] for p in pops]
     primary[pid]["feature_reliability_as_used_by_position"] = dict(zip(pops, rel))
     primary[pid]["seeds_passing_all_checks"] = sum(
-        v["checks"]["excess_lb_gt_0"] and v["checks"]["perm_p_lt_05"]
-        and int(v["checks"]["loco_positive_classes"].split("/")[0]) >= 2 for v in s.values())
-p0 = np.array([primary[k]["seeds"][0]["perm_p"] for k in ("P1", "P2", "P3")])
+        v["checks"]["excess_lb_gt_0"] and v["checks"]["fl_p_lt_05"]
+        and int(v["checks"]["loco_excess_positive_classes"].split("/")[0]) >= 2 for v in s.values())
+p0 = np.array([primary[k]["seeds"][0]["cv_perm_p"] for k in ("P1", "P2", "P3")])
 bh = false_discovery_control(p0, method="bh")
 for k, q in zip(("P1", "P2", "P3"), bh):
     primary[k]["bh_q_seed0"] = float(q)
@@ -273,7 +273,7 @@ for ax, (pid, f, t, pops) in zip(axes, PRIMARY):
     s0 = primary[pid]["seeds"][0]
     dd = s0["delta_r2_vs_B2"]
     ax.set_title(f"{pid}: {f} -> {t} ({'+'.join(pops)}, n={s0['n']})\n"
-                 f"excess dR2 vs B2 {dd['excess']:+.3f} ± {dd['se']:.3f}, perm p {s0['perm_p']:.3f}", fontsize=9)
+                 f"excess dR2 vs B2 {dd['excess']:+.3f} ± {dd['se']:.3f}, perm p {s0['cv_perm_p']:.3f}", fontsize=9)
     ax.set_xlabel(f"{f} | B2 (residual)")
     ax.set_ylabel(f"{t} | B2 (residual)")
     ax.axhline(0, color="0.8", lw=0.5)

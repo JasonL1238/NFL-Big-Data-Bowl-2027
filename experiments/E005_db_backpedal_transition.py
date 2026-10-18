@@ -141,14 +141,14 @@ for p in prereg["primary_tests"]:
         r = runs[seed]
         log(f"{p['id']} seed {seed}: n={r['n']} raw_r={r['raw_r']:+.3f} partial_r={r['partial_r']} "
             f"dR2={r['delta_r2_vs_B2']['mean']:+.4f}+-{r['delta_r2_vs_B2']['se']:.4f} excess={r['delta_r2_vs_B2']['excess']:+.4f} "
-            f"p={r['perm_p']:.4f} loco={r['loco_delta_r2']}")
+            f"p={r['cv_perm_p']:.4f} loco={r['loco']}")
     no25 = linkage.evaluate(df.filter(pl.col("draft_year") != 2025), f, tgt, n_repeats=50, n_perm=2000, seed=0, n_jobs=N_JOBS)
-    log(f"{p['id']} without 2025: n={no25['n']} excess={no25['delta_r2_vs_B2']['excess']:+.4f} p={no25['perm_p']:.4f}")
+    log(f"{p['id']} without 2025: n={no25['n']} excess={no25['delta_r2_vs_B2']['excess']:+.4f} p={no25['cv_perm_p']:.4f}")
     primary[p["id"]] = {"spec": p, "seeds": {str(k): v for k, v in runs.items()}, "without_2025": no25}
 
 # BH-FDR across the primary tests (seed-0 p values)
 ids = list(primary)
-ps = np.array([primary[i]["seeds"]["0"]["perm_p"] for i in ids])
+ps = np.array([primary[i]["seeds"]["0"]["cv_perm_p"] for i in ids])
 order = np.argsort(ps)
 q = np.empty_like(ps)
 m = len(ps)
@@ -176,8 +176,8 @@ for i in ids:
     seeds_pass = []
     for k in ("0", "1", "2"):
         r = s[k]
-        ok = (r["checks"]["excess_lb_gt_0"] and r["checks"]["perm_p_lt_05"]
-              and int(r["checks"]["loco_positive_classes"].split("/")[0]) >= 2
+        ok = (r["checks"]["excess_lb_gt_0"] and r["checks"]["fl_p_lt_05"]
+              and int(r["checks"]["loco_excess_positive_classes"].split("/")[0]) >= 2
               and (r["partial_r"] is not None and r["partial_r"] > 0))
         seeds_pass.append(ok)
     fr, tr_ = rel_used[i]
@@ -215,8 +215,8 @@ for xid, f, tgt, desc in EXPLORATORY:
     r = linkage.evaluate(dx, f, tgt, n_repeats=20, n_perm=500, seed=0, n_jobs=N_JOBS)
     exploratory[xid] = {"description": desc, "result": r}
     log(f"{xid} {f}->{tgt}: n={r['n']} raw_r={r['raw_r']:+.3f} partial_r={r['partial_r']} "
-        f"excess={r['delta_r2_vs_B2']['excess']:+.4f}+-{r['delta_r2_vs_B2']['se']:.4f} p={r['perm_p']:.4f} "
-        f"loco+={r['checks']['loco_positive_classes']}")
+        f"excess={r['delta_r2_vs_B2']['excess']:+.4f}+-{r['delta_r2_vs_B2']['se']:.4f} p={r['cv_perm_p']:.4f} "
+        f"loco+={r['checks']['loco_excess_positive_classes']}")
 
 # ---------- 7. summary figure: added-variable plots for the primaries ----------
 fig, axes = plt.subplots(1, len(ids), figsize=(6.2 * len(ids), 5.2))
@@ -224,8 +224,8 @@ for ax, i in zip(np.atleast_1d(axes), ids):
     spec, r = primary[i]["spec"], primary[i]["seeds"]["0"]
     d = df.filter(pl.col(spec["feature"]).is_finite() & pl.col(spec["target"]).is_finite()).sort("nfl_id")
     Xi = linkage._imputed(linkage._design(d, linkage.COMBINE_CONTROLS + linkage.DRAFT_CONTROLS))  # same B2 design as the harness
-    _, xr = linkage._fit_resid(Xi, d[spec["feature"]].to_numpy().astype(float))
-    _, yr = linkage._fit_resid(Xi, d[spec["target"]].to_numpy().astype(float))
+    xr = linkage._residual_maker(Xi) @ d[spec["feature"]].to_numpy().astype(float)
+    yr = linkage._residual_maker(Xi) @ d[spec["target"]].to_numpy().astype(float)
     ax.scatter(xr, yr, s=36, c=BLUE, edgecolors="white", linewidths=1.0, zorder=3)
     b = np.polyfit(xr, yr, 1)
     xs = np.linspace(xr.min(), xr.max(), 50)
@@ -242,7 +242,7 @@ for ax, i in zip(np.atleast_1d(axes), ids):
     pr = r["partial_r"]
     ax.set_title(f"{i}: Combine {spec['feature']} -> game {spec['target']}\n"
                  f"n={r['n']}, partial r={pr:+.2f}, excess dR2 vs B2={r['delta_r2_vs_B2']['excess']:+.3f} "
-                 f"(SE {r['delta_r2_vs_B2']['se']:.3f}), perm p={r['perm_p']:.3f}", fontsize=9.5, color=INK, loc="left")
+                 f"(SE {r['delta_r2_vs_B2']['se']:.3f}), perm p={r['cv_perm_p']:.3f}", fontsize=9.5, color=INK, loc="left")
 fig.suptitle("E005: DB drill signatures vs the same movement in games, beyond Combine times + draft pick "
              "(added-variable plots)", fontsize=11, color=INK, x=0.01, ha="left")
 plt.tight_layout()

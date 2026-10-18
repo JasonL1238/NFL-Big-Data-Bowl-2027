@@ -224,6 +224,17 @@ INTERVAL_NOTE = (
     "(cge_C2_calibrated_lower95 / upper95, PH6) state what an estimate rules out under the simulation model (signal "
     "on 3 Combine columns, iid games); they can sit above 0 where B1 does not.")
 
+DETERMINISM_FIX = {  # 2026-10-17, found by the clean-room reproduction; no definition or statistical setting changed
+    "date": "2026-10-17", "check": "PH11, stationarity()",
+    "affected": "post_hoc_review.per_trait.<T>.stationarity_and_game_unit.season_change_within_player.<transition>.ci95",
+    "what": "The bootstrap of each class/transition's season-to-season changes resampled rows by position, and the row "
+            "order came from an unordered polars group_by and join, so the 36 intervals changed from run to run "
+            "(across four earlier full runs, T1, T7 and T9 '2024 class 2024->2025' changed whether they include 0). "
+            "Rows are now sorted by nfl_id before the bootstrap; seed, resample count (2,000) and every definition "
+            "are unchanged. This run's intervals replace the earlier ones and are reproducible. mean_tau and n are "
+            "unchanged (last-digit rounding aside); they are the only season-change values that the cge_table notes "
+            "and the writeup use."}
+
 REVIEW_RESPONSE = [  # two reviews (statistics, football) of the builder's run, 2026-10-15; numbers live in the keys named
     {"issue": "R1.1 PH5 replaced the preregistered B1 interval and under-covers", "status": "accepted (partly)",
      "action": "B1 restored as the reported interval everywhere (a post hoc interval may not replace a preregistered "
@@ -361,8 +372,8 @@ def maxdiff(a: pl.DataFrame, b: pl.DataFrame, on: str, ca: str, cb: str) -> dict
 
 
 def check_frozen_choices() -> dict:
-    """If the freeze file exists (session scratchpad), assert the copy above is identical to it."""
-    f = SCRATCH / "implementation_choices_frozen.json"
+    """If the freeze file exists (committed audit record), assert the copy above is identical to it."""
+    f = RES / "E012_audit" / "implementation_choices_frozen.json"
     if not f.exists():
         return {"freeze_file_present": False}
     sha = hashlib.sha256(f.read_bytes()).hexdigest()
@@ -929,7 +940,7 @@ def stationarity(ga: pl.DataFrame, tau2: float, weeks: pl.DataFrame, seed: int) 
     nxt = nxt.with_columns(d=(pl.col("m_next") - pl.col("m")) / tau)
     change = {}
     for (cls, s), grp in sorted(nxt.group_by("draft_year", "season"), key=lambda x: x[0]):
-        x = grp["d"].to_numpy()
+        x = grp.sort("nfl_id")["d"].to_numpy()  # group_by / join order is arbitrary; the bootstrap resamples by row
         if len(x) >= 5:
             change[f"{cls} class {s}->{s + 1}"] = {"mean_tau": float(x.mean()), "ci95": _boot_mean_ci(x, rng),
                                                   "n": int(len(x))}
@@ -1875,7 +1886,8 @@ def main() -> None:
         "per_trait": ph,
         "simulation": {"calibrated_bounds": belt_sum, "interval_coverage": cov_sum},
         "validation_1": validation1_posthoc(out["validation_1"], internal),
-        "validation_2": validation2_posthoc(Fc, v2, fits, app, games_p, players_p, identified)}
+        "validation_2": validation2_posthoc(Fc, v2, fits, app, games_p, players_p, identified),
+        "determinism_fix": DETERMINISM_FIX}
     out["cge_table"] = cge_table(internal, ph, belt_sum)
 
     # ---- 5. deliverables

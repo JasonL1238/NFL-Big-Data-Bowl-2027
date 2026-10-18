@@ -197,7 +197,7 @@ def run(d, feature, target, seed, n_repeats, n_perm, **kw):
     pr = "n/a" if r["partial_r"] is None else f"{r['partial_r']:+.3f}"
     print(f"  {feature} -> {target} n={r['n']} seed={seed} raw_r={r['raw_r']:+.3f} partial_r={pr} "
           f"dR2vsB2={r['delta_r2_vs_B2']['mean']:+.4f}+-{r['delta_r2_vs_B2']['se']:.4f} excess={r['delta_r2_vs_B2']['excess']:+.4f} "
-          f"p={r['perm_p']:.4f} loco={r['checks']['loco_positive_classes']}", flush=True)
+          f"p={r['cv_perm_p']:.4f} loco={r['checks']['loco_excess_positive_classes']}", flush=True)
     return r
 
 
@@ -222,7 +222,7 @@ def bh(pvals):
     return out
 
 
-bh_q = bh([primary[k]["seeds"][0]["perm_p"] for k in primary])
+bh_q = bh([primary[k]["seeds"][0]["cv_perm_p"] for k in primary])
 for k, q in zip(primary, bh_q):
     primary[k]["bh_q_seed0"] = float(q)
 
@@ -305,7 +305,7 @@ for ax, (k, ent) in zip(axes, primary.items()):
     ax.plot(xs, np.polyval(b, xs), color=INK2, lw=1.5, zorder=2)
     r0 = ent["seeds"][0]
     ax.set_title(f"{k}: partial r = {r0['partial_r']:+.2f}, excess ΔR² = {r0['delta_r2_vs_B2']['excess']:+.3f}\n"
-                 f"perm p = {r0['perm_p']:.3f}, LOCO+ {r0['checks']['loco_positive_classes']}, n = {r0['n']}",
+                 f"perm p = {r0['cv_perm_p']:.3f}, LOCO+ {r0['checks']['loco_excess_positive_classes']}, n = {r0['n']}",
                  fontsize=8.5, color=INK)
     ax.set_xlabel(labels[sp["feature"]], fontsize=8.5)
     ax.set_ylabel(labels[sp["target"]], fontsize=8.5)

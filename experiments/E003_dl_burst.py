@@ -238,8 +238,8 @@ def summarize(r, label=None, extra=None):
          "raw_r": fnum(r["raw_r"]),
          "partial_r": fnum(r["partial_r"]) if r["partial_r"] is not None else None,
          "delta_r2_vs_B2": fnum(d["mean"], 4), "se": fnum(d["se"], 4), "null_mean": fnum(d["null_mean"], 4),
-         "excess": fnum(d["excess"], 4), "perm_p": fnum(r["perm_p"], 4), "loco": r["loco_delta_r2"],
-         "loco_positive": r["checks"]["loco_positive_classes"], "by_class": r["by_class"],
+         "excess": fnum(d["excess"], 4), "cv_perm_p": fnum(r["cv_perm_p"], 4), "loco": r["loco"],
+         "loco_positive": r["checks"]["loco_excess_positive_classes"], "by_class": r["by_class"],
          "cv_r2": {k: fnum(v, 4) for k, v in r["cv_r2"].items()},
          "delta_r2_vs_B0": {k: fnum(v, 4) for k, v in r["delta_r2_vs_B0"].items()}, "checks": r["checks"]}
     if extra:
@@ -250,7 +250,7 @@ def summarize(r, label=None, extra=None):
 def show(s):
     pr = "n/a" if s["partial_r"] is None else f"{s['partial_r']:+.2f}"
     print(f"  {s['label'] or '':38s} {s['feature']:>10s} -> {s['target']:<22s} n={s['n']:3d} r={s['raw_r']:+.2f} "
-          f"pr={pr} dR2={s['delta_r2_vs_B2']:+.3f}±{s['se']:.3f} excess={s['excess']:+.3f} p={s['perm_p']:.4f} "
+          f"pr={pr} dR2={s['delta_r2_vs_B2']:+.3f}±{s['se']:.3f} excess={s['excess']:+.3f} p={s['cv_perm_p']:.4f} "
           f"loco+={s['loco_positive']}", flush=True)
 
 
@@ -265,7 +265,7 @@ for test in out["prereg"]["primary_tests"]:
                          n_repeats=50, n_perm=2000, seed=0, n_jobs=N_JOBS)
     no25 = summarize(r, f"{test['id']} without 2025")
     show(no25)
-    passes = [s["checks"]["excess_lb_gt_0"] and s["checks"]["perm_p_lt_05"]
+    passes = [s["checks"]["excess_lb_gt_0"] and s["checks"]["fl_p_lt_05"]
               and int(s["loco_positive"].split("/")[0]) >= 2 for s in seeds]
     sign_ok = [(s["partial_r"] or 0) * (1 if test["expected_sign"] == "+" else -1) > 0 for s in seeds]
     # Descriptive precision of the (in-sample) partial r: Fisher-z 95% CI, the smallest partial r this n
@@ -284,7 +284,7 @@ for test in out["prereg"]["primary_tests"]:
     primary.append({**test, "seeds": seeds, "without_2025": no25, "precision": precision,
                     "seeds_passing_all_checks": f"{sum(passes)}/3",
                     "expected_sign_matches": bool(all(sign_ok)),
-                    "bonferroni_p_lt_0167_seed0": bool(seeds[0]["perm_p"] < 0.05 / 3)})
+                    "bonferroni_p_lt_0167_seed0": bool(seeds[0]["cv_perm_p"] < 0.05 / 3)})
 out["primary"] = primary
 log("primary tests done")
 
@@ -330,11 +330,11 @@ def bh(pvals):
     return out_q
 
 
-for s_, q_ in zip(explo, bh([e["perm_p"] for e in explo])):
+for s_, q_ in zip(explo, bh([e["cv_perm_p"] for e in explo])):
     s_["bh_q"] = fnum(q_)
 out["exploratory"] = explo
 out["exploratory_count"] = len(explo)
-out["exploratory_p_lt_05"] = sum(e["perm_p"] < 0.05 for e in explo)
+out["exploratory_p_lt_05"] = sum(e["cv_perm_p"] < 0.05 for e in explo)
 out["exploratory_min_bh_q"] = min(e["bh_q"] for e in explo)
 log(f"{len(explo)} exploratory tests done")
 
@@ -367,7 +367,7 @@ for ax, p in zip(axes, primary):
     ax.plot(xs, np.polyval(b, xs), color=ORANGE, lw=2)
     s0 = p["seeds"][0]
     ax.set_title(f"{p['id']}: partial r = {s0['partial_r']:+.2f}, excess ΔR² = {s0['excess']:+.3f} ± {s0['se']:.3f}\n"
-                 f"perm p = {s0['perm_p']:.3f}, n = {s0['n']}", fontsize=9, color=INK)
+                 f"perm p = {s0['cv_perm_p']:.3f}, n = {s0['n']}", fontsize=9, color=INK)
     ax.set_xlabel("Combine 40 burst (yd in 1st s after onset)\nresidual given B2", color=INK)
     ax.set_ylabel(labels[p["target"]] + "\nresidual given B2", color=INK)
 axes[0].legend(title="draft class", fontsize=7, title_fontsize=7, frameon=False)

@@ -533,6 +533,8 @@ for m in re.finditer(r'(?:Figure|Table|Section|figures/fig)\s*(\d+)', text):  # 
     struct.append((m.start(1), m.end(1)))
 for m in re.finditer(r'figures/fig\d_[\w.]+', text):  # image paths
     struct.append((m.start(), m.end()))
+for m in re.finditer(r'https?://\S+', text):  # links (e.g. the notebook URL; usernames may contain digits)
+    struct.append((m.start(), m.end()))
 uncovered = []
 for m in re.finditer(r'\d+(?:[.,]\d+)*', text):
     a, b = m.start(), m.end()

@@ -45,8 +45,7 @@ from bdb27.probes import g_catch_point as G
 
 ROOT = Path(__file__).resolve().parents[1]
 RES, FIG, P = ROOT / "experiments" / "results", ROOT / "experiments" / "figures", io.PROCESSED
-PLAN = Path("/private/tmp/claude-501/-Users-jasonli-Documents-GitHub-NFL-Big-Data-Bowl-2027/"
-            "ca6dc0b9-7e4f-45b4-b4e4-1468819c8969/scratchpad/round3/E011_prereg_scratch.json")
+PLAN = RES / "E011_prereg.json"
 GATE = 0.5
 N_BOOT = 2000
 SEED = 0
