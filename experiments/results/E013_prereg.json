@@ -1,0 +1,52 @@
+{
+  "experiment": "E013 — Role-aware Combine Exchange Rate: once a rookie's role is known from his first games, how much do the Combine and draft add, and how fast do his own games take over?",
+  "date": "2026-10-18",
+  "written_by": "orchestrator, before any association between role and any game trait, and before any role-aware variance component, CGE or forecast was computed",
+  "motivation": "Mock football judge (writeup v2): the position average pools EDGE with interior DL, CB with safeties, slot with outside WR, and tackles with interior OL, so part of what E012 credits to the Combine (e.g. DL rush distance, 1.2 games) may be role.",
+  "already_seen_before_this_prereg": [
+    "E012 (all results): CGE, the in-season rule, the pseudo-prospective 2025 test. E013 reuses the same 2025 rookies, so its tests are NEW hypotheses on data already used for E012's tests, not fresh data.",
+    "E012 post hoc notes: DL rush distance 1.2 games is mostly body type and role (NFL roster position alone 2.4 games); WR top speed correlates 0.61 with deep-route share; E010 skeptic: OL tackle share r +0.61 and DL EDGE share r +0.61 with play intensity, DB CB share r -0.49.",
+    "Role measurability only (no trait association): player-level majority alignment share medians WR 0.70, DL 0.95, OL 1.00, DB 0.98 (orchestrator check 2026-10-18)."
+  ],
+  "role_definition": {
+    "source": "player_play.lined_up_position on the player's REG plays (all plays of the qualifying games used for the trait)",
+    "role_share": {
+      "WR": "slot share = plays at SLOT_WR / plays at SLOT_WR or WR",
+      "DL": "edge share = plays at EDGE or OLB / plays at EDGE, OLB or INTERIOR_LINE",
+      "OL": "tackle share = plays at T / plays at T, G or C",
+      "DB": "corner share = plays at CB or SLOT_CB / plays at CB, SLOT_CB, HIGH_SAFETY, BOX_SAFETY, OLB, MLB, EDGE or INTERIOR_LINE"
+    },
+    "other_alignments": "ignored (not in numerator or denominator)",
+    "training": "2023-24 fit: role share over all of the player's 2023-24 games",
+    "in_season": "2025 test at k games: role share over his first k qualifying games only (known by then). No role prior at k = 0 (role unknown before the first game)."
+  },
+  "traits": "The 9 traits E012 identified (reliability and split-half >= 0.5): T1 WR top speed, T2 WR OUT/IN retention, T3 WR HITCH braking, T5 WR yards/route over expected, T6 DL first-second rush distance, T7 DL get-off, T9 OL set acceleration, T11 DB retreat speed, T12 DB top speed. Game-level values, qualifying rules, centering and expectation models exactly as in E012 (reuse its code and data/processed/e012_* tables; refit expectation models on 2023-24 only for the prospective test, as E012 did).",
+  "information_sets": {
+    "C0": "E012's C0 (draft-year means within position)",
+    "C0_role": "C0 + role share (linear)",
+    "C2_role": "C0_role + E012's C2 controls (traditional Combine + draft slot)",
+    "C3_role": "C2_role + E012's C3 tracking set",
+    "model": "as E012 (median-impute + indicators -> standardize -> RidgeCV), player-level, repeated 5-fold CV for internal estimands"
+  },
+  "estimands_descriptive": {
+    "lambda_role": "sigma2 / tau2_role, with tau2_role the between-player variance left after year + role share (internal fit on 2023-25, as E012's tables)",
+    "role_worth": "CGE of C0_role relative to C0, in games (E012 formula with true-score R2 of role share)",
+    "cge_beyond_role": "CGE of C2_role and C3_role relative to C0_role, in games, with E012's B1 bootstrap and the simulation-calibrated bounds method",
+    "half_weight_game_role": "games after which his own games outweigh the C0_role and C2_role priors (E012 amendment A1 weight)",
+    "trust_table_role": "the E012 Table 1 weights after 1, 4 and 8 qualifying games under the C0_role and C2_role priors"
+  },
+  "prospective_test": {
+    "design": "As E012 validation 2: fit on the 2023 + 2024 classes only; for each 2025 rookie with >= k + 3 qualifying games, forecast his mean over games k+1..end with each prior's in-season blend (E012 amendment A1 weight), using role share from his first k games.",
+    "metric": "squared error standardized by the trait's 2023-24 tau2 (position-level, as E012), pooled over the 9 traits with equal weight",
+    "primary_tests": [
+      {"id": "H1", "claim": "C0_role blend beats the C0 blend at k = 1", "expected_sign": "C0_role < C0"},
+      {"id": "H2", "claim": "C0_role blend beats the C0 blend at k = 2", "expected_sign": "C0_role < C0"},
+      {"id": "H3", "claim": "Beyond role, the Combine and draft help: C2_role blend beats C0_role blend at k = 1", "expected_sign": "C2_role < C0_role"},
+      {"id": "H4", "claim": "Beyond role, Combine tracking helps: C3_role blend beats C2_role blend at k = 1", "expected_sign": "C3_role < C2_role"}
+    ],
+    "inference": "player-level paired differences, one-sided sign-flip permutation test (100,000 flips), player bootstrap 95% CI, BH across H1-H4, alpha 0.05; also team-cluster sign flips as a sensitivity (E012 review)",
+    "secondary": "per trait and per position; k = 3, 4; role share from all of his 2025 games (oracle role, upper bound); WR deep-route share added as a usage covariate (sensitivity only: deep usage may follow from speed)"
+  },
+  "deliverables": ["role-aware trust table (writeup Table 1 candidate)", "CGE beyond role, per trait, with bounds", "figure: weight curves or worth-in-games, position average vs role-aware vs Combine beyond role", "how the DL 1.2-game Combine value changes once role is known"],
+  "go": "H1-H4 by BH-adjusted one-sided tests. Descriptive estimands with intervals, not tests."
+}
