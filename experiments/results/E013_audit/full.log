@@ -1,0 +1,65 @@
+[      0s] inputs: 12,363 internal and 11,943 prospective game values; 249,269 REG player_play rows
+[    112s] prospective forecasts built; E012 reproduction {"rows_e013": 626, "rows_e012": 626, "rows_matched": 626, "se_games_max_abs_diff": 0.0, "se_blend_C0_max_abs_diff": 0.0, "se_blend_C2_max_abs_diff": 0.0, "se_blend_C3_max_abs_diff": 0.0, "se_comb_C2_max_abs_diff": 0.0}
+[    145s] H1: 1.797 vs 1.748 ratio 1.028 [0.996, 1.070] p 0.9246 q 0.9246 team-cluster p 0.9361, n 80
+[    145s] H2: 1.752 vs 1.748 ratio 1.002 [0.984, 1.022] p 0.5987 q 0.8647 team-cluster p 0.6031, n 76
+[    145s] H3: 1.732 vs 1.797 ratio 0.964 [0.917, 1.008] p 0.0774 q 0.3095 team-cluster p 0.0553, n 80
+[    145s] H4: 1.739 vs 1.732 ratio 1.004 [0.984, 1.022] p 0.6486 q 0.8647 team-cluster p 0.6351, n 80
+[   6083s] T1 WR Game top speed: n 64, lambda 1.48, lambda_role 1.56, role worth 0.00 [0.0, 0.0], beyond role C2 +0.63 C3 +0.69; E012 C2 0.47; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   6367s] T2 WR OUT/IN turn speed retention: n 64, lambda 6.78, lambda_role 7.14, role worth 0.00 [0.0, 0.5572667449577592], beyond role C2 +0.12 C3 +0.49; E012 C2 0.00; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   6653s] T3 WR HITCH peak braking: n 62, lambda 4.65, lambda_role 6.54, role worth 0.24 [0.0, 2.535471266619444], beyond role C2 -0.24 C3 -0.24; E012 C2 0.00; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   6940s] T5 WR Yards per route over expected: n 64, lambda 4.84, lambda_role 5.10, role worth 0.00 [0.0, 0.0], beyond role C2 +0.00 C3 +0.00; E012 C2 0.00; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   7230s] T6 DL First-second rush distance: n 85, lambda 3.61, lambda_role 4.56, role worth 0.77 [0.0, 2.1602269761364368], beyond role C2 +0.52 C3 +0.30; E012 C2 1.23; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   7522s] T7 DL Get-off (NGS): n 84, lambda 3.29, lambda_role 3.52, role worth 0.00 [0.0, 0.12623536675836938], beyond role C2 +0.19 C3 +0.16; E012 C2 0.24; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   7807s] T9 OL Pass-set acceleration (0-0.6 s): n 65, lambda 5.75, lambda_role 5.60, role worth 0.00 [0.0, 0.0], beyond role C2 +0.00 C3 +0.00; E012 C2 0.00; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   8093s] T11 DB Pre-throw peak retreat speed: n 74, lambda 5.83, lambda_role 5.74, role worth 0.00 [0.0, 0.0], beyond role C2 +0.00 C3 +0.00; E012 C2 0.00; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   8379s] T12 DB Game top speed: n 76, lambda 4.84, lambda_role 5.35, role worth 0.00 [0.0, 0.4933946170859092], beyond role C2 +0.33 C3 +0.18; E012 C2 0.25; reproduction {"point_max_abs_diff": 0.0, "bootstrap_cge_C2_max_abs_diff": 0.0, "bootstrap_lambda_max_abs_diff": 0.0}
+[   8379s] diagnostics done
+[   8488s] sim role T1: observed +0.00, calibrated [0.0, 0.3571457286721588]
+[   8596s] sim role T2: observed +0.00, calibrated [0.0, 2.6174745444267082]
+[   8701s] sim role T3: observed +0.24, calibrated [0.0, 1.7890732278393917]
+[   8808s] sim role T5: observed +0.00, calibrated [0.0, 1.7229265188775162]
+[   8913s] sim role T6: observed +0.77, calibrated [0.11492993808271566, 2.0771586340138777]
+[   9019s] sim role T7: observed +0.00, calibrated [0.0, 0.6759552419414823]
+[   9123s] sim role T9: observed +0.00, calibrated [0.0, 1.995260352349328]
+[   9228s] sim role T11: observed +0.00, calibrated [0.0, 1.2791591864679788]
+[   9334s] sim role T12: observed +0.00, calibrated [0.0, 1.1310533876252533]
+[   9578s] sim beyond_C2 T1: observed +0.63, calibrated [0.12246212797657531, 1.8014813705361727]
+[   9820s] sim beyond_C2 T2: observed +0.12, calibrated [0.0, 4.374410116868265]
+[  10063s] sim beyond_C2 T3: observed -0.24, calibrated [0.0, 0.0]
+[  10306s] sim beyond_C2 T5: observed +0.00, calibrated [0.0, 2.3296516234251836]
+[  10552s] sim beyond_C2 T6: observed +0.52, calibrated [-0.12379614690927174, 2.12791648696267]
+[  10798s] sim beyond_C2 T7: observed +0.19, calibrated [0.0, 1.617967745278055]
+[  11043s] sim beyond_C2 T9: observed +0.00, calibrated [0.0, 3.8425794840069605]
+[  11290s] sim beyond_C2 T11: observed +0.00, calibrated [0.0, 2.46131940613114]
+[  11537s] sim beyond_C2 T12: observed +0.33, calibrated [0.0, 3.240687437220541]
+[  11790s] sim beyond_C3 T1: observed +0.69, calibrated [0.1400455079658368, None]
+[  12051s] sim beyond_C3 T2: observed +0.49, calibrated [0.0, None]
+[  12309s] sim beyond_C3 T3: observed -0.24, calibrated [0.0, 0.0]
+[  12569s] sim beyond_C3 T5: observed +0.00, calibrated [0.0, 2.4478078320266086]
+[  12837s] sim beyond_C3 T6: observed +0.30, calibrated [-0.24213144066655728, 2.024687787868843]
+[  13094s] sim beyond_C3 T7: observed +0.16, calibrated [0.0, 1.5166293100432289]
+[  13347s] sim beyond_C3 T9: observed +0.00, calibrated [0.0, 2.614163424711984]
+[  13600s] sim beyond_C3 T11: observed +0.00, calibrated [0.0, 2.9922156005894682]
+[  13849s] sim beyond_C3 T12: observed +0.18, calibrated [0.0, 3.166641175260817]
+[  17654s] coverage T1: {"rho": 0.0, "g": 0.5, "n_datasets": 80, "role_worth": {"estimand_cv": 0.0, "mean_estimate": 0.001947766677887572, "coverage": 1.0, "se": 0.0}, "beyond_C2_role": {"estimand_cv": 0.4338335487052846, "mean_estimate": 0.5046008151180537, "coverage": 0.7875, "se": 0.04573616594118926}}
+[  21076s] coverage T6: {"rho": 0.17578410992992094, "g": 0.3, "n_datasets": 80, "role_worth": {"estimand_cv": 0.24000428413990177, "mean_estimate": 0.39937058459753, "coverage": 0.925, "se": 0.02944804747347436}, "beyond_C2_role": {"estimand_cv": 0.494417328664242, "mean_estimate": 0.5545391065500478, "coverage": 0.8375, "se": 0.04124526487974104}}
+[  21077s] done: /Users/jasonli/Documents/GitHub/NFL-Big-Data-Bowl-2027/experiments/results/E013.json
+    21173.64 real     42855.46 user       254.45 sys
+           508919808  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              665666  page reclaims
+                4513  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                8933  voluntary context switches
+            15017861  involuntary context switches
+        397845072851  instructions retired
+        182631241299  cycles elapsed
+           393643232  peak memory footprint
+exit 0

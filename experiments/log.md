@@ -11,6 +11,91 @@ Template:
 - Decision: keep / kill / revisit — why
 ```
 
+## 2026-10-19 — E013 summary (user decisions 2026-10-18: real names, keep the title "The Combine Exchange Rate", run the role-aware analysis)
+- **E013 (preregistered, committed before any result as 8d2d8ba): none of H1–H4 is supported.** Knowing a rookie's role from his first games (edge / tackle / corner / slot share) did not improve his 2025 in-season forecast (k = 1 ratio 1.028; 1.011 after correcting the one-game precision gap). Beyond role, Combine + draft (H3, p 0.077) and tracking (H4) were not significant.
+- **Interpretation, written as bounds:**
+  - Role does carry real between-player signal for WR hitch braking (29%) and DL rush distance (21%); DB top speed is weaker (10%).
+  - Once the Combine and draft are known, alignment share adds at most 0.16 games.
+  - For DL the role that matters is the roster designation (OLB vs DE) and body type, not edge alignment (descriptive).
+  - Table 1 stays position-level; the writeup gets a short robustness note.
+- **Writeup correction found by the E013 review:** "five traits reach 0.4–1.7 games" (E012 PH8) is contaminated by ridge shrinkage of the class dummies; it is 2 traits (WR top speed 0.63, DL rush distance 1.68).
+
+## 2026-10-19 — E013 review response (two reviewers, both 'weakened'; post hoc PH4–PH13)
+
+- **Unchanged.** The preregistered verdicts (none of H1–H4 supported) and every stored number. Re-run with `--reuse`: numbers match to within 9e-16; parquets byte-identical.
+- **Prospective (post hoc)**
+  - The one-game comparisons were biased against role: the coefficient was trained on whole-history shares but fed a share from one game.
+    - Calibrated on training players: H1 1.011 [0.990, 1.036], H3 0.977 [0.937, 1.015].
+    - Training shares at matched precision: H1 1.007, H3 0.983.
+    - WR hitch braking per-trait ratio 1.33 → 1.14 / 1.04. The deep-share deterioration (1.110) falls to 1.015.
+  - H3's 3.6% cut is mostly WR hitch braking (two rookies carry 78% of the role-aware blend's excess error).
+    - H3 without that trait: 0.987.
+    - Role-aware + Combine and draft vs the position average: 0.991 [0.949, 1.033] (E012's prior 0.986).
+    - The WR test's team-cluster family q is 0.015 (player-level q 0.64).
+  - Power: minimum detectable ratio 0.956 at one game; the best case the internal fit implies is about 0.967, so the test could not detect it.
+- **Internal (post hoc)**
+  - Role is real between players by the preregistered ANOVA (10,000 within-class permutations, BH over 9 traits):
+    - WR hitch braking 29% of between-player variance (q 0.003);
+    - DL rush distance 21% (q 0.003);
+    - DB top speed 10% (q 0.026);
+    - worth 1.89, 0.95 and 0.51 games if known exactly;
+    - others ≤ 6%.
+  - Learned out of fold, against a ridge on the class dummies, role is worth 0.90 (T3) and 1.14 (T6) games, about 0 elsewhere.
+  - Once the Combine and draft are known, role adds −0.06 to +0.16 games for every priced trait.
+  - DL rush distance's 1.23 games = 0.52 beyond role + 0.71 shared (edge share is 75% predictable from the Combine and draft). Edge share beyond the Combine and draft adds 0.06.
+  - The DL role signal is the roster designation, not edge alignment: among pure edge players, OLB vs DE differ by 0.12 yd (p 0.0003); OLB is +0.110 beyond edge share and weight (p 4e-5). Descriptive; the label may postdate the draft.
+  - E012's same-CV "relative to C0" values mixed ridge shrinkage of the class means into the Combine value. Against the dummies-only ridge, E012's Combine + draft forecast reaches ≥ 0.4 games for 2 traits (T1 0.63, T6 1.68), not 5.
+- **Decision: keep the robustness note, rewritten as bounds.**
+  - Table 1 stays position-level.
+  - The note says:
+    - role carries real between-player signal for WR hitch braking and DL rush distance (DB top speed weaker);
+    - once the Combine and draft are known, alignment share adds ≤ 0.16 games;
+    - it did not improve 2025 forecasts, even corrected (the test could not detect effects of the size the internal fit implies).
+  - The DL wording becomes "roster designation (OLB vs DE) and body type, not edge alignment".
+  - Fix the writeup's "five traits reach 0.4–1.7 games" (now two).
+- **Revisit if** a draft-day OLB/DE (or CB/S) designation is preregistered as a k = 0 role prior.
+
+## 2026-10-19 — E013: Role-aware Combine Exchange Rate (preregistered)
+
+- **Hypothesis**
+  - Prereg: `experiments/results/E013_prereg.json`, written before any role–trait association.
+  - Motivation: the mock football judge said position averages pool EDGE with interior DL, CB with safeties, slot with outside WR, and tackles with interior OL.
+  - On 2025 rookies:
+    - H1/H2: a role-aware prior (role share from his first k games) beats the position-average blend at k = 1 and k = 2.
+    - H3: beyond role, Combine + draft help at k = 1.
+    - H4: Combine tracking helps beyond that at k = 1.
+- **Method**
+  - Code: `src/bdb27/probes/i_role_aware.py` and `experiments/E013_role_aware.py`. They reuse E012's tables and functions.
+  - E012's internal CGE, B1 draws and 626 forecast rows are reproduced exactly.
+  - Implementation choices were frozen before any real-data run (sha 9ace65fb…).
+  - Post hoc: PH1–PH3 (figure layout, a descriptive ratio panel, headline wording) and BUG1 (a code fix).
+  - Role share = his share of slot / edge / tackle / corner alignments in the trait's qualifying games.
+  - 9 priced traits.
+  - λ_role by stratified ANOVA with the role covariate (new; unbiased in simulation).
+  - B1 with 1,000 resamples (E012's draws).
+  - Calibrated bounds from 200 simulated datasets per grid point; B1 coverage checked at the T1 and T6 designs.
+  - Prospective test: 100,000 sign flips, 10,000 bootstrap resamples, BH over H1–H4, team-cluster sensitivity, and a 67-test secondary family.
+  - Run: 21,174 s wall; peak RSS 0.5 GB.
+- **Result (with uncertainty)**
+  - **Primaries: none supported.**
+    - H1 ratio 1.028 [0.996, 1.070], p 0.92.
+    - H2 1.002 [0.984, 1.022].
+    - H3 0.964 [0.917, 1.008], p 0.077, q 0.31 (team-cluster p 0.055).
+    - H4 1.004 [0.984, 1.022].
+  - Role from his whole season does not help either: 1.013 [0.986, 1.046].
+  - No secondary result survives the family BH (smallest q 0.64). WR Combine + draft beyond role at k = 1 is 0.900 [0.808, 0.969] (p 0.010, q 0.64).
+  - **Role worth (2023–25 fit):** at least 0.1 games for 2 of 9 traits.
+    - DL rush distance 0.77 (calibrated 0.11–2.08).
+    - WR hitch braking 0.24.
+    - 0 for the other 7; calibrated upper bounds 0.36–2.62.
+  - **DL rush distance:** E012's Combine + draft value of 1.23 games is 0.52 beyond edge share (calibrated −0.12 to 2.13); the change is 0.71 [−0.02, 2.18].
+  - **Prior worth** under the role-aware + Combine prior: 2.1–6.9 games (E012: 2.0–6.8).
+  - **B1 coverage** for beyond role: 79–84% at nominal 95%.
+- **Decision: keep as a robustness note (one sentence and a Limitations update), not a new section.**
+  - Position-average priors are not hiding role for the priced traits, so Table 1 stays position-level.
+  - The DL wording becomes "roster role and body type more than alignment".
+  - Revisit if roster position is preregistered as role, or if traits are rebuilt without alignment centring.
+
 ## 2026-10-15 — GATE 2b: the framing becomes Combine Game Equivalents (E012), with the transfer map as its evidence
 - **E012** (preregistered; amendment A1 fixed my blend-weight algebra before any real-data run; reviewed by 2 skeptics, both 'weakened'; the responder accepted almost every point):
   - In season, a player's own qualifying games outweigh any pre-season prior within 2–7 games for the 9 reliably measured traits.

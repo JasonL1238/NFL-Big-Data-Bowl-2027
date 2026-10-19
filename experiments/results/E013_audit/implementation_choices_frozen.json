@@ -1,0 +1,109 @@
+{
+ "frozen_at_utc": "2026-10-19T02:03:19Z",
+ "status": "Fixed before any association between role share and any game trait, and before any role-aware variance component, CGE or forecast of E013 was computed on real data. Seen before this freeze: E012's results (listed in the prereg), the player_play alignment vocabulary and counts by Combine position (no trait values), and the unit tests of bdb27.probes.i_role_aware on simulated data. Anything decided after this point is labeled post hoc in E013.json.",
+ "prereg_sha256": "af84afa14c7ca25b84bb4c9df26a7b13e8d42e83bcf8bc3830cde3729a665689",
+ "choices": [
+  {
+   "id": "G1",
+   "topic": "population, games and values",
+   "choice": "Exactly E012's: Combine positions (WR traits use Combine WRs), REG games, chronological order = game_id order, qualifying games and per-game values as stored by E012 (data/processed/e012_game_values.parquet for the internal fit; e012_prospective_values.parquet, built with 2023-24 constants and expectation models, for the prospective test), players with >= 3 qualifying games. Player table = e012_players.parquet (internal: as stored; prospective: the strict 2023-24 Combine composites (__v2) swapped in, as E012 --reuse-values). The 9 traits of the prereg: T1, T2, T3, T5, T6, T7, T9, T11, T12.",
+   "reason": "Prereg: values, qualifying rules, centering and expectation models exactly as E012, reusing its tables."
+  },
+  {
+   "id": "R1",
+   "topic": "role share counting",
+   "choice": "Counting unit = one player_play row (REG games) of the player in a game. Every row counts, including plays nullified by penalty (the alignment is a pre-snap fact) and plays that carry no value of the trait (prereg: all plays of the qualifying games). Numerator / denominator alignments exactly as the prereg (WR slot: SLOT_WR / SLOT_WR+WR; DL edge: EDGE+OLB / EDGE+OLB+INTERIOR_LINE; OL tackle: T / T+G+C; DB corner: CB+SLOT_CB / CB+SLOT_CB+HIGH_SAFETY+BOX_SAFETY+OLB+MLB+EDGE+INTERIOR_LINE); null and other alignments ignored. Share = sum numerator / sum denominator over the games (play-weighted); undefined (null) if the denominator is 0, then median-imputed with a missing indicator inside linkage._model (and by i_role_aware.impute_cols in the ANOVA). Data facts seen before this freeze (vocabulary only, no trait values): Combine DL have 51 OLB rows against 28,884 EDGE and 23,030 INTERIOR_LINE (edge share is effectively EDGE / (EDGE + INTERIOR_LINE)); 503 DL rows at SLOT_CB are ignored.",
+   "reason": "Prereg role_definition; play weighting makes the share the fraction of his snaps in the role."
+  },
+  {
+   "id": "R2",
+   "topic": "games behind each role share",
+   "choice": "Internal fit: the player's qualifying games of the trait in e012_game_values (2023-25). Prospective training: his qualifying games of the trait in the train split (2023-24 seasons, 2023-24 classes). In season at k: his first k qualifying 2025 games of the trait (game_id order). Oracle (secondary): all his 2025 qualifying games of the trait. The prereg's 'role share over all of the player's 2023-24 games' is read with its role_definition.source: all plays of the qualifying games used for the trait.",
+   "reason": "Prereg role_definition (source, training, in_season)."
+  },
+  {
+   "id": "R3",
+   "topic": "information sets",
+   "choice": "C0 = E012's (draft-year mean within position; the training-fold class mean in CV). C0_role = linkage._model on [draft-year dummies (h_game_equivalents.design, earliest class the reference) | role_share]. C2_role = [dummies | linkage.COMBINE_CONTROLS + linkage.DRAFT_CONTROLS | role_share]. C3_role = [dummies | C2 columns + the tracked-40 set + the trait's matched signature (E012 C3) | role_share]. E012's C2 and C3 are carried in the same estimate (same folds) for reference and reproduction. Role share enters linearly.",
+   "reason": "Prereg information_sets."
+  },
+  {
+   "id": "E1",
+   "topic": "internal estimate and descriptive estimands",
+   "choice": "h_game_equivalents.estimate on the six sets (draft-year-strata variance components, rel, RepeatedKFold 5 x 20 seed 0 over players, R2_CV = mean over repeats of 1 - MSE / Var_w, R2_true = clip(R2_CV / rel, 0, 0.99), CGE = lambda R2 / (1 - R2) with E012's position-level lambda and rel). role_worth = CGE(C0_role) (E012 formula; like E012's CGE it is measured against the position average); sensitivity: C0-relative under the same CV (E012 PH8 convention). cge_beyond_role(C) = CGE(C) - CGE(C0_role) for C2_role and C3_role (i_role_aware derivation 2: equals lambda_role P / (1 - P) with P the partial true-score R2 beyond role; the unclipped difference of the two clipped CGEs, so it can be negative); tracking beyond C2_role = CGE(C3_role) - CGE(C2_role), descriptive. combine_change_once_role_known = CGE(C2) - cge_beyond_role(C2_role). lambda_role (primary) = sigma2 / tau2_role with tau2_role from the stratified one-way ANOVA with the role covariate (derivation 3, unit-tested against simulation), 'as E012's variance components'; reported beside the CV route lambda / (1 - R2_true(C0_role)) = lambda + CGE(C0_role), which is what the trust rule uses. half_weight_game = lambda / (1 - R2_C) and trust-table weights w_k = k / (k + lambda / (1 - R2_C)) at k = 1, 4, 8 (E012 amendment A1) for C0_role and C2_role, with C0 and C2 beside them; the 2023-24 fit's values (validation training fit) beside the internal ones. Rookie appearances = half-weight / E012's qualifying_share_2025_rookies share (derived, as writeup provenance item 1).",
+   "reason": "Prereg estimands_descriptive; one estimator family with E012 so differences are attributable to role."
+  },
+  {
+   "id": "E2",
+   "topic": "bootstrap (B1)",
+   "choice": "1,000 player resamples per trait with E012's seeds (20261015 + E012 trait index): the same player draws and per-resample CV seeds as E012's B1, so its C0 / C2 / C3 draws reproduce data/processed/e012_bootstrap.parquet (checked). The whole pipeline (i_role_aware.estimate_role: E012 estimate with grouped folds over the unique resampled players, 20 CV repeats, plus lambda_role) per resample; each player's role share travels with him. 95% percentile intervals (h_game_equivalents.percentile_ci, non-finite draws as +inf). Differences (beyond role, the change once role is known) are computed within each draw. Simulated coverage of these intervals is reported (S2), and they are read as nominal.",
+   "reason": "Prereg: E012's B1 bootstrap."
+  },
+  {
+   "id": "S1",
+   "topic": "simulation-calibrated bounds",
+   "choice": "E012 PH6 method at each trait's own design (its players, classes, game counts and design matrices; tau2 = 1, no class effects, games iid N(theta, lambda_hat) with the trait's internal lambda; 200 datasets per grid point; seeds default_rng([20261018, family, trait index, grid index, rep])). Neyman one-sided 95% bounds (h_game_equivalents.calibrated_bounds) for the CV estimand (each set's CGE from the mean oracle R2 of its out-of-fold forecasts against theta, clipped at 0), plus the population-signal version. Families: (a) role worth: theta = sqrt(rho) z + sqrt(1 - rho) u, z = standardized role share (median-imputed), rho in (0, .05, .1, .15, .2, .25, .3, .4, .5, .6, .75, .9); sets C0, C0_role; estimate CGE(C0_role); population CGE = lambda rho / (1 - rho). (b) C2 beyond role: theta = sqrt(rho_hat) z + sqrt(1 - rho_hat) (sqrt(g) s_perp + sqrt(1 - g) u), s = signed sum of 3 random columns of the C2 Combine design (h_game_equivalents.signal_matrix), residualized on z and standardized; rho_hat = the trait's observed internal R2_true(C0_role), clipped to [0, 0.95]; g in E012's grid (0 ... 0.75); sets C0, C0_role, C2_role; estimate CGE(C2_role) - CGE(C0_role); estimand CGE*(C2_role) - CGE*(C0_role); population = lambda / (1 - rho_hat) g / (1 - g). (c) C3 beyond role: as (b) with the C3 Combine design and C3_role.",
+   "reason": "Prereg: 'the simulation-calibrated bounds method' for CGE beyond role; the task asks for it on every descriptive CGE estimand."
+  },
+  {
+   "id": "S2",
+   "topic": "bootstrap coverage in simulation",
+   "choice": "At the T1 and T6 designs (E012's coverage designs): 80 simulated datasets each, theta planted at rho_hat (as S1 b) and at the grid g whose family-(b) estimand is closest to the observed C2 beyond-role value; per dataset B1 with 250 resamples x 20 CV repeats (h_game_equivalents.bootstrap); coverage of the 95% intervals for role worth and for C2 beyond role against the CV estimand from those datasets' mean oracle R2 (as E012's coverage_summary). Seeds default_rng([20261018, 99, trait index, dataset]).",
+   "reason": "LESSONS 2026-10-15: check interval coverage by simulation before trusting any bootstrap."
+  },
+  {
+   "id": "P1",
+   "topic": "prospective fit (leakage rules as E012)",
+   "choice": "E012 P1-P4 unchanged: the stored prospective values split by h_game_equivalents.split_prospective (train = 2023-24 seasons of the 2023-24 classes; test = 2025 class, 2025 season); h_game_equivalents.fit_prospective on the six sets (WR traits also the deep-share sets, P6); training role share from 2023-24 qualifying games only; the 2025 prior for a role set = ridge prediction with the draft-year dummy at its training mean and the role share from his first k qualifying 2025 games. Checked at run time: training seasons <= 2024 and classes < 2025; the fit is unchanged when every 2025 alignment is altered; the k-game priors are unchanged when the alignments of games after k are altered; the C0 / C2 / C3 forecast errors equal E012's stored e012_forecasts_2025 rows.",
+   "reason": "Prereg leakage rules: nothing from 2025 in any fitted quantity; role share in the test from the first k qualifying games only."
+  },
+  {
+   "id": "P2",
+   "topic": "forecasts and metric",
+   "choice": "h_game_equivalents.in_season_forecasts run separately at each k in 1..4 with that k's role shares (i_role_aware.in_season_role_forecasts): 2025 rookies with >= k + 3 qualifying games; target = mean of games k+1..end; blend = mu_C + w_k (ybar_k - mu_C), w_k = k / (k + lambda / (1 - R2_C)) (E012 A1) with lambda, R2_C and tau2 from the 2023-24 fit; standardized SE = (forecast - target)^2 / tau2_train (position-level). No role prior at k = 0. Pooled = equal-weight mean over the 9 traits with >= 1 eligible player at that k of the trait's mean standardized SE.",
+   "reason": "Prereg prospective_test design and metric."
+  },
+  {
+   "id": "P3",
+   "topic": "primary tests H1-H4",
+   "choice": "H1: se_blend_C0_role vs se_blend_C0 at k = 1; H2: the same at k = 2; H3: se_blend_C2_role vs se_blend_C0_role at k = 1; H4: se_blend_C3_role vs se_blend_C2_role at k = 1. Player-level paired difference d_i = sum over his traits of (SE_a - SE_b) / (T n_t) (E012 P6); one-sided sign-flip test, 100,000 flips, expected sign negative, seeds 20261018 + 1..4; player bootstrap (10,000) 95% CIs for both pooled means, the difference and the ratio; BH across H1-H4 at alpha 0.05; pass = q < 0.05 and difference < 0.",
+   "reason": "Prereg primary_tests and inference."
+  },
+  {
+   "id": "P4",
+   "topic": "team-cluster sensitivity",
+   "choice": "Team of a 2025 rookie = the team_abbr on most of his 2025 REG player_play rows (ties: alphabetical first; none: his own cluster). For every primary and secondary test: sign flips of team sums of d_i (100,000) and a team-cluster bootstrap (10,000 resamples of teams, each with all its players) for the difference and the ratio. BH across H1-H4 on the team-cluster p values is reported as a sensitivity; the decision uses the player-level test.",
+   "reason": "Prereg inference: team-cluster sign flips as a sensitivity (E012 review)."
+  },
+  {
+   "id": "P5",
+   "topic": "secondary family",
+   "choice": "Descriptive tests, each with a player-level one-sided sign-flip p, player-bootstrap CIs and the team-cluster versions; BH across the whole family (player-level p) reported as q_family. (i) per trait (9 x 4): C0_role vs C0 at k = 1 and k = 2, C2_role vs C0_role at k = 1, C3_role vs C2_role at k = 1; (ii) per position (4 x 4): the same four comparisons pooled with equal weight over the position's traits (WR T1/T2/T3/T5, DL T6/T7, OL T9, DB T11/T12); (iii) k = 3 and k = 4 (2 x 3): C0_role vs C0, C2_role vs C0_role, C3_role vs C2_role, pooled; (iv) oracle role (4): H1-H4 with role share from all his 2025 qualifying games (an upper bound: it uses the target games); (v) WR deep-route share (5): deep share (GO/POST/CORNER/WHEEL among routes run, over the same plays as role share; training over 2023-24 qualifying games, test over his first k) appended to every role set for the 4 WR traits: H1-H4 analogues on the WR traits, and C0_role+deep vs C0_role at k = 1. A test runs when >= 3 players are eligible (otherwise n is reported and the test is not in the family). Seeds 20261018 + 1000 + its index in this order.",
+   "reason": "Prereg secondary list; one fixed family for multiplicity."
+  },
+  {
+   "id": "P6",
+   "topic": "descriptive prospective outputs",
+   "choice": "Pooled curves at k = 1..4 for games-only, every prior alone and every blend (player-bootstrap 95% CIs, common rows); 80% interval coverage of the C0_role / C2_role / C3_role blends with E012's P7 formula (all quantities from the 2023-24 fit); per-trait mean SEs.",
+   "reason": "E012 P7 analogue."
+  },
+  {
+   "id": "D1",
+   "topic": "diagnostics (descriptive, computed after this freeze)",
+   "choice": "Per trait: role share distribution of the analysis players (mean, quartiles, shares >= 0.9 and <= 0.1, missing); correlation of the first-k role share with the oracle role share for test rookies (k = 1, 2); within-player correlation of per-game role share with per-game trait value (both centred by player; the same-game share of role that the internal fit can carry because role and trait come from the same games); Pearson r of the draft-year-centred player trait with role share; E012's NFL roster-position reference for context.",
+   "reason": "Interpretation aids, fixed before results."
+  },
+  {
+   "id": "D2",
+   "topic": "known design facts (from E012's definitions, not results)",
+   "choice": "T6 / T7 play values are centred by EDGE / INTERIOR_LINE alignment, T9 by T / G / C, T11 by alignment x coverage cell, and T2 / T3 by route type, so for those traits role share can add only what play-level centring leaves; T1, T5 and T12 are not alignment-centred.",
+   "reason": "Stated before results so it cannot be used selectively."
+  },
+  {
+   "id": "X1",
+   "topic": "compute and files",
+   "choice": "joblib n_jobs 3 with one BLAS/OpenMP thread per worker, threadpool_limits(3) at top; bootstrap and simulation checkpoints in the session scratchpad (removed at the end); outputs data/processed/e013_*.parquet (role shares, bootstrap draws, simulation belts, coverage, forecasts), experiments/results/E013.json, experiments/figures/E013_*.png. Figures: per trait, what the position average, the role-aware average and the Combine + draft beyond role are worth in games (B1 intervals, calibrated bounds, E012's CGE(C2) as reference) and the prospective test; layout decided on viewing (post hoc, no numbers).",
+   "reason": "Project compute rules; prereg deliverables."
+  }
+ ]
+}
