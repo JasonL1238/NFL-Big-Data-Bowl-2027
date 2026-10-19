@@ -1,4 +1,4 @@
-"""Check every number quoted in writeup/draft.md (v2.5, Combine Game Equivalents) against its committed source.
+"""Check every number quoted in writeup/draft.md (v2.6, Combine Game Equivalents) against its committed source.
 
 For each quoted number this script:
   1. recomputes it from its source JSON key (experiments/results/E0xx.json (E007-E013), E007_leaderboard.json,
@@ -367,7 +367,12 @@ r2s = rd['r2_in_sample']
 chk('DL: tracks body type and roster designation (in-sample R2: designation > weight > 0.1; descriptive)', r2s['roster_position'] > r2s['weight'] > 0.1
     and ols['olb']['p'] < 0.05, True,
     quoted='DL rush distance (1.2) tracks body type and roster designation (descriptive)')
-chk('the v2.4 "not edge alignment" overreach is gone (judges, v2.5)', 'not edge alignment' not in text and 'OLB vs DE' not in text, True)
+# v2.5 (judges): "not edge alignment" and "OLB vs DE" never explain this trait's 1.2 or 2.4 games (the label is four-level).
+# v2.6 (final checker F2): "OLB vs DE" is allowed once, in the Roles note's PH10 sentence (edge share given designation).
+sec32 = text[text.index('### 3.2'):text.index('### 3.3')]
+chk('the v2.4 "not edge alignment" overreach is gone (judges, v2.5); "OLB vs DE" only in the Roles note (v2.6)',
+    'not edge alignment' not in text and 'OLB vs DE' not in sec32 and text.count('OLB vs DE') == 1
+    and text.index('OLB vs DE') > text.index('**Roles.**'), True)
 chk('DL: among pure edge players OLB > DE (Welch p < 0.05; all three classes)', pe['mean_olb'] > pe['mean_de'] and pe['welch_p_two_sided'] < 0.05
     and all(v['olb'] > v['de'] for v in pe['by_class'].values()), True)
 chk('roster designation analysis is post hoc and descriptive (E013 PH10)', 'possibly the latest roster label' in ph13.get('PH10', '')
@@ -451,15 +456,26 @@ chk('none survives multiplicity (min BH q > 0.05)', min(PHV2['ph3_bh_q_over_10']
     quoted='All are post hoc; none survives multiplicity control')
 chk('PH3 / PH10 post hoc', {'PH3', 'PH10'} <= post_hoc_ids, True)
 
-# ---------------------------------------------------------------- 3.4 role-aware note (E013; v2.4, rewritten in v2.5)
-# v2.5 (both judges; LESSONS 2026-10-19): like-for-like worth under both estimators, the shares' intervals and selection,
-# and the preregistered H1 interval instead of the floored "beyond" range and the 80%-power detectable effect.
+# ---------------------------------------------------------------- 3.4 role-aware note (E013; v2.4, rewritten in v2.5 and v2.6)
+# v2.5 (both judges; LESSONS 2026-10-19): the shares' intervals and selection, and the preregistered H1 interval instead of
+# the floored "beyond" range and the 80%-power detectable effect. v2.6 (final checker F1-F4): the shares are labelled post
+# hoc (PH6); the DL sentence says what PH10 shows (edge share adds nothing detectable once roster designation and weight
+# are controlled); the out-of-fold alignment worth is no longer quoted (DL: edge-share worth that tracks designation;
+# hitch braking: set against a floored 0, and its prospective counterpart went the other way); the null is scoped to
+# alignment measured from a rookie's first games, so that it is not read as "role does nothing".
+def sentences(s):
+    s = re.sub(r'!\[[^\]]*\]\([^)]*\)', ' ', s).replace('**', '').replace('|', ' ')
+    return [' '.join(x.split()) for x in re.split(r'(?<=[.!?])\s+|\n+', s) if x.strip()]
+
+
+text_s = sentences(text)
+roles_s = sentences(text[text.index('**Roles.**'):text.index('## 4.')])
 A13 = S13['anova_share']
 sig13 = ['T3', 'T6', 'T12']
 roles13 = {t: e13['internal'][t]['role'] for t in sig13}
-chk("alignment = receivers' slot share, DL edge share, DBs' corner share", roles13 == {'T3': 'slot share', 'T6': 'edge share', 'T12': 'corner share'}
+chk('alignment = slot share (WR), edge share (DL), corner share (DB)', roles13 == {'T3': 'slot share', 'T6': 'edge share', 'T12': 'corner share'}
     and all(x in e13p['role_definition']['role_share'][pos] for pos, x in (('WR', 'slot share'), ('DL', 'edge share'), ('DB', 'corner share'))), True,
-    quoted="Alignment (receivers' slot share, DL edge share, DBs' corner share) explains 29%, 21% and 10% of between-player differences in WR hitch braking, DL rush distance and DB top speed")
+    quoted='Alignment (slot, edge or corner share) explains 29%, 21% and 10% of between-player differences in WR hitch braking, DL rush distance and DB top speed')
 chk('role share T3 (WR hitch braking)', 100 * A13['T3'], 29, 0)
 chk('role share T6 (DL rush distance)', 100 * A13['T6'], 21, 0)
 chk('role share T12 (DB top speed)', 100 * A13['T12'], 10, 0)
@@ -471,30 +487,67 @@ chk('the only three of nine passing false-discovery control (BH q < 0.05)', sort
     and sum(q < 0.05 for q in S13['anova_bh_q'].values()) == 3, True, quoted='the only three of nine passing false-discovery control')
 sh_ci = {t: I13[t]['anova']['share_of_between_player_variance'] for t in sig13}
 for t, lo_, hi_ in (('T3', 4, 57), ('T6', 4, 44), ('T12', -1, 28)):
-    chk(f'share interval {t} lo', 100 * sh_ci[t]['lo'], lo_, 0, quoted='(95% CIs 4–57%, 4–44%, −1% to 28%)')
+    chk(f'share interval {t} lo', 100 * sh_ci[t]['lo'], lo_, 0, quoted='(95% CIs 4–57%, 4–44%, −1% to 28%; post hoc)')
     chk(f'share interval {t} hi', 100 * sh_ci[t]['hi'], hi_, 0)
-chk('ANOVA share and permutation are post hoc (E013 PH6)', 'share of between-player variance' in ph13['PH6'], True)
+s_share = [x for x in roles_s if '29%' in x]
+chk('F4: the shares sentence (29/21/10%, selection) is labelled post hoc (E013 PH6)', len(s_share) == 1 and 'post hoc' in s_share[0]
+    and 'share of between-player variance' in ph13['PH6'] and 'permutation' in ph13['PH6'], True)
+# F2 (v2.6): for DL the signal tracks roster designation and body type, not edge share (E013 PH10; descriptive, in sample)
+r2gain = max(r2s['roster_position_and_role_share'] - r2s['roster_position'], r2s['weight_and_role_share'] - r2s['weight'])
+DL_SENT = ('For DL, edge share adds nothing detectable once roster designation (OLB vs DE) and weight are controlled: the signal '
+           'tracks designation and body type (descriptive; the label may postdate the draft)')
+chk('F2: edge share adds nothing detectable once designation and weight are controlled (OLS HC1: edge share p > 0.05, OLB > 0 '
+    'with p < 0.001; edge share adds < 0.01 R2 beyond either; weight R2 > 0.1; pure-edge OLB > DE, p < 0.05, every class)',
+    ols['edge_share']['p'] > 0.05 and ols['olb']['p'] < 0.001 and ols['olb']['coef'] > 0 and r2gain < 0.01 and r2s['weight'] > 0.1
+    and pe['mean_olb'] > pe['mean_de'] and pe['welch_p_two_sided'] < 0.05 and all(v['olb'] > v['de'] for v in pe['by_class'].values())
+    and 'descriptive' in ph13['PH10'] and 'possibly the latest roster label' in ph13['PH10'], True, quoted=DL_SENT)
+# Mutation guards for the edge-share attribution (F2): the DL share is followed at once by the designation sentence; no
+# other sentence mentions edge share or edge alignment; no sentence gives rush distance a games value from alignment.
+i21 = [k for k, x in enumerate(roles_s) if '21%' in x]
+edge_s = [x for x in text_s if re.search(r'\bedge[- ](?:share|alignment)', x, re.I)]
+dl_games = [x for x in text_s if 'rush distance' in x and re.search(r'\balignment\b|\bedge\b', x, re.I) and re.search(r'\bgames?\b', x)]
+chk('F2 guard: the 21% DL share is followed at once by the designation sentence', len(i21) == 1 and i21[0] + 1 < len(roles_s)
+    and roles_s[i21[0] + 1].startswith(DL_SENT), True)
+chk(f'F2 guard: the only sentence about edge share is the designation sentence {[x[:60] for x in edge_s]}',
+    len(edge_s) == 1 and edge_s[0].startswith(DL_SENT), True)
+chk(f'F2 guard: no games value for rush distance from alignment or edge share {[x[:60] for x in dl_games]}', dl_games == [], True)
+# F1/F2 (v2.6): the out-of-fold alignment worth is not quoted. T6's is edge-share worth (above); T3's set alignment against
+# the forecast's floored 0, and E013's prospective hitch-braking ratio is above 1 under every variant.
 at3, at6 = I13['T3']['attribution_C2'], I13['T6']['attribution_C2']
 rwd = S13['role_worth_vs_dummies_ridge_same_cv']
-chk('hitch braking: alignment worth, preregistered CV estimator (0.2)', at3['role_alone']['est'], 0.2, 1,
-    quoted='Learned out of fold, it is worth 0.2–0.9 games for hitch braking, where the Combine + draft forecast is worth 0, and 0.8–1.1 for rush distance, mostly shared with the forecast (post hoc)')
-chk('role_alone = the internal role worth key', abs(at3['role_alone']['est'] - e13['internal']['T3']['role_worth']['est']) < 1e-12
-    and abs(at6['role_alone']['est'] - e13['internal']['T6']['role_worth']['est']) < 1e-12, True)
-chk('hitch braking: alignment worth vs the dummies-only ridge, same CV (0.9; PH8)', rwd['T3'], 0.9, 1)
-chk('hitch braking: the Combine + draft forecast is worth 0 under both estimators', at3['c_alone']['est'] == 0 and dr['T3'] == 0
-    and ct['T3']['cge_C2']['est'] == 0, True)
-chk('rush distance: alignment worth, preregistered CV estimator (0.8)', at6['role_alone']['est'], 0.8, 1)
-chk('rush distance: vs the dummies-only ridge (1.1)', rwd['T6'], 1.1, 1)
-chk('rush distance: mostly shared with the forecast (shared > half of alignment worth; both orders: PH9)', at6['shared']['est'] > 0.5 * at6['role_alone']['est']
-    and 'role beyond Combine + draft' in ph13['PH9'], True)
-chk('the floored "beyond" range is no longer quoted (v2.5)', '−0.06 to +0.16' not in text and "detectable effect (4%)" not in text, True)
+p13t3 = {v: r['T3'] for v, r in e13['post_hoc_review']['prospective']['per_trait_h1_ratio_k1'].items()}
+sec13 = e13['prospective']['tests']['secondary_family']['per_trait:T3:C0_role_vs_C0_k1']
+chk(f'premise: hitch-braking alignment worth (0.24 / 0.90) is in sample and its prospective ratio is > 1 under every variant {p13t3}',
+    at3['role_alone']['est'] > 0 and rwd['T3'] > 0 and len(p13t3) == 4 and min(p13t3.values()) > 1
+    and abs(sec13['ratio'] - p13t3['prereg']) < 1e-9, True)
+chk("premise: the forecast's 0 for hitch braking is floored (cross-validated R2 <= 0, clipped)",
+    ct['T3']['cge_C2']['est'] == 0 and ct['T3']['r2_cv']['C2'] <= 0 and at3['c_alone']['est'] == 0, True)
+chk('F1/F2 guard: the out-of-fold alignment worth is not quoted (0.2–0.9, 0.8–1.1)', '0.2–0.9' not in text and '0.8–1.1' not in text, True)
+hb_cmp = [x for x in text_s if re.search(r'\balignment\b|\bslot share\b|\brole\b', x, re.I) and 'hitch braking' in x
+          and re.search(r'forecast|Combine|outvalu|worth more|beats?\b', x)]
+chk(f'F1 guard: no sentence compares alignment with the Combine + draft forecast for hitch braking {[x[:60] for x in hb_cmp]}',
+    hb_cmp == [] and not re.search(r'outvalu', text, re.I), True)
+# F3 (v2.6): the log's "adds at most 0.16 games beyond the Combine and draft" is a difference of floored fits for 5 of 9
+# traits (hitch braking among them); its "could not detect" overstates the test's power at the best case (about 0.59).
+fl = sorted(t for t, v in I13.items() if 'attribution_C2' in v and (v['attribution_C2']['both']['est'] == 0 or v['attribution_C2']['c_alone']['est'] == 0))
+chk(f'premise: role beyond the Combine + draft forecast involves a floored fit for 5 of 9 traits {fl}', fl == ['T11', 'T2', 'T3', 'T5', 'T9'], True)
+chk('F3 guard: no floored "beyond" value (−0.06 to +0.16, at most 0.16)', '−0.06 to +0.16' not in text
+    and not re.search(r'(?:at most|up to|adds?|beyond)[^.;|]{0,30}\b0\.16\b|\b0\.16 games', text) and 'detectable effect (4%)' not in text, True)
+pw13 = e13['post_hoc_review']['prospective']['power']
+nd = lambda z: 0.5 * (1 + math.erf(z / math.sqrt(2)))
+power_best = nd(abs(math.log(pw13['best_case_from_internal_fit']['H1']['ratio_vs_observed_position_average_error'])) / pw13['primary']['H1']['sd_log_ratio'] - 1.6449)
+chk(f'premise: power at the best case is about 0.59 (not 0, so "could not detect" overstates; not 0.8 either) {power_best:.2f}',
+    0.5 < power_best < 0.8 and pw13['primary']['H1']['mde_ratio_one_sided_80pct_power'] < pw13['best_case_from_internal_fit']['H1']['ratio_vs_observed_position_average_error'], True)
+nothing = re.search(r"\b(?:role|alignment)\b[^.;:]{0,30}\b(?:does not matter|doesn't matter|does nothing|is worth nothing|worth nothing|adds nothing|is useless|is worthless|worthless|is irrelevant|irrelevant|is meaningless|useless)", text, re.I)
+chk(f'F3 guard: nothing says role or alignment does nothing {nothing.group() if nothing else ""}', nothing is None
+    and 'could not detect' not in text and 'excludes even' not in text, True)
 P13 = e13['prospective']['tests']['primary']
 pre13 = {h['id']: h for h in e13p['prospective_test']['primary_tests']}
 h1 = P13['H1']
 best13 = 1 - e13['post_hoc_review']['prospective']['power']['best_case_from_internal_fit']['H1']['ratio_vs_observed_position_average_error']
-chk('preregistered H1/H2: role from his first 1 / 2 games beats the position-average blend', pre13['H1']['claim'].endswith('at k = 1')
+chk('preregistered H1/H2: alignment share from his first 1 / 2 games beats the position-average blend', pre13['H1']['claim'].endswith('at k = 1')
     and pre13['H2']['claim'].endswith('at k = 2') and (h1['k'], P13['H2']['k']) == (1, 2), True,
-    quoted="Yet alignment from a rookie's first games did not improve 2025 forecasts (preregistered): error rose 2.8%, and its 95% CI (−0.4% to +7.0%) excludes even the 3% cut exactly known alignment would bring; a post hoc precision correction agrees")
+    quoted="Still, alignment measured from a rookie's first games did not improve 2025 forecasts (preregistered): error rose 2.8%, and its 95% CI (−0.4% to +7.0%) excludes the 3% cut exactly known alignment would bring (post hoc); a post hoc precision correction agrees")
 chk('H1 error rose 2.8%', 100 * (h1['ratio'] - 1), 2.8, 1)
 chk('H1 CI lo -0.4%', 100 * (h1['ratio_ci95'][0] - 1), -0.4, 1)
 chk('H1 CI hi +7.0%', 100 * (h1['ratio_ci95'][1] - 1), 7.0, 1)
@@ -560,13 +613,16 @@ chk('round-1 q', mul['bh_q_all_round1_tests'], 0.06, 2)
 # ---------------------------------------------------------------- 6. Recommendations
 chk('deployment before game 1 is untested (E013 prereg: no role prior at k = 0)', 'No role prior at k = 0' in e13p['role_definition']['in_season'], True,
     quoted='Intended deployment, known before game 1, is a prior we did not test')
-chk('alignment outvalues the Combine + draft forecast for WR hitch braking (both estimators)', at3['role_alone']['est'] > at3['c_alone']['est']
-    and rwd['T3'] > dr['T3'], True, quoted='in our 2023–25 fit, alignment outvalues the Combine + draft forecast for WR hitch braking')
+# v2.6 (final checker F1): v2.5's "in our 2023-25 fit, alignment outvalues the Combine + draft forecast for WR hitch
+# braking" is gone (prospectively worse under every variant; set against a floored 0; premises in the Roles block).
+clubs = text[text.index('**Clubs, week to week**'):text.index("**The league's")]
+al_clubs = re.findall(r'\balignment\b|\b(?:slot|edge|corner) share\b|\bhitch\b|outvalu', clubs, re.I)
+chk(f'F1 guard: no alignment advice in the Clubs items {al_clubs}', al_clubs == [], True)
 r6 = PHR['per_trait']['T6']['references']['role']
 chk('T6 designation = NFL roster position', r6['reference'].startswith('NFL roster position') and 'latest roster designation' in r6['reference'], True,
     quoted='(post hoc; designations may postdate the draft)')
 chk('designation prior worth more than the Combine + draft forecast (T6)', r6['cge_ref'] > ct['T6']['cge_C2']['est'] and r6['cge_ref_plus_C2'] < r6['cge_ref'], True,
-    quoted='a DL roster-designation prior is outweighed after 6.0 games, not 4.8')
+    quoted='for DL rush distance, a roster-designation prior is outweighed after 6.0 games, not 4.8')
 chk('not 4.8 = Table 1 half-weight with the Combine + draft forecast (T6)', hw['T6'], 4.8, 1)
 chk('role worth', r6['cge_ref'], 2.4, 1)
 chk('role half-weight = lambda + CGE_role', lam['T6'] + ct['T6']['cge_role_reference'], 6.0, 1)
@@ -625,8 +681,19 @@ allow('game 1', 'illustrative game number')
 allow('a typical game-1 top-speed play', 'Figure 1 panel: a play from his first qualifying game (figure_plan selection rule)')
 allow('40 vs DL pass-rush drill', 'Figure 5 panel: drill names (the 40-yard dash)')
 chk('Figure 3 coverage panel is the 80% interval', 'C2' in V2['calibration_80pct'], True, quoted='80% interval coverage.')
+# v2.6: the Figure 3 caption names the forecast by its information set (outline section 4: never "the Combine" for C2
+# in a comparison); the figure's title and rows say "Combine + draft forecast" too (make_figures.py).
+cap3 = re.search(r'\*\*Figure 3\.\*\*[^\n]*', text).group()
+chk('Figure 3 caption: "the Combine + draft forecast", not "the Combine"', re.search(r'\bthe Combine\b(?! \+ draft)', cap3) is None, True,
+    quoted='shrinkage, the Combine + draft forecast, tracking and alignment')
+# v2.6: Figure 1's band is the rule's 80% posterior interval for his level (prior SD x sqrt(1 - w); make_figures.py), not
+# the calibrated 80% interval for a rookie's remaining-games average that Section 3.4 and Figure 3 evaluate. No text
+# sentence about Figure 1, its band or the hook may call it calibrated or cite its coverage.
+sec1 = text[text.index('## 1.'):text.index('## 2.')]
+f1_s = [x for x in text_s if 'Figure 1' in x or re.search(r'\bband\b', x, re.I)] + [x for x in sentences(sec1) if re.search(r'\binterval', x)]
+f1_bad = [x[:60] for x in f1_s if re.search(r'calibrat|coverage|held \d', x, re.I)]
+chk(f'Figure 1 band never called the calibrated interval {f1_bad}', f1_bad == [], True)
 allow('calibrated 90% bounds bold, 95% bootstrap thin', 'interval levels (Figure 2 caption): two one-sided 95% bounds = 90%; B1 95%')
-allow('our 2023–25 fit', 'data scope of the internal fit')
 allow('(95% CIs)', 'CI level (Figure 4 caption)')
 
 # ---------------------------------------------------------------- named players (user decision 2026-10-18; outline.md section 4)

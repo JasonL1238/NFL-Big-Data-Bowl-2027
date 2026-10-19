@@ -529,9 +529,9 @@ def fig1(gif: bool = True) -> None:
     # ---------------------------------------------------------------- layout: two panels on top, one below
     foot = (f"Fastest finish for his 40 time of {n_wr} Combine receivers; official electronic splits do not "
             f"corroborate it (post hoc). Forecast and in-season estimate fit on 2023–24 (weight on his first game "
-            f"{w_2324}); Table 1 refits on 2023–25 ({w_all}). Shaded band: the rule’s 80% interval for his level; "
-            "the bar at game 0: 95% range for a 15-game average under the forecast. Line of scrimmage from the "
-            "play’s yard line (nearest yard).")
+            f"{w_2324}); Table 1 refits on 2023–25 ({w_all}). Shaded band: the rule’s 80% interval for his level "
+            "(narrower than the remaining-games interval Figure 3 checks); the bar at game 0: 95% range for a "
+            "15-game average under the forecast. Line of scrimmage from the play’s yard line (nearest yard).")
 
     def band_glyph(kax, xc):
         kax.fill_between([xc - 0.18, xc + 0.18], [-0.55, -0.55], [0.55, 0.55], color=BLUE, alpha=0.16, lw=0)
@@ -1149,6 +1149,7 @@ def fig3() -> None:
          "its CI")
     same(f"{(1 - k0id['ratio']) * 100:.1f}%", "3.5%", "identified traits only")
     same(f"{(1 - k1['ratio']) * 100:.1f}%", "2.5%", "Combine vs position average after 1 game")
+    assert all(r["ratio_ci95"][0] < 1 < r["ratio_ci95"][1] for r in (k0id, k1))  # draft: "both intervals include 0"
     same(f"{(H3['ratio'] - 1) * 100:.1f}%", "2.1%", "H3 tracking worse")
     assert H1["n_players"] == H3["n_players"] == 81
     times = H1["pooled_b"] / H1["pooled_a"]
@@ -1184,7 +1185,9 @@ def fig3() -> None:
     E13S = "E013.prospective.tests.primary.H1"
     E13C = "E013.post_hoc_review.prospective.tests['calibrated:H1']"
 
-    title = "On 2025 rookies, shrinkage does the work; the Combine trims a few percent"
+    # the forecast is named by its information set (never "the Combine" alone), and its trim is post hoc (PH3)
+    title = (f"On 2025 rookies, shrinkage does the work; against the {PA}, the {FC.replace(' ', chr(160))} trims a "
+             "few percent (post hoc)")  # non-breaking spaces: the wrap never splits the forecast's name
     sub = (f"Fit on the 2023–24 seasons, applied to {H1['n_players']} rookies in 2025 (pseudo-prospective: trait "
            "definitions were chosen after earlier analyses had used 2025 games). Blending toward the "
            f"{PA} alone captures {share:.0%} of the rule’s gain over his raw early games (post hoc).")
@@ -1289,7 +1292,7 @@ def fig3() -> None:
         (H2, "Same rule vs his first two games", "preregistered", f"{S}.H2", BLUE, "s", False, ".0f", ".0f"),
         (c0raw, "Rule (position-average prior) vs his first game", "post hoc",
          "post_hoc_review.validation_2.blend_C0_vs_games.k1", GREY, "v", True, ".0f", ".0f"),
-        ("hdr", f"The Combine vs the {PA}"),
+        ("hdr", f"The {FC} vs the {PA}"),
         (k0, "Combine + draft vs position average, before game 1", f"post hoc, q {qtxt}", f"{P}.k0.comb_C2_vs_C0", BLUE, "s", True,
          ".0f", ".1f"),
         (k0id, "Same, on the 9 priced traits", "post hoc",
@@ -1311,6 +1314,7 @@ def fig3() -> None:
     cap = 0.045
     for gi, row in enumerate(rows):
         if row[0] == "hdr":
+            assert text_w(fig, row[1], FS_P, "bold") < rw - 0.05, row[1]
             y += 0.12 if gi else 0.0
             axr.text(0.0, y + 0.12, row[1], transform=tr, size=FS_P, color=INK, weight="bold", va="center",
                      ha="left", bbox=bb, zorder=5)
@@ -1361,7 +1365,8 @@ def fig3() -> None:
         f"{1 - H2['ratio']:.0%} after two ({h1p_txt}% after one game on the nine priced traits, post hoc); a {PA} "
         f"rule does nearly the same. The {FC} beats the {PA} by "
         f"{(1 - k0['ratio']) * 100:.0f}% before the first game (post hoc, not robust to multiplicity), "
-        f"{(1 - k0id['ratio']) * 100:.1f}% on the priced traits, and {(1 - k1['ratio']) * 100:.1f}% after one game; "
+        f"{(1 - k0id['ratio']) * 100:.1f}% on the priced traits, and {(1 - k1['ratio']) * 100:.1f}% after one game "
+        f"(both post hoc, intervals including 0); "
         f"adding Combine tracking is {(H3['ratio'] - 1) * 100:.1f}% worse (preregistered), and adding his alignment "
         f"share from his first game to the {PA} rule is {(r1['ratio'] - 1) * 100:.1f}% worse (preregistered; "
         f"{(r1c['ratio'] - 1) * 100:.1f}% worse when corrected for one game's precision, post hoc), both intervals "
@@ -1604,6 +1609,17 @@ def fig5() -> None:
                                    "summary.drill_profile.wr_route_same_drill_retest.retest_icc_median)")
     e10 = E10["combine"]["stop_rule"]["reliability"]
     same(f"{e10:.2f}", "0.74", "drill intensity reliability")
+    # drill intensity's preregistered game tests (E010_prereg.json primary_tests P1 play intensity, P2 snaps per
+    # season; beyond stopwatch + draft slot, expected sign +): estimates near 0, stated with their 95% CI upper ends
+    e10g = E10["game"]["primaries"]
+    assert [(e10g[p]["feature"], e10g[p]["target"]) for p in ("P1", "P2")] == [
+        ("c_drill_intensity", "g_play_intensity"), ("c_drill_intensity", "g_snaps_per_season")]
+    assert all(e10g[p]["partial_r_ci95"][0] < 0 < e10g[p]["partial_r_ci95"][1] for p in ("P1", "P2"))
+    e10r = {p: num(F, round(e10g[p]["partial_r"], 2) + 0.0, ".2f", f"E010.game.primaries.{p}.partial_r")
+            for p in ("P1", "P2")}  # + 0.0: no negative zero
+    assert (e10r["P1"], e10r["P2"]) == ("0.00", "−0.04"), e10r
+    e10u = {p: num(F, e10g[p]["partial_r_ci95"][1], "+.2f", f"E010.game.primaries.{p}.partial_r_ci95[1]")
+            for p in ("P1", "P2")}
     e11 = {m: v["cross_drill"]["reliability"] for m, v in E11["reliability"].items()
            if isinstance(v, dict) and isinstance(v.get("cross_drill"), dict) and v["cross_drill"].get("reliability")
            is not None}
@@ -1640,17 +1656,20 @@ def fig5() -> None:
         nrange[(g, k)] = (f"{num(F, min(ns), 'd', f'E008.drill_profile[{g} | {k}].n_players min')}–"
                           f"{num(F, max(ns), 'd', f'E008.drill_profile[{g} | {k}].n_players max')}")
 
-    fig = new_fig(8.2)
-    top = header(fig, "The tracked 40 is a trait; position-drill signatures mostly are not",
+    # Same-day retests are "repeatable within a session", never "a trait" (outline section 4; the text's wording)
+    fig = new_fig(8.75)
+    top = header(fig, "The tracked 40 is repeatable within a session; position-drill signatures mostly are not",
                  "Reliability of each Combine tracking metric (0 = noise, 1 = perfectly repeatable). Each row is a "
                  "different kind of reliability, so compare within a row. Most position drills are run once per "
                  "player, so their signatures can only be checked across different drills.")
     fb = footer(fig, "Reliability as used in the round-1 tests (Spearman–Brown; 0 when negative); n = players per "
-                     "metric. No intervals were stored for single metrics or session shares except the catch "
-                     "mechanic’s (post hoc bootstrap, 95%), so counts against 0.5 are approximate. The three single "
-                     "rows are separate tests, not in the counts; the WR row is a single-rep retest within one "
-                     "session, which session effects inflate. Not shown: two DL composites that include the 40, and "
-                     "OL within-one-rep metrics, which overstate a trait (notebook).")
+                     "metric. Repeat reps are same-day retests, which session effects can inflate. No intervals were "
+                     "stored except the catch mechanic’s (post hoc bootstrap, 95%), so counts against 0.5 are "
+                     "approximate. The three single rows are separate tests, not in the counts. Drill intensity’s "
+                     "preregistered game tests, beyond stopwatch + draft slot: partial r "
+                     f"{e10r['P1']} with typical-play intensity and {e10r['P2']} with snaps per season (95% CIs end "
+                     f"at {e10u['P1']} and {e10u['P2']}). Not shown: two DL composites that include the 40, and OL "
+                     "within-one-rep metrics, which overstate repeatability (notebook).")
     ky = top - 0.2
     pre = "Position-drill repeat reps:"
     ftext(fig, 0.1, ky, pre, size=FS, color=INK, va="center")
@@ -1663,8 +1682,8 @@ def fig5() -> None:
     ax_y = fb + 0.6
     ax_top = ky - 0.55
     ax = axes_in(fig, ax_x, ax_y, ax_w, ax_top - ax_y)
-    yc = {0: 0.0, 1: 1.45, 2: 2.95, "e10": 4.15, "e11": 4.95, "wr": 5.9}
-    ymax = 6.35
+    yc = {0: 0.0, 1: 1.45, 2: 2.95, "e10": 4.15, "e11": 5.35, "wr": 6.3}  # drill intensity has a third label line
+    ymax = 6.75
     ax.set_xlim(-0.04, 1.02)
     ax.set_ylim(ymax, -0.85)
     ax.set_yticks([])
@@ -1675,7 +1694,7 @@ def fig5() -> None:
     ax.set_xticklabels(["0", "0.25", "0.5", "0.75", "1"])
     ax.set_xlabel("Reliability")
     ax.axvline(0.5, color=INK2, lw=1.1, zorder=1)
-    ax.text(0.5, -0.82, "trait threshold", ha="center", va="bottom", size=FS_N, color=INK2)
+    ax.text(0.5, -0.82, "reliability gate", ha="center", va="bottom", size=FS_N, color=INK2)  # the text's term
     ms = 5.6
     d_x = (ms / 72) / ax_w * 1.06 * 1.05
     d_y = (ms / 72) / (ax_top - ax_y) * (ymax + 0.85) * 1.05
@@ -1707,20 +1726,20 @@ def fig5() -> None:
     ax.text(1.04, -0.82, "≥ 0.5", transform=tr, ha="left", va="bottom", size=FS_N, color=INK2)
     # single values: two later tests (not in the counts) and the WR same-drill retest median
     singles = [("e10", e10, "E010.combine.stop_rule.reliability", "Drill intensity",
-                "speed vs 40 peak; not counted"),
+                "speed vs 40 peak; not counted", "no game link (preregistered)"),
                ("e11", e11v, "E011.reliability.catch_offset.cross_drill.reliability", "Best catch mechanic",
-                "2025 ball tracking; not counted"),
+                "2025 ball tracking; not counted", None),
                ("wr", retest, "E008.summary.drill_profile.wr_route_same_drill_retest.retest_icc_median",
-                "WR route drills", "one-session retests: inflated")]
+                "WR route drills", "one-session retests: inflated", None)]
     ci11 = E11["reliability"]["catch_offset"]["cross_drill_boot_ci95"]  # post hoc bootstrap (E011 revision)
     ax.plot(ci11, [yc["e11"]] * 2, color=NAVY, lw=1.3, zorder=3, solid_capstyle="butt")
     PRINTED.append((F, "drawn", "E011.reliability.catch_offset.cross_drill_boot_ci95"))
-    for key, v, src, l1, l2 in singles:
+    for key, v, src, l1, l2, l3 in singles:
         ax.plot([v], [yc[key]], marker="o", ms=6.4, mfc=NAVY, mec=SURF, mew=0.8, ls="none", zorder=4)
         xl = ci11[1] if key == "e11" else v
         ax.text(xl + 0.035, yc[key], ("median " if key == "wr" else "") + num(F, v, ".2f", src)
                 + (f", {n_rt} metrics" if key == "wr" else ""), ha="left", va="center", size=FS, color=INK)
-        row_label(yc[key], l1, l2, bold=(key == "wr"))
+        row_label(yc[key], l1, l2, bold=(key == "wr"), l3=l3)
 
     # ---- right top: like-for-like first-step metrics
     rx = 5.75
@@ -1789,13 +1808,15 @@ def fig5() -> None:
     iax.axvline(0, color=BASE, lw=0.8)
     f40 = E8["summary"]["drill_profile"]["forty"]["top_speed"]["rel"]
     alt = (f"Strip chart of reliability for Combine tracking metrics by measurement type. All 28 tracked-40 metrics "
-           f"sit above 0.5, top speed near {f40[0]:.2f} to {f40[1]:.2f}. Only 2 of 22 position-drill metrics with "
-           f"repeat reps and 10 of 68 cross-drill composites reach 0.5; 16 of the 22 repeat reps are reaction or "
-           f"opposite-side reps, different movements. The same six DL first-step metrics reach {min(r40):.2f} to "
-           f"{max(r40):.2f} in the 40 but {min(rpr):.2f} to {max(rpr):.2f} in the pass-rush drill. Drill intensity "
-           f"reaches {e10:.2f}; the best ball-tracking catch mechanic reaches {e11v:.2f}; WR route drills repeat at a "
-           f"median {retest:.2f} over {n_rt} metrics within one session, inflated by session effects. Inset: {min(wave.values()):.0%} to {max(wave.values()):.0%} of "
-           f"OL wave-drill variance lies between Combine sessions.")
+           f"are repeatable within a session (above 0.5), top speed near {f40[0]:.2f} to {f40[1]:.2f}. Only 2 of 22 "
+           f"position-drill metrics with repeat reps and 10 of 68 cross-drill composites reach 0.5; 16 of the 22 "
+           f"repeat reps are reaction or opposite-side reps, different movements. The same six DL first-step metrics "
+           f"reach {min(r40):.2f} to {max(r40):.2f} in the 40 but {min(rpr):.2f} to {max(rpr):.2f} in the pass-rush "
+           f"drill. Drill intensity reaches {e10:.2f} but showed no game link in its preregistered tests (partial r "
+           f"{e10r['P1']} and {e10r['P2']}); the best ball-tracking catch mechanic reaches {e11v:.2f}; WR route drills "
+           f"repeat at a median {retest:.2f} over {n_rt} metrics within one session, inflated by session effects. "
+           f"Inset: {min(wave.values()):.0%} to {max(wave.values()):.0%} of OL wave-drill variance lies between "
+           f"Combine sessions.")
     save(fig, "fig5_drill_reliability.png", alt)
 
 

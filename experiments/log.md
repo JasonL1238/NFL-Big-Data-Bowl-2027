@@ -11,6 +11,11 @@ Template:
 - Decision: keep / kill / revisit — why
 ```
 
+## 2026-10-19 — Correction to the E013 summary below (found by the writeup v2.6 final checker)
+- "Once the Combine and draft are known, alignment share adds at most 0.16 games" is a difference involving a floored (0) fit for 5 of 9 traits (T2, T3, T5, T9, T11). It holds only for T1, T6, T7 and T12 and must not be quoted as a general bound.
+- "The test could not detect effects of the size the internal fit implies" overstates the case: power at the 3.35% best case was about 0.59 (80%-power detectable cut 4.4%). The correct statement is that the 95% CI (−0.4% to +7.0%) excludes the 3% cut that exactly known alignment would bring (post hoc).
+- The writeup (v2.6) quotes neither original statement; check_numbers.py fails if either returns.
+
 ## 2026-10-19 — E013 summary (user decisions 2026-10-18: real names, keep the title "The Combine Exchange Rate", run the role-aware analysis)
 - **E013 (preregistered, committed before any result as 8d2d8ba): none of H1–H4 is supported.** Knowing a rookie's role from his first games (edge / tackle / corner / slot share) did not improve his 2025 in-season forecast (k = 1 ratio 1.028; 1.011 after correcting the one-game precision gap). Beyond role, Combine + draft (H3, p 0.077) and tracking (H4) were not significant.
 - **Interpretation, written as bounds:**
