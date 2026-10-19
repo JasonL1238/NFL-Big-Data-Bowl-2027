@@ -1,7 +1,7 @@
-"""Check every number quoted in writeup/draft.md (v2.2, Combine Game Equivalents) against its committed source.
+"""Check every number quoted in writeup/draft.md (v2.5, Combine Game Equivalents) against its committed source.
 
 For each quoted number this script:
-  1. recomputes it from its source JSON key (experiments/results/E0xx.json, E007_leaderboard.json,
+  1. recomputes it from its source JSON key (experiments/results/E0xx.json (E007-E013), E007_leaderboard.json,
      experiments/posthoc_writeup_v1/*.json, experiments/posthoc_writeup_v2/e012_case_priors.json) and compares
      at the quoted rounding. A few numbers are arithmetic
      on committed keys (sums, ratios, a Spearman-Brown inversion, a binomial chance); the formula is written
@@ -16,10 +16,17 @@ budget (HTML comments and image links removed; captions and table cells count):
   - whitespace tokens <= 1,950, counted both on the pasted markdown and on the rendered text, so any word
     counter a judge uses stays well under the 2,000 limit;
   - <= 8 figures + tables.
+It also checks the named players (user decision 2026-10-18; writeup/outline.md section 4): each name in NAMED
+matches every committed record for his nfl_id (E007.json, E007_leaderboard.json, E012.json), no other player in
+those files or in E013.json is named, no "Receiver A/B" placeholder is left, each named player's first mention is his
+full name, and no draft-status, off-field, draft-slot or stopwatch-only reference appears in a sentence about a named
+player: in the text (a sentence that names him, or one with he/his/him in a section that names him) and in the HTML
+comments (a sentence that names him or his nfl_id, or one with he/his/him in a comment that does).
 
 Run: .venv/bin/python writeup/check_numbers.py [path/to/draft.md]   (exit code 1 on any failure)
 On a comment-stripped copy (the text pasted into Kaggle) the src-comment check is skipped; every number is still checked.
 """
+import difflib
 import json
 import math
 import re
@@ -33,6 +40,7 @@ PH2 = ROOT / 'experiments' / 'posthoc_writeup_v2'
 DRAFT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'writeup' / 'draft.md'
 
 load = lambda p: json.loads(p.read_text())
+e7 = load(R / 'E007.json')
 e7lb = load(R / 'E007_leaderboard.json')
 e8 = load(R / 'E008.json')
 e9 = load(R / 'E009.json')
@@ -40,6 +48,8 @@ e10 = load(R / 'E010.json')
 e11 = load(R / 'E011.json')
 e12 = load(R / 'E012.json')
 e12p = load(R / 'E012_prereg.json')
+e13 = load(R / 'E013.json')  # role-aware re-fit (v2.4: Section 3.2 correction and DL wording, Section 3.4 note)
+e13p = load(R / 'E013_prereg.json')
 ph_pairs = load(PH / 'ph_pairs.json')
 cp = load(PH2 / 'e012_case_priors.json')  # post hoc export of stored E012 forecasts (case-study priors C0-C3, pools)
 
@@ -108,7 +118,7 @@ lam = {t: ct[t]['lambda']['est'] for t in ct}
 
 # ---------------------------------------------------------------- Section 1: hook (E012 case study, E007 leaderboard)
 chk('A official 40', bond['official_forty'], 4.39, quoted='4.39 forty at the 2025 Combine')
-chk('A draft year', bond['draft_year'], 2025, 0)
+chk('A Combine class 2025', bond['draft_year'], 2025, 0)
 chk('A is the T1 case study', case['nfl_id'], 59278, 0)
 chk('A last-20 speed (flying 20, mph)', bond['flying20_mph'], 23.2, 1, quoted='tracking clocked his last 20 yards at 23.2 mph')
 chk('A finishing-speed rank', bond['rank'], 1, 0, quoted='the fastest finish for his 40 time of 91 Combine receivers')
@@ -117,9 +127,9 @@ chk('rank is by hidden speed', max(p['hidden_speed_mph'] for p in e7lb['players'
     bond['hidden_speed_mph'], 6)
 chk('91 Combine WRs', e7lb['meta']['n'], 91, 0)
 chk('2023-24 fit (design label)', 'fit on the 2023-24 seasons only' in V2['design_label'], True,
-    quoted='A forecast from his Combine results and draft slot, fit on 2023–24')
+    quoted='A Combine + draft forecast, fit on 2023–24')
 chk('T1 per-game value is q90', tr['T1']['per_game_value'] == 'q90', True,
-    quoted='(his 90th-percentile play peak, well below a sprint)')
+    quoted='put his typical game top speed (90th-percentile play peak, well below a sprint)')
 chk('A C2 prior mph', case['prior_C2'] * MPH, 17.6, 1, quoted='at 17.6 mph')
 chk('A position average mph', case['prior_C0'] * MPH, 17.5, 1, quoted='the 17.5 receiver average')
 chk('A game 1 mph', case['game_values'][0] * MPH, 18.3, 1, quoted='He hit 18.3 in his first qualifying game')
@@ -133,7 +143,7 @@ chk('T1 test receivers with 10+ games', pool1['n_with_10plus_games'], 11, 0,
 chk('A largest WR gap (absolute)', case['abs_gap'] == max(c['abs_gap'] for c in wr_cases), True)
 chk('A rule largest', case['rule'].startswith('largest'), True)
 chk('case-study rule fixed in prereg', '2 largest and 2 smallest' in e12p['deliverables'][2], True,
-    quoted='(a rule fixed in advance picked him)')
+    quoted='(a rule fixed in advance chose him)')
 chk('rule universe >= 10 games', 'among players with >= 10 games' in e12p['deliverables'][2], True,
     quoted='ten or more qualifying games')
 chk('A has >= 10 games', case['n_games'] >= 10, True)
@@ -154,10 +164,6 @@ chk('A tracking nudge (mph)', cpa['tracking_shift_C3_minus_C2'] * MPH, 0.3, 1,
     quoted='Combine tracking nudged his forecast 0.3 mph toward his season average')
 chk('nudge is toward his season (C2 < C3 < season)', cpa['prior_C2'] < cpa['prior_C3'] < cpa['season_mean'], True)
 chk('with tracking, still far below his season (> 1 mph)', (cpa['season_mean'] - cpa['prior_C3']) * MPH > 1, True)
-# C1 (stopwatch + measurements, no draft slot) is deliberately not quoted: next to C2 it would hint at his draft slot.
-# It is checked so that "near average" and "no Combine failure" do not rest on the draft slot.
-chk('stopwatch-only forecast also near average (|C1 - C0| < 0.5 mph)', abs(cpa['prior_C1'] - cpa['prior_C0']) * MPH < 0.5, True)
-chk('stopwatch-only forecast also far below his season (> 1 mph)', (cpa['season_mean'] - cpa['prior_C1']) * MPH > 1, True)
 spl = e7lb['meta']['post_hoc_official_splits']
 chk('official splits do not corroborate', spl['corr_tracked_vs_official_10_40_time_beyond_forty'] < 0
     and 'not corroborated' in spl['note'], True,
@@ -179,7 +185,7 @@ chk('debut 18.3 mph', case['game_values'][0] * MPH, 18.3, 1, quoted='an 18.3 mph
 allow('tracked at 10 Hz', 'data spec (AGENTS.md)')
 chk('12 traits', len(tr), 12, 0, quoted='For 12 game traits at WR, DL, OL and DB')
 chk('positions', sorted({t['position'] for t in tr.values()}) == ['DB', 'DL', 'OL', 'WR'], True)
-chk('T1 qualifying = 10 plays', tr['T1']['min_plays_per_game'], 10, 0, quoted='(WR top speed: 10 tracked plays)')
+chk('T1 qualifying = 10 plays (Table 1: ≥10 plays)', tr['T1']['min_plays_per_game'], 10, 0)
 chk('A1 weight form', 'k / (k + lambda + CGE_C)' in e12['amendments'][0]['finding'], True,
     quoted='w = k/(k + λ + CGE)')
 chk('C0 half-weight = lambda', max(abs(tr[t]['half_weight_game']['C0']['est'] - lam[t]) for t in tr), 0, 9)
@@ -195,11 +201,15 @@ chk('identification rule', all(PHR['per_trait'][t]['identification_rule'].starts
                                 for t in tr) and 'PH7' in post_hoc_ids, True,
     quoted='reliability or odd/even split-half below 0.5 (post hoc)')
 allow('tracked-40 speed profile', 'name of the C3 feature set')
+chk('scope: the estimand is the in-game trait level of a playing rookie (per qualifying game)', all(t['min_plays_per_game'] > 0 for t in tr.values()), True,
+    quoted="It prices forecasts of a playing rookie's trait level, not who plays or is drafted")
+chk('worth scales with lambda: CGE = lambda R2 / (1 - R2) (framework)', 'lambda' in json.dumps(e12p['framework']) and 'R2' in json.dumps(e12p['framework']), True,
+    quoted='worth scales with λ, so priors matter least for fast-stabilizing traits')
 chk('A1 before real data', 'before any CGE' in e12['amendments'][0]['status'], True,
-    quoted='one amendment, made before any real-data run, fixed the weight formula')
+    quoted='one amendment before any real-data run fixed the weight formula')
 
 # ---------------------------------------------------------------- 3.1 and Table 1
-chk('nine identified', len(ident), 9, 0, quoted='For the nine reliably measured traits')
+chk('nine identified', len(ident), 9, 0, quoted='For the nine priced traits')
 chk('hw = lambda + CGE', max(abs(hw[t] - lam[t] - ct[t]['cge_C2']['est']) for t in ident), 0, 9)
 chk('hw = weight-curve half_weight', max(abs(hw[t] - wc[t]['C2']['half_weight_game']) for t in ident), 0, 9)
 hwi = {t: hw[t] for t in ident}
@@ -215,18 +225,19 @@ chk('lambda max (identified)', max(lam[t] for t in ident), 6.8, 1)
 chk('CGE min (identified)', min(ct[t]['cge_C2']['est'] for t in ident), 0, 1)
 chk('CGE max (identified)', max(ct[t]['cge_C2']['est'] for t in ident), 1.2, 1)
 qs = [v['share'] for v in QS.values()]
-chk('qualifying share min', 100 * min(qs), 47, 0, quoted='(47–92% of appearances qualified), that is three to 12 appearances')
+chk('qualifying share min (not quoted since v2.5)', 100 * min(qs), 47, 0)
 chk('qualifying share max', 100 * max(qs), 92, 0)
 app = {t: (hw[t] if t in ident else lam[t]) / QS[t]['share'] for t in tr}  # qualifying games -> appearances
 chk('appearances min (identified) = three', round(min(app[t] for t in ident)), 3, 0)
-chk('appearances max (identified) = 12', round(max(app[t] for t in ident)), 12, 0)
+chk('appearances max (identified) = 12', round(max(app[t] for t in ident)), 12, 0,
+    quoted="At 2025 rookies' qualifying rates, that is three to 12 appearances")
 lam_ni = sorted(lam[t] for t in notid)
-chk('not-identified lambda lo', lam_ni[0], 11, 0, quoted='half signal only after 11–23 qualifying games, about 14–39 appearances')
-chk('not-identified lambda hi', lam_ni[-1], 23, 0)
+chk('not-identified lambda lo (1 dp, as Table 1)', lam_ni[0], 10.8, 1, quoted='half signal only after 10.8–22.8 qualifying games, about 14–39 appearances')
+chk('not-identified lambda hi (1 dp, as Table 1)', lam_ni[-1], 22.8, 1)
 app_ni = sorted(app[t] for t in notid)
 chk('not-identified appearances lo', app_ni[0], 14, 0)
 chk('not-identified appearances hi', app_ni[-1], 39, 0)
-chk('DL pressure appearances', app['T8'], 22, 0, quoted="a rookie pass rusher's pressure rate needs about 22")
+chk('DL pressure appearances (Table 1)', app['T8'], 22, 0)
 allow('fit on 2023–25', 'data scope of the internal fit (weight_curves[T].fit)')
 chk('weight curves internal fit', all('2023-25' in wc[t]['fit'] for t in tr), True)
 allow('Weight after 1/4/8', 'table design: the k values shown')
@@ -273,17 +284,32 @@ for t, lab, plays, mark, l_, c_, h_, lo_, hi_, ap_, ws in TABLE:
 zero_t = [t for t in ident if ct[t]['cge_C2']['est'] == 0]
 chk('zeros are clipped (CV R2 <= 0)', all(ct[t]['r2_cv']['C2'] <= 0 for t in zero_t), True,
     quoted='0: no out-of-sample gain (clipped)')
+chk('Table 1 CIs = preregistered bootstrap, CGE part biased low (draws below the estimate; every simulated miss low)',
+    all('ci95_prereg_bootstrap' in tr[t]['half_weight_game']['C2'] for t in ident)
+    and tr['T1']['cge']['C2']['ci95_prereg_bootstrap']['share_draws_below_est'] > 0.5, True,
+    quoted='CIs: preregistered bootstrap, CGE part biased low')
 shift = max(abs(v['mean_tau']) for t in ('T9', 'T11')
             for v in PHR['per_trait'][t]['stationarity_and_game_unit']['season_change_within_player'].values())
 chk('season shift up to 2.2 SD', shift, 2.2, 1, quoted='Levels shift between seasons (up to 2.2 between-player SD): no weights')
 
 # ---------------------------------------------------------------- 3.2 CGE
-chk('T6 CGE', ct['T6']['cge_C2']['est'], 1.2, 1, quoted='DL rush distance (1.2) is body type and role')
+chk('T6 CGE', ct['T6']['cge_C2']['est'], 1.2, 1, quoted='DL rush distance (1.2)')
 chk('T1 CGE', ct['T1']['cge_C2']['est'], 0.5, 1, quoted='WR top speed (0.5) falls to')
 chk('T6, T1 are the two largest', sorted(ident, key=lambda t: -ct[t]['cge_C2']['est'])[:2] == ['T6', 'T1'], True,
     quoted='The two largest values are soft (post hoc)')
-chk('zero for five', len(zero_t), 5, 0, quoted="The Combine + draft forecast's worth runs from 0 (five traits) to 1.2 games")
+chk('zero for five (Table 1 zeros)', len(zero_t), 5, 0)
+chk('worth from 0 (min)', min(ct[t]['cge_C2']['est'] for t in ident), 0, 1, quoted='the Combine + draft forecast is worth 0 to 1.2 games (Figure 2)')
 chk('runs to 1.2 (max)', max(ct[t]['cge_C2']['est'] for t in ident), 1.2, 1)
+# v2.5 (judge 2 item 4): the stopwatch and measurements alone (information set C1, preregistered), pooled by trait;
+# never for a named player (outline section 4). The draft slot's increment = CGE(C2) - CGE(C1), point estimates.
+c1 = {t: ct[t]['cge_C1']['est'] for t in ident}
+slot_inc = {t: ct[t]['cge_C2']['est'] - c1[t] for t in ident}
+chk('C1 is a preregistered information set (stopwatch and measurements)', 'traditional Combine' in e12p['information_sets']['C1'], True,
+    quoted='without the draft slot, nearly the same (it adds at most 0.1)')
+chk('C1 worth max (nearly the same: 1.2)', max(c1.values()), 1.2, 1)
+chk('C1 worth min 0', min(c1.values()), 0, 1)
+chk('draft slot adds at most 0.1 (max over priced traits)', max(slot_inc.values()), 0.1, 1)
+chk('draft slot never lowers the worth (increments >= 0)', min(slot_inc.values()) >= -1e-9, True)
 chk('every bootstrap interval includes 0', all(r['cge_C2']['lo'] <= 0 for r in e12['cge_table']), True,
     quoted='The preregistered bootstrap intervals all include 0 but are biased low')
 chk('biased low: most T1 draws below the estimate', tr['T1']['cge']['C2']['ci95_prereg_bootstrap']['share_draws_below_est'] > 0.5, True)
@@ -291,8 +317,11 @@ chk('biased low: every simulated miss is low (T1, T6)', all(abs(PHR['simulation'
 cov = [PHR['simulation']['interval_coverage'][t]['b1']['coverage'] for t in ('T1', 'T6')]
 chk('coverage about 80%', min(cov), (0.75, 0.85), quoted='covering about 80% in simulation')
 chk('coverage about 80% (hi)', max(cov), (0.75, 0.85))
-chk('T1 calibrated lower', ct['T1']['cge_C2_calibrated_lower95'], 0.08, 2,
-    quoted='put WR top speed at 0.08–1.6 games, DL rush distance at 0.10–3.9, and the rest below 1.7–3.6')
+CB = PHR['simulation']['calibrated_bounds']['traits']
+chk('calibrated bounds are two one-sided 95% bounds = a 90% two-sided interval', all('calibrated_one_sided_95' in CB[t] for t in ident), True,
+    quoted='Simulation-calibrated 90% bounds (post hoc) put WR top speed at 0.08–1.6 games, DL rush distance at 0.10–3.9, and the rest below 1.7–3.6')
+chk('calibrated bounds = cge_table keys', max(abs(CB[t]['calibrated_one_sided_95']['upper'] - ct[t]['cge_C2_calibrated_upper95']) for t in ident), 0, 9)
+chk('T1 calibrated lower', ct['T1']['cge_C2_calibrated_lower95'], 0.08, 2)
 chk('T1 calibrated upper', ct['T1']['cge_C2_calibrated_upper95'], 1.6, 1)
 chk('T6 calibrated lower', ct['T6']['cge_C2_calibrated_lower95'], 0.10, 2)
 chk('T6 calibrated upper', ct['T6']['cge_C2_calibrated_upper95'], 3.9, 1)
@@ -302,18 +331,47 @@ chk('rest calibrated upper min', min(ct[t]['cge_C2_calibrated_upper95'] for t in
 chk('rest calibrated upper max', max(ct[t]['cge_C2_calibrated_upper95'] for t in rest), 3.6, 1)
 chk('calibrated bounds post hoc (PH6)', 'PH6' in post_hoc_ids, True)
 ns = [r['n_players'] for r in e12['cge_table']]
-chk('n players lo', min(ns), 62, 0, quoted='(the Combine as learned from 62–85 players, negative fits clipped to 0)')
+chk('n players lo', min(ns), 62, 0, quoted='Learned from 62–85 players per trait')
 chk('n players hi', max(ns), 85, 0)
-vs0 = {t: ct[t]['cge_C2_vs_C0_same_cv'] for t in ident}
-big = [v for v in vs0.values() if v >= 0.4]
-chk('vs C0 same CV: five >= 0.4', len(big), 5, 0,
-    quoted='against the position average under the same cross-validation, five traits reach 0.4–1.7 games (post hoc)')
-chk('vs C0 same CV min of five', min(big), 0.4, 1)
-chk('vs C0 same CV max', max(big), 1.7, 1)
-chk('vs C0 same CV post hoc (PH8)', 'PH8' in post_hoc_ids, True)
+# v2.4 correction (E013 review): E012's cge_C2_vs_C0_same_cv mixed ridge shrinkage of the class means into the Combine
+# value ("five traits reach 0.4-1.7"); the reference is now a ridge on the draft-year dummies alone (E013 PH8).
+S13 = e13['post_hoc_review']['summary']
+I13 = e13['post_hoc_review']['internal']
+ph13 = {p['id']: p['what'] for p in e13['post_hoc']}
+dr = S13['e012_C2_vs_dummies_ridge_same_cv']
+chk('same-CV reference = ridge on the draft-year dummies alone (E013 PH8, post hoc)', 'draft-year dummies alone' in ph13['PH8'], True,
+    quoted='The estimate may be conservative: against draft-class averages under the same cross-validation, WR top speed reaches 0.63 games and DL rush distance 1.68 (intervals include 0), the rest under 0.4;')
+chk('vs class averages, same CV: WR top speed', dr['T1'], 0.63, 2)
+chk('vs class averages, same CV: DL rush distance', dr['T6'], 1.68, 2)
+chk('summary = per-trait key (T1, T6)', max(abs(dr[t] - I13[t]['same_cv_vs_dummies_ridge']['e012_C2']['est']) for t in ('T1', 'T6')), 0, 9)
+chk('over the 9 priced traits', sorted(dr) == sorted(ident), True)
+chk('only WR top speed and DL rush distance reach 0.4 (the rest under 0.4)', sorted(t for t, v in dr.items() if v >= 0.4) == ['T1', 'T6']
+    and sorted(S13['e012_C2_vs_dummies_ridge_ge_0.4']) == ['T1', 'T6'], True)
+chk('both intervals include 0', all(I13[t]['same_cv_vs_dummies_ridge']['e012_C2']['lo'] <= 0 for t in ('T1', 'T6')), True)
+chk('"may be conservative": both exceed the main estimate', all(dr[t] > ct[t]['cge_C2']['est'] for t in ('T1', 'T6')), True)
+pops = [ct[t]['cge_C2_population_signal_upper95'] for t in ident]
+chk('perfectly learned signal: population-signal upper bounds, min (priced traits)', min(pops), 4, 0,
+    quoted='a perfectly learned Combine signal could be worth up to 4–15 games (both post hoc)')
+chk('perfectly learned signal: max', max(pops), 15, 0)
+chk('population-signal estimand = perfectly learned linear signal (PH6)', 'perfectly learned' in PHR['simulation']['calibrated_bounds']['estimand'], True)
+chk('the contaminated "five traits" claim is gone', 'five traits reach' not in text, True)
 chk('T6 role reference', ct['T6']['cge_role_reference'], 2.4, 1,
-    quoted='roster position alone is worth 2.4 games, the Combine −0.25 beyond it')
+    quoted='designation alone (which may postdate the draft) is worth 2.4 games, the Combine + draft forecast −0.25 beyond it')
+chk('T6 role reference = the four-level NFL roster position, possibly post-draft', PHR['per_trait']['T6']['references']['role']['reference'].startswith('NFL roster position')
+    and all(x in PHR['per_trait']['T6']['references']['role']['reference'] for x in ('DE', 'DT', 'NT', 'OLB', 'latest roster designation')), True)
 chk('T6 beyond role', ct['T6']['cge_C2_beyond_role'], -0.25, 2)
+rd = I13['T6']['roster_designation']
+ols = rd['ols_hc1_role_weight_olb']
+pe = rd['pure_edge_olb_vs_de']
+r2s = rd['r2_in_sample']
+chk('DL: tracks body type and roster designation (in-sample R2: designation > weight > 0.1; descriptive)', r2s['roster_position'] > r2s['weight'] > 0.1
+    and ols['olb']['p'] < 0.05, True,
+    quoted='DL rush distance (1.2) tracks body type and roster designation (descriptive)')
+chk('the v2.4 "not edge alignment" overreach is gone (judges, v2.5)', 'not edge alignment' not in text and 'OLB vs DE' not in text, True)
+chk('DL: among pure edge players OLB > DE (Welch p < 0.05; all three classes)', pe['mean_olb'] > pe['mean_de'] and pe['welch_p_two_sided'] < 0.05
+    and all(v['olb'] > v['de'] for v in pe['by_class'].values()), True)
+chk('roster designation analysis is post hoc and descriptive (E013 PH10)', 'possibly the latest roster label' in ph13.get('PH10', '')
+    and 'descriptive' in ph13['PH10'], True)
 chk('T1 2023-24 fit', ct['T1']['cge_C2_2023_24_seasons_fit'], 0.14, 2,
     quoted='falls to 0.14 in the 2023–24 fit and to 0 without one draft class')
 chk('T1 LOCO min 0', ct['T1']['cge_C2_leave_one_class_out_range'][0], 0, 2)
@@ -325,8 +383,12 @@ chk('T1 Combine beyond deep share', r1['combine_beyond_ref'], 1.0, 1)
 chk('T1 beyond deep share = cge_table', r1['combine_beyond_ref'], ct['T1']['cge_C2_beyond_role'], 9)
 rel_ni = sorted(ct[t]['rel_player_mean'] for t in notid)
 sh_ni = sorted(ct[t]['split_half'] for t in notid)
-chk('three not priced', len(notid), 3, 0, quoted='The three outcome traits are not priced')
-chk('not-identified rel lo', rel_ni[0], 0.34, 2, quoted='reliability 0.34–0.53, split-half 0.20–0.28')
+chk('three not priced', len(notid), 3, 0, quoted='The three outcome traits cannot be priced')
+chk('not-identified rel lo', rel_ni[0], 0.34, 2,
+    quoted='at reliability 0.34–0.53 and split-half 0.20–0.28, simulation cannot bound their worth above (post hoc)')
+chk('no calibrated upper bound for any not-priced trait (not bounded within the grid)', all(ct[t]['cge_C2_calibrated_upper95'] is None
+    and CB[t]['calibrated_one_sided_95']['upper'] is None for t in notid), True)
+chk('E012 notes: do not interpret the not-priced CGE (none quoted)', all(any('do not interpret' in n for n in ct[t]['notes']) for t in notid), True)
 chk('not-identified rel hi', rel_ni[-1], 0.53, 2)
 chk('not-identified split-half lo', sh_ni[0], 0.20, 2)
 chk('not-identified split-half hi', sh_ni[-1], 0.28, 2)
@@ -336,17 +398,22 @@ chk('T1 raw CV R2', ct['T1']['r2_cv']['C2'], 0.22, 2)
 chk('T8 exposure r', ct['T8']['exposure_r_trait_log_games'], 0.40, 2, quoted='(r +0.40 with qualifying games)')
 
 # ---------------------------------------------------------------- 3.3 tracking
-d = [ct[t]['delta_cge_tracking'] for t in ident]
-chk('dCGE min', min(x['est'] for x in d), -0.24, 2, quoted='by −0.24 to +0.18 games across the nine traits, every interval including 0')
-chk('dCGE max', max(x['est'] for x in d), 0.18, 2)
-chk('dCGE intervals include 0', all(x['lo'] <= 0 <= x['hi'] for x in d), True)
+# v2.5: the dCGE range (-0.24 to +0.18) and "every interval including 0" are no longer quoted (judge 2: degenerate B1 intervals)
+chk('dCGE range no longer quoted', 'every interval including 0' not in text and '−0.24 to +0.18' not in text, True)
 chk('H3 is the estimate after one game', 'at k = 1' in PR['H3']['claim'], True,
-    quoted='it made the estimate after one game 2.1% worse (95% CI 0.4% to 3.9%; preregistered, 12 traits pooled)')
+    quoted='Combine tracking made the estimate after one game 2.1% worse (95% CI 0.4% to 3.9%; preregistered, 12 traits pooled)')
 chk('H3 % worse', 100 * (PR['H3']['ratio'] - 1), 2.1, 1)
 chk('H3 lo', 100 * (PR['H3']['ratio_ci95'][0] - 1), 0.4, 1)
 chk('H3 hi', 100 * (PR['H3']['ratio_ci95'][1] - 1), 3.9, 1)
 chk('H3 not passed', PR['H3']['pass'], False)
 chk('H3 pooled over 12 traits', len(PR['H3']['n_by_trait']), 12, 0)
+c3set = e12p['information_sets']['C3']
+sig_n = {sum(t.get('matched_signature') is not None for t in e12p['traits'] if t['id'] == k) for k in tr}
+chk('tracking set = five tracked-40 features plus a matched drill signature if any (five or six)', sum(f in c3set for f in ('c40_smax', 'c40_v_20_40', 'c40_vmax', 'c40_tau', 'c40_a0')) == 5
+    and sig_n == {0, 1}, True, quoted='That describes our model (five or six tracked features, 62–85 players)')
+chk("Section 4's two WR links: the two non-null links, both WR, single-feature, in sample", sorted(T8['passes_c1']) == ['E001-WR', 'E006-P1']
+    and all(tm8[i]['positions'] == 'WR' and isinstance(tm8[i]['feature'], str) for i in T8['passes_c1']), True,
+    quoted="Section 4's two WR links are single-feature, in-sample correlations")
 
 # ---------------------------------------------------------------- 3.4 2025 rookies
 allow('we fit on 2023–24', 'data scope of the validation-2 fit')
@@ -364,7 +431,7 @@ chk('H1 identified-only cut 68%', 100 * (1 - pool(ident, 'se_blend_C2') / pool(i
 chk('H2 52%', 100 * (1 - PR['H2']['ratio']), 52, 0, quoted='after two 52% (both preregistered)')
 chk('H1 H2 pass', PR['H1']['pass'] and PR['H2']['pass'], True)
 calib = [V2['calibration_80pct']['C2'][str(k)]['pooled_coverage'] for k in range(5)]
-chk('80% coverage min', 100 * min(calib), 77, 0, quoted="Its 80% intervals held 77–81% of rookies' remaining-games averages (after 0–4 games)")
+chk('80% coverage min', 100 * min(calib), 77, 0, quoted="Its 80% intervals held 77–81% of rookies' remaining-games averages")
 chk('80% coverage max', 100 * max(calib), 81, 0)
 chk('shrinkage share 99%', 100 * PHV2['shrinkage_share_of_blend_gain']['1'], 99, 0, quoted='captures 99% of that gain')
 k0 = V2['post_hoc_combine_prior_vs_position_mean']['k0']['comb_C2_vs_C0']
@@ -376,12 +443,68 @@ drv = PHV2['ph3_drivers']['k0']
 top2 = sorted((k for k in drv if k.startswith('T')), key=lambda k: drv[k]['contribution_to_pooled'])[:2]
 chk('drivers T1, T4', sorted(top2) == ['T1', 'T4'], True, quoted='mostly via WR top speed and the unpriced separation trait')
 k0i = PHV2['ph3_drivers']['k0_identified_traits_only']
-chk('identified only 3.5%', 100 * (1 - k0i['ratio']), 3.5, 1, quoted='on priced traits by 3.5%; after one game by 2.5%')
+chk('identified only 3.5%', 100 * (1 - k0i['ratio']), 3.5, 1, quoted='on priced traits by 3.5%, and after one game by 2.5% (both intervals include 0)')
 k1 = V2['post_hoc_combine_prior_vs_position_mean']['k1']['blend_C2_vs_C0']
 chk('k1 2.5%', 100 * (1 - k1['ratio']), 2.5, 1)
+chk('both intervals include 0 (ratio 1)', k0i['ratio_ci95'][0] < 1 < k0i['ratio_ci95'][1] and k1['ratio_ci95'][0] < 1 < k1['ratio_ci95'][1], True)
 chk('none survives multiplicity (min BH q > 0.05)', min(PHV2['ph3_bh_q_over_10'].values()) > 0.05, True,
     quoted='All are post hoc; none survives multiplicity control')
 chk('PH3 / PH10 post hoc', {'PH3', 'PH10'} <= post_hoc_ids, True)
+
+# ---------------------------------------------------------------- 3.4 role-aware note (E013; v2.4, rewritten in v2.5)
+# v2.5 (both judges; LESSONS 2026-10-19): like-for-like worth under both estimators, the shares' intervals and selection,
+# and the preregistered H1 interval instead of the floored "beyond" range and the 80%-power detectable effect.
+A13 = S13['anova_share']
+sig13 = ['T3', 'T6', 'T12']
+roles13 = {t: e13['internal'][t]['role'] for t in sig13}
+chk("alignment = receivers' slot share, DL edge share, DBs' corner share", roles13 == {'T3': 'slot share', 'T6': 'edge share', 'T12': 'corner share'}
+    and all(x in e13p['role_definition']['role_share'][pos] for pos, x in (('WR', 'slot share'), ('DL', 'edge share'), ('DB', 'corner share'))), True,
+    quoted="Alignment (receivers' slot share, DL edge share, DBs' corner share) explains 29%, 21% and 10% of between-player differences in WR hitch braking, DL rush distance and DB top speed")
+chk('role share T3 (WR hitch braking)', 100 * A13['T3'], 29, 0)
+chk('role share T6 (DL rush distance)', 100 * A13['T6'], 21, 0)
+chk('role share T12 (DB top speed)', 100 * A13['T12'], 10, 0)
+chk('trait names and positions', [(e13['internal'][t]['position'], e13['internal'][t]['name']) for t in sig13] ==
+    [('WR', 'HITCH peak braking'), ('DL', 'First-second rush distance'), ('DB', 'Game top speed')], True)
+chk('summary share = per-trait ANOVA key', max(abs(A13[t] - I13[t]['anova']['share_of_between_player_variance']['est']) for t in sig13), 0, 9)
+chk('the only three of nine passing false-discovery control (BH q < 0.05)', sorted(S13['anova_share_bh_q_lt_0.05']) == sorted(sig13)
+    and all(S13['anova_bh_q'][t] < 0.05 for t in sig13) and len(S13['anova_bh_q']) == 9
+    and sum(q < 0.05 for q in S13['anova_bh_q'].values()) == 3, True, quoted='the only three of nine passing false-discovery control')
+sh_ci = {t: I13[t]['anova']['share_of_between_player_variance'] for t in sig13}
+for t, lo_, hi_ in (('T3', 4, 57), ('T6', 4, 44), ('T12', -1, 28)):
+    chk(f'share interval {t} lo', 100 * sh_ci[t]['lo'], lo_, 0, quoted='(95% CIs 4–57%, 4–44%, −1% to 28%)')
+    chk(f'share interval {t} hi', 100 * sh_ci[t]['hi'], hi_, 0)
+chk('ANOVA share and permutation are post hoc (E013 PH6)', 'share of between-player variance' in ph13['PH6'], True)
+at3, at6 = I13['T3']['attribution_C2'], I13['T6']['attribution_C2']
+rwd = S13['role_worth_vs_dummies_ridge_same_cv']
+chk('hitch braking: alignment worth, preregistered CV estimator (0.2)', at3['role_alone']['est'], 0.2, 1,
+    quoted='Learned out of fold, it is worth 0.2–0.9 games for hitch braking, where the Combine + draft forecast is worth 0, and 0.8–1.1 for rush distance, mostly shared with the forecast (post hoc)')
+chk('role_alone = the internal role worth key', abs(at3['role_alone']['est'] - e13['internal']['T3']['role_worth']['est']) < 1e-12
+    and abs(at6['role_alone']['est'] - e13['internal']['T6']['role_worth']['est']) < 1e-12, True)
+chk('hitch braking: alignment worth vs the dummies-only ridge, same CV (0.9; PH8)', rwd['T3'], 0.9, 1)
+chk('hitch braking: the Combine + draft forecast is worth 0 under both estimators', at3['c_alone']['est'] == 0 and dr['T3'] == 0
+    and ct['T3']['cge_C2']['est'] == 0, True)
+chk('rush distance: alignment worth, preregistered CV estimator (0.8)', at6['role_alone']['est'], 0.8, 1)
+chk('rush distance: vs the dummies-only ridge (1.1)', rwd['T6'], 1.1, 1)
+chk('rush distance: mostly shared with the forecast (shared > half of alignment worth; both orders: PH9)', at6['shared']['est'] > 0.5 * at6['role_alone']['est']
+    and 'role beyond Combine + draft' in ph13['PH9'], True)
+chk('the floored "beyond" range is no longer quoted (v2.5)', '−0.06 to +0.16' not in text and "detectable effect (4%)" not in text, True)
+P13 = e13['prospective']['tests']['primary']
+pre13 = {h['id']: h for h in e13p['prospective_test']['primary_tests']}
+h1 = P13['H1']
+best13 = 1 - e13['post_hoc_review']['prospective']['power']['best_case_from_internal_fit']['H1']['ratio_vs_observed_position_average_error']
+chk('preregistered H1/H2: role from his first 1 / 2 games beats the position-average blend', pre13['H1']['claim'].endswith('at k = 1')
+    and pre13['H2']['claim'].endswith('at k = 2') and (h1['k'], P13['H2']['k']) == (1, 2), True,
+    quoted="Yet alignment from a rookie's first games did not improve 2025 forecasts (preregistered): error rose 2.8%, and its 95% CI (−0.4% to +7.0%) excludes even the 3% cut exactly known alignment would bring; a post hoc precision correction agrees")
+chk('H1 error rose 2.8%', 100 * (h1['ratio'] - 1), 2.8, 1)
+chk('H1 CI lo -0.4%', 100 * (h1['ratio_ci95'][0] - 1), -0.4, 1)
+chk('H1 CI hi +7.0%', 100 * (h1['ratio_ci95'][1] - 1), 7.0, 1)
+chk('H1, H2 not supported (pass false, ratio > 1)', not h1['pass'] and not P13['H2']['pass'] and h1['ratio'] > 1 and P13['H2']['ratio'] > 1, True)
+chk('3% cut if alignment were known exactly (best case, internal fit; PH7)', 100 * best13, 3, 0)
+chk('the H1 interval excludes the best case', h1['ratio_ci95'][0] > 1 - best13, True)
+chk('E013 test is pseudo-prospective on 2025 rookies', e13['prospective']['design_label'].startswith('pseudo-prospective'), True)
+cal13 = e13['post_hoc_review']['prospective']['tests']['calibrated:H1']
+chk('precision-corrected H1 agrees: not better, interval also excludes the best case (post hoc PH4)', cal13['ratio'] > 1 and cal13['p_one_sided'] > 0.05
+    and cal13['ratio_ci95'][0] > 1 - best13 and 'PH4' in ph13 and 'precision mismatch' in ph13['PH4'], True)
 
 # ---------------------------------------------------------------- 4. Why (E008, E009)
 chk('18 links', T8['n_links'], 18, 0, quoted='Of 18 links from a Combine tracking signature')
@@ -389,30 +512,28 @@ chk('16 nulls beyond B2', T8['n_nulls'], 16, 0,
     quoted='16 show nothing detectable beyond the stopwatch and draft slot, and the same 16 beyond the stopwatch alone')
 chk('16 nulls beyond B1', e9['summary']['b1_n_nulls'], 16, 0)
 chk('same 16', sorted(e9['summary']['b1_passes_c1']) == sorted(T8['passes_c1']), True)
-chk('draft delta median', e9['summary']['draft_delta_abs_median'], 0.01, 2, quoted='by a median of 0.01 (at most 0.14; intervals allow 0.37)')
-chk('draft delta max', max(abs(x) for x in e9['summary']['draft_delta_signed_range']), 0.14, 2)
-chk('draft delta interval limit', e9['summary']['draft_delta_largest_upper_limit']['jackknife'][1], 0.37, 2)
-chk('ceiling lo', T8['ceiling_per_link_95'][0], 0.09, 2, quoted='excludes partial correlations above +0.09 to +0.38 (detectable effect 0.31–0.38 at 60–80 players)')
+chk('the other two are WR speed links, both fragile (E006-P1: drop-3 CI includes 0 and round-1 q > 0.05; E001-WR: fails BH and leave-3-out)',
+    all(tm8[i]['positions'] == 'WR' and tm8[i]['construct'] == 'Sprint speed' for i in T8['passes_c1'])
+    and tm8['E006-P1']['drop3_ci_lo'] < 0 < S8['multiplicity']['E006-P1']['bh_q_all_round1_tests'] - 0.05
+    and tm8['E001-WR']['verdict'] == 'p < .05; fails BH + leave-3-out', True,
+    quoted='the other two, both WR speed links, are fragile (Section 5)')
+chk('ceiling lo', T8['ceiling_per_link_95'][0], 0.09, 2, quoted='each null excludes only partial correlations above +0.09 to +0.38')
 chk('ceiling hi', T8['ceiling_per_link_95'][1], 0.38, 2)
-single = [r for r in e8['transfer_map'] if '+' not in r['positions']]
-chk('n lo', min(r['n'] for r in single), (60, 62))
-chk('n hi', max(r['n'] for r in single), (78, 82))
-chk('MDE lo', min(r['mde80_one_sided'] for r in single), 0.31, 2)
-chk('MDE hi', max(r['mde80_one_sided'] for r in single), 0.38, 2)
-chk('error-free >= .5 for six', len(T8['corrected_beyond_b2_ge_05']), 6, 0, quoted='effects of 0.5 or more remain possible for six links')
+chk('error-free >= .5 for six', len(T8['corrected_beyond_b2_ge_05']), 6, 0, quoted='for error-free measures six links could reach 0.5 or more')
 nulls = [r for r in e8['transfer_map'] if r['id'] not in T8['passes_c1']]
 chk('16 null links in the map', len(nulls), 16, 0)
 chk('13 of 16 nulls pass the reliability gate', T8['nulls_passing_c5'], 13, 0,
-    quoted='13 of the 16 pass the reliability gate (Combine and game measures both ≥ 0.5)')
+    quoted='13 of the 16 pass the reliability gate (both measures ≥ 0.5)')
 chk('gate = Combine feature and game target both >= 0.5', sum(r['rel_x'] >= 0.5 and r['rel_y'] >= 0.5 for r in nulls), 13, 0)
 chk('gate flag agrees', sum(bool(r['c5_reliability_ge_05']) for r in nulls), 13, 0)
 g = S8['drill_profile']['by_group_kind']
-chk('40 metrics n', g['40-yd dash | repeat attempts']['n'], 28, 0, quoted='All 28 tracked-40 metrics are stable traits (reliability ≥ 0.5; top speed 0.95–0.98)')
+chk('40 metrics n', g['40-yd dash | repeat attempts']['n'], 28, 0, quoted='All 28 tracked-40 metrics are repeatable within a session (reliability ≥ 0.5; top speed 0.95–0.98)')
 chk('40 metrics >= .5', g['40-yd dash | repeat attempts']['n_ge_05'], 28, 0)
 chk('top speed rel lo', S8['drill_profile']['forty']['top_speed']['rel'][0], 0.95, 2)
 chk('top speed rel hi', S8['drill_profile']['forty']['top_speed']['rel'][1], 0.98, 2)
 rep = [r for r in dp if r['kind'] == 'repeat attempts' and not r['scope'].startswith('40')]
-chk('repeat drill metrics', len(rep), 22, 0, quoted='Of 22 position-drill metrics with repeat reps, 2 are')
+chk('repeat drill metrics', len(rep), 22, 0, quoted='Of 22 position-drill metrics with repeat reps, 16 of them reaction or opposite-side reps, 2 are')
+chk('16 of the 22 are reaction or opposite-side reps', sum(r['scope'].startswith(('45-degree reaction', 'pass-rush-drop attempts (opposite sides)')) for r in rep), 16, 0)
 chk('repeat drill >= .5', sum(r['rel_round1_def'] >= 0.5 for r in rep), 2, 0)
 chk('cross-drill n', g['position drill | cross-drill']['n'], 68, 0, quoted='of 68 composites across drills that target one skill, 10 are')
 chk('cross-drill >= .5', g['position drill | cross-drill']['n_ge_05'], 10, 0)
@@ -423,7 +544,9 @@ chk('wave session hi', 100 * max(ws), 63, 0)
 
 # ---------------------------------------------------------------- 5. What tracking does show (E008, E009, E010)
 w = tm8['E006-P1']
-chk('WR signal r', w['partial_r'], 0.48, 2, quoted='(partial r +0.48, 95% CI +0.20 to +0.68)')
+chk("the stronger of Section 4's two WR links", w['partial_r'] > tm8['E001-WR']['partial_r'], True,
+    quoted="Of Section 4's two WR links, the stronger remains suggestive")
+chk('WR signal r', w['partial_r'], 0.48, 2, quoted='(extrapolated from in-game accelerations; partial r +0.48, 95% CI +0.20 to +0.68)')
 chk('WR signal lo', w['ci_lo'], 0.20, 2)
 chk('WR signal hi', w['ci_hi'], 0.68, 2)
 chk('WR drop3', w['drop3_partial_r'], 0.31, 2, quoted='it falls to +0.31 (−0.01 to +0.57)')
@@ -432,66 +555,54 @@ chk('WR drop3 hi', w['drop3_ci_hi'], 0.57, 2)
 mul = S8['multiplicity']['E006-P1']
 chk('round-1 tests', mul['m_round1_tests'], 90, 0, quoted='across about 90 first-round tests (q 0.06)')
 chk('round-1 q', mul['bh_q_all_round1_tests'], 0.06, 2)
-allow('his 40 peak', 'definition: the tracked-40 peak speed')
-chk('E010 reliability', e10['combine']['stop_rule']['reliability'], 0.74, 2, quoted='is stable (0.74)')
-P = e10['game']['primaries']
-chk('E010 P1 r', P['P1']['partial_r'], 0.00, 2, quoted='(partial r 0.00 and −0.04; preregistered)')
-chk('E010 P2 r', P['P2']['partial_r'], -0.04, 2)
-chk('E010 CIs include 0', all(P[k]['partial_r_ci95'][0] < 0 < P[k]['partial_r_ci95'][1] for k in ('P1', 'P2')), True)
+# v2.5: the drill-intensity sentence (E010) is cut for words; Figure 5 shows it ("later test; no game link")
 
 # ---------------------------------------------------------------- 6. Recommendations
-chk('C0 weight k=1 (T1)', wc['T1']['C0']['w'][1], 0.40, 2, quoted="WR top speed's weights become 0.40/0.73/0.84 after 1/4/8 games")
-chk('C0 weight k=4 (T1)', wc['T1']['C0']['w'][4], 0.73, 2)
-chk('C0 weight k=8 (T1)', wc['T1']['C0']['w'][8], 0.84, 2)
-chk('C0 weight = k / (k + lambda)', abs(wc['T1']['C0']['w'][4] - 4 / (4 + lam['T1'])), 0, 9)
+chk('deployment before game 1 is untested (E013 prereg: no role prior at k = 0)', 'No role prior at k = 0' in e13p['role_definition']['in_season'], True,
+    quoted='Intended deployment, known before game 1, is a prior we did not test')
+chk('alignment outvalues the Combine + draft forecast for WR hitch braking (both estimators)', at3['role_alone']['est'] > at3['c_alone']['est']
+    and rwd['T3'] > dr['T3'], True, quoted='in our 2023–25 fit, alignment outvalues the Combine + draft forecast for WR hitch braking')
 r6 = PHR['per_trait']['T6']['references']['role']
-chk('T6 role = NFL roster position', r6['reference'].startswith('NFL roster position') and 'latest roster designation' in r6['reference'], True,
-    quoted='(post hoc; roles may postdate the draft)')
-chk('role beats the Combine (T6)', r6['cge_ref'] > ct['T6']['cge_C2']['est'] and r6['cge_ref_plus_C2'] < r6['cge_ref'], True,
-    quoted='roster role (DE, DT, NT, OLB) beats the Combine: worth 2.4 games, outweighed after 6.0')
+chk('T6 designation = NFL roster position', r6['reference'].startswith('NFL roster position') and 'latest roster designation' in r6['reference'], True,
+    quoted='(post hoc; designations may postdate the draft)')
+chk('designation prior worth more than the Combine + draft forecast (T6)', r6['cge_ref'] > ct['T6']['cge_C2']['est'] and r6['cge_ref_plus_C2'] < r6['cge_ref'], True,
+    quoted='a DL roster-designation prior is outweighed after 6.0 games, not 4.8')
+chk('not 4.8 = Table 1 half-weight with the Combine + draft forecast (T6)', hw['T6'], 4.8, 1)
 chk('role worth', r6['cge_ref'], 2.4, 1)
 chk('role half-weight = lambda + CGE_role', lam['T6'] + ct['T6']['cge_role_reference'], 6.0, 1)
 chk('raw first game 3.5x', PR['H1']['pooled_b'] / PR['H1']['pooled_a'], 3.5, 1,
     quoted='had 3.5 times the forecast error of the shrunk estimate')
-chk('point estimates from 0', min(ct[t]['cge_C2']['est'] for t in ident), 0, 1,
-    quoted='the stopwatch and draft slot, point estimates 0 to 1.2, more than about 4 ruled out')
-chk('point estimates to 1.2', max(ct[t]['cge_C2']['est'] for t in ident), 1.2, 1)
-chk('more than about 4 ruled out', max(ct[t]['cge_C2_calibrated_upper95'] for t in ident), 4, 0)
+chk('Clubs item 3: as modeled, Combine tracking made estimates slightly worse (H3 ratio > 1)', PR['H3']['ratio'] > 1, True,
+    quoted="Don't weight Combine tracking** as we modeled it: it made estimates slightly worse")
 dl40 = S8['drill_profile']['forty']['dl_starts']['rel']
-chk('40 first-step rel lo', dl40[0], 0.66, 2, quoted='stable traits in the 40 (reliability 0.66–0.79) but mostly not in the DL pass-rush drill (0.23–0.51)')
+chk('40 first-step rel lo', dl40[0], 0.66, 2, quoted='repeatable in the 40 (reliability 0.66–0.79) but mostly not in the DL pass-rush drill (0.23–0.51)')
 chk('40 first-step rel hi', dl40[1], 0.79, 2)
 pr = [r for r in dp if r['scope'] == 'pass-rush drill attempts']
 chk('DL pass-rush rows = the 6 first-step metrics', sorted(r['metric'] for r in pr) == sorted(['d05', 'd10', 's05', 's10', 'amax06', 't3']), True)
 chk('DL pass-rush rel lo', min(r['rel_round1_def'] for r in pr), 0.23, 2)
 chk('DL pass-rush rel hi', max(r['rel_round1_def'] for r in pr), 0.51, 2)
 chk('mostly not: at most 1 of 6 reaches 0.5', sum(r['rel_round1_def'] >= 0.5 for r in pr) <= 1, True)
-variants = [r for r in rep if 'reaction' in r['scope'] or 'opposite sides' in r['scope']]
-chk('most repeats are mirror-side or reaction reps', len(variants) > len(rep) / 2, True,
-    quoted='Most existing repeats are mirror-side or reaction reps')
-chk('16 of 22 variants', len(variants), 16, 0)
 icc1 = [r['icc_unit'] for r in pr]
-chk('single-rep reliability lo', min(icc1), 0.15, 2, quoted='at single-rep reliabilities of 0.15–0.39, two to six identical reps reach 0.5')
+chk('single-rep reliability lo', min(icc1), 0.15, 2, quoted='At single-rep reliabilities of 0.15–0.39, two to six identical reps reach 0.5')
 chk('single-rep reliability hi', max(icc1), 0.39, 2)
 reps_needed = sorted(math.ceil((1 - i) / i) for i in icc1)  # Spearman-Brown: n = (R/(1-R)) (1-icc)/icc, R = 0.5
 chk('reps needed two to six', (reps_needed[0], reps_needed[-1]) == (2, 6), True)
 chk('wave session effects dominate (> 50%)', min(ws) > 0.5, True, quoted='Session effects dominate the OL wave drill')
 chk('2025 comeback', any('2025 COMEBACK is a different movement' in c for c in e8['links']['E002-P3']['caveats']), True,
     quoted='the 2025 comeback drill was a different movement')
-chk('E011 2025 only', e11['data']['draft_years'] == [2025], True, quoted='The 2025 ball data (no height)')
-chk('E011 within one frame', 100 * e11['detection']['contact_time_check']['share_within_0.1s'], 87, 0,
-    quoted='time 87% of reached balls within one frame')
+chk('E011 2025 only', e11['data']['draft_years'] == [2025], True,
+    quoted='In the 2025 data no catch mechanic is yet a stable trait (best 0.42; 6–46 catching drills needed)')
 rel11 = [v['cross_drill']['reliability'] for v in e11['reliability'].values()
          if v.get('cross_drill', {}).get('reliability') is not None]
-chk('E011 best reliability', max(rel11), 0.42, 2, quoted='no catch mechanic is yet a stable trait (best 0.42)')
+chk('E011 best reliability', max(rel11), 0.42, 2)
 dn = e11['reliability']['catch_offset']['drills_needed_range_from_icc_ci']['for_0.5']
-chk('catch drills needed lo', dn[0], 6, 0, quoted='needs about 6–46 catching drills per player')
+chk('catch drills needed lo', dn[0], 6, 0)
 chk('catch drills needed hi', dn[1], 46, 0)
 
 # ---------------------------------------------------------------- 7. Limitations
 chk('n players lo (limits)', min(ns), 62, 0, quoted='62–85 players per trait')
 chk('three classes', sorted(tr['T1']['by_class']) == ['2023', '2024', '2025'], True, quoted='three classes, one season for 2025 rookies')
-pop = max(r['cge_C2_population_signal_upper95'] for r in e12['cge_table'] if r['cge_C2_population_signal_upper95'] is not None)
-chk('population-signal bound', pop, 15, 0, quoted='could be worth up to 15 games in simulation')
+# v2.5: the Limitations estimand bullet moved to Section 3.2 (population-signal bounds 4-15)
 nr = [PHR['per_trait'][t]['stationarity_and_game_unit']['noise_ratio_lowest_vs_highest_plays_quartile'] for t in tr]
 nr2 = [x for x in nr if x >= 2]
 chk('noise ratio >= 2 for 9 of 12', len(nr2), 9, 0, quoted='low-play games are 2.0–3.5 times noisier (9 of 12 traits)')
@@ -499,11 +610,11 @@ chk('noise ratio lo', min(nr2), 2.0, 1)
 chk('noise ratio hi', max(nr2), 3.5, 1)
 roles = ' '.join(PHR['per_trait'][t]['references']['role']['reference'] for t in ('T6', 'T12'))
 chk('roles pooled (DE/DT, CB/FS)', all(x in roles for x in ('DE', 'DT', 'CB', 'FS')), True,
-    quoted='position averages pool roles (edge with interior, corner with safety)')
+    quoted='position averages pool roles (Section 3.4)')
 # spelled-out numbers (the uncovered-number scan below sees digits only)
 chk('heading: fifteen games', case['n_games'], 15, 0, quoted='One rookie, fifteen games')
 chk('four priors = C0-C3', len([k for k in e12p['information_sets'] if re.fullmatch(r'C\d', k)]), 4, 0, quoted='We price four priors')
-chk('three most supportive receivers', w['n'] - w['drop3_n'], 3, 0, quoted='without its three most supportive receivers')
+chk('three most supportive receivers', w['n'] - w['drop3_n'], 3, 0, quoted='Without its three most supportive receivers')
 chk('heading: about one game (max CGE)', max(ct[t]['cge_C2']['est'] for t in ident), 1, 0, quoted='a fraction of a game to about one')
 allow('2025 Combine', 'data scope')
 allow('2025 rookie', 'data scope')
@@ -513,8 +624,98 @@ allow('the 2025 test', 'data scope')
 allow('game 1', 'illustrative game number')
 allow('a typical game-1 top-speed play', 'Figure 1 panel: a play from his first qualifying game (figure_plan selection rule)')
 allow('40 vs DL pass-rush drill', 'Figure 5 panel: drill names (the 40-yard dash)')
-chk('Figure 3 coverage panel is the 80% interval', 'C2' in V2['calibration_80pct'], True, quoted='80% interval coverage (bottom right)')
+chk('Figure 3 coverage panel is the 80% interval', 'C2' in V2['calibration_80pct'], True, quoted='80% interval coverage.')
+allow('calibrated 90% bounds bold, 95% bootstrap thin', 'interval levels (Figure 2 caption): two one-sided 95% bounds = 90%; B1 95%')
+allow('our 2023–25 fit', 'data scope of the internal fit')
 allow('(95% CIs)', 'CI level (Figure 4 caption)')
+
+# ---------------------------------------------------------------- named players (user decision 2026-10-18; outline.md section 4)
+# Real names are allowed. A named player's draft status, draft position and off-field matters never are, and neither
+# the draft slot nor the stopwatch-only forecast is tied to a named player anywhere, comments included (v2.4).
+NAMED = {59278: 'Isaiah Bond',  # the hook: E012's preregistered WR case study
+         58274: 'Kyle Williams'}  # Figure 1's same-40 comparison (E007 concept_pair); figure only
+
+
+def name_records(o, out):
+    """Every (nfl_id, name) pair in a committed results file (key 'name' or 'display_name')."""
+    if isinstance(o, dict):
+        nm = o.get('name', o.get('display_name'))
+        if 'nfl_id' in o and isinstance(nm, str):
+            out.append((o['nfl_id'], nm))
+        for v in o.values():
+            name_records(v, out)
+    elif isinstance(o, list):
+        for v in o:
+            name_records(v, out)
+    return out
+
+
+recs = name_records([e7, e7lb, e12, e13], [])
+for nid, nm in NAMED.items():
+    got = sorted({n for i, n in recs if i == nid})
+    chk(f'nfl_id {nid} is {nm!r} in all {sum(i == nid for i, _ in recs)} committed records (found {got})', got == [nm], True)
+chk('the hook is the E012 case study, named', case['name'] == NAMED[59278] and bond['name'] == NAMED[59278], True,
+    quoted='Isaiah Bond ran a 4.39 forty at the 2025 Combine')
+chk('Figure 1 caption names him', case['name'] == NAMED[59278], True, quoted='**Figure 1.** Isaiah Bond (animated)')
+cpair = e7['concept_pair']
+chk("Kyle Williams is Figure 1's same-40 comparison (E007 concept pair)",
+    (cpair['fast']['nfl_id'], cpair['slow']['nfl_id']) == (59278, 58274)
+    and abs(cpair['fast']['forty'] - cpair['slow']['forty']) <= cpair['tolerance_s'] + 1e-9, True)
+universe = sorted({n for _, n in recs})
+others = [n for n in universe if n not in NAMED.values() and re.search(rf'\b{re.escape(n)}\b', raw)]
+chk(f'no other player named in the text or comments (of {len(universe)} named in the committed results) {others}', others == [], True)
+chk('no "Receiver A/B" placeholder left', re.search(r'\bReceiver [AB]\b', text) is None, True)
+parts = {x for nm in NAMED.values() for x in nm.split()}
+near = sorted({w for w in re.findall(r'\b[A-Z][a-z]+\b', text) if w not in parts
+               and any(difflib.SequenceMatcher(None, w, x).ratio() >= 0.75 for x in parts)})
+chk(f'no misspelled first name or surname of a named player {near}', near == [], True)
+for nid, nm in NAMED.items():
+    sur = nm.split()[-1]
+    full = [m.start() for m in re.finditer(rf'\b{re.escape(nm)}\b', text)]
+    bare = [m.start() for m in re.finditer(rf'\b{re.escape(sur)}\b', text)]
+    first_is_full = (not bare) or (bool(full) and bare[0] == full[0] + len(nm) - len(sur))
+    chk(f'{nm}: first mention in the text is the full name ({len(bare)} mentions)', first_is_full, True)
+# A sentence is about a named player if it names him, or if it has he/his/him in a section (heading to heading) that
+# names him: in the hook every sentence after the first refers to him by pronoun. "Combine + draft forecast" (the
+# forecast's name) is allowed; every pattern below is not. "select..." counts only next to a draft word (a "selection
+# rule" is legitimate); "draft forecast" is not a draft word.
+DRAFT_WORDS = re.compile(r'\b(?:un)?drafted\b|\bdraftees?\b|\bdraft (?:status|position|round|pick|slot)s?\b|\brounds?\b'
+                         r'|\bpick\w*|\bsigned\b|\bfree[- ]agen(?:t|ts|cy)\b|\bUDFA\b'
+                         r'|\bselect\w*(?=[^.;]{0,40}\b(?:draft(?! forecast)\w*|rounds?|overall)\b)'
+                         r'|\b(?:draft(?! forecast)\w*|rounds?|overall)\b[^.;]{0,40}\bselect\w*', re.I)
+OFF_FIELD = re.compile(r'\boff[- ]field\b|\barrest\w*|\balleg\w*|\bcharged\b|\bsuspen\w*|\blawsuits?\b|\bpolice\b'
+                       r'|\blegal\b|\binvestigat\w*|\baccus\w*|\bassault\w*|\bmedical\w*', re.I)
+STOPWATCH_ONLY = re.compile(r'\bstopwatch[- ]only\b|\bstopwatch (?:and|\+) measurements\b|\bprior_C1\b|\bC1\b', re.I)
+GUARD = (DRAFT_WORDS, OFF_FIELD, STOPWATCH_ONLY)
+PRONOUN = re.compile(r'\b(?:he|his|him|himself)\b', re.I)
+NAME_RE = re.compile('|'.join(rf'\b{re.escape(x)}\b' for nm in NAMED.values() for x in (nm, nm.split()[-1])))
+plain = re.sub(r'!\[[^\]]*\]\([^)]*\)', ' ', text).replace('**', '').replace('|', ' ')
+about = []
+for sec in re.split(r'(?m)^(?=#+ )', plain):
+    if NAME_RE.search(sec):
+        about += [' '.join(x.split()) for x in re.split(r'(?<=[.!?])\s+|\n+', sec)
+                  if NAME_RE.search(x) or PRONOUN.search(x)]
+chk('scope covers the hook and the Figure 1 caption', any(x.startswith('Isaiah Bond ran') for x in about)
+    and any(x.startswith('Isaiah Bond (animated)') for x in about), True)
+hits = [(m.group(), x[:80]) for x in about for rx in GUARD for m in rx.finditer(x)]
+chk(f'no draft-status, off-field or stopwatch-only words in the {len(about)} sentences about named players {hits}', hits == [], True)
+# The same scan over the HTML comments: a comment sentence is about a named player if it names him or his nfl_id, or
+# if it has he/his/him in a comment that does.
+ID_RE = re.compile('|'.join(rf'\b{i}\b' for i in NAMED))
+about_c = []
+for cm in re.findall(r'<!--(.*?)-->', raw, flags=re.S):
+    if NAME_RE.search(cm) or ID_RE.search(cm):
+        about_c += [' '.join(x.split()) for x in re.split(r'(?<=[.!?])\s+', cm)
+                    if NAME_RE.search(x) or ID_RE.search(x) or PRONOUN.search(x)]
+hits_c = [(m.group(), x[:100]) for x in about_c for rx in GUARD for m in rx.finditer(x)]
+chk(f'no draft-status, off-field or stopwatch-only words in the {len(about_c)} comment sentences about named players {hits_c}',
+    hits_c == [], True)
+# The stopwatch-only forecast (information set C1) appears nowhere in a text section or a comment that names a player.
+C1_RE = re.compile(r'\bprior_C1\b|\bC1\b|\b[Ss]topwatch[- ]only\b')
+scopes = [sec for sec in re.split(r'(?m)^(?=#+ )', text) if NAME_RE.search(sec)]
+scopes += [cm for cm in re.findall(r'<!--(.*?)-->', raw, flags=re.S) if NAME_RE.search(cm) or ID_RE.search(cm)]
+hits_c1 = [m.group() for sc in scopes for m in C1_RE.finditer(sc)]
+chk(f'no stopwatch-only forecast in the {len(scopes)} sections and comments that name a player {hits_c1}', hits_c1 == [], True)
 
 # ---------------------------------------------------------------- coverage of every numeric token
 spans = sorted(covered)
@@ -529,7 +730,7 @@ for m in re.finditer(r'^(#+ )([\d.]+)', text, flags=re.M):  # section numbers
     struct.append((m.start(2), m.end(2)))
 for m in re.finditer(r'^(\d+)\. ', text, flags=re.M):  # list numbers
     struct.append((m.start(1), m.end(1)))
-for m in re.finditer(r'(?:Figure|Table|Section|figures/fig)\s*(\d+)', text):  # figure, table and section labels
+for m in re.finditer(r'(?:Figure|Table|Section|figures/fig)\s*(\d+(?:\.\d+)?)', text):  # figure, table and section labels (3.4)
     struct.append((m.start(1), m.end(1)))
 for m in re.finditer(r'figures/fig\d_[\w.]+', text):  # image paths
     struct.append((m.start(), m.end()))
@@ -555,7 +756,7 @@ for i, blk in enumerate(blocks):
     body = re.sub(r'<!--.*?-->', ' ', blk, flags=re.S)
     if blk.lstrip().startswith(('#', '![', '**Figure', '**Table', '**Code', '**Clubs', '**The league')):
         continue
-    body_nums = re.sub(r'(?:Figure|Table|Section)\s*\d+|^\d+\. |^#+.*$|game [13]\b|\b40\b|10 Hz', ' ', body, flags=re.M)
+    body_nums = re.sub(r'(?:Figure|Table|Section)\s*\d+(?:\.\d+)?|^\d+\. |^#+.*$|game [13]\b|\b40\b|10 Hz', ' ', body, flags=re.M)
     if not re.search(r'\d', body_nums):
         continue
     if not any('<!-- src' in b for b in blocks[i:i + 3]):

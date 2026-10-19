@@ -1,10 +1,10 @@
-# Figure and table plan: writeup v2.2 (Combine Game Equivalents)
+# Figure and table plan: writeup v2.5 (Combine Game Equivalents)
 
 The limit is **fewer than 10 figures and tables combined**; our budget is **at most 8**. v2.1 uses **6** (Figures 1–5 and Table 1) and keeps **2 reserve slots** (R1, R2). Numbering follows first mention in `writeup/draft.md` (v2.1 renumbered the sections, not the figures).
 
 Every final figure is drawn by `writeup/make_figures.py` from committed results and the `data/processed` cache, and the public notebook must regenerate it. `make_figures.py` registers every printed number with its source key and asserts it against the draft's rounding (`same(...)`). The `experiments/figures/*.png` files are research figures, not final ones.
 
-**Status line.** Each figure below lists the v2.1 judge items as **done** (visible in the renders of 2026-10-15 19:39–19:40, updated by the 19:58 renders) or **to do** (a precise change for the figure builder). v2.2 (final checker) re-synced every caption with the 19:58 renders and moved Figure 5 to Section 5 as a separate finding. Judge items that change only the text are in `writeup/outline.md` section 10.
+**Status line.** Each figure below lists the v2.1 judge items as **done** (visible in the renders of 2026-10-15 19:39–19:40, updated by the 19:58 renders) or **to do** (a precise change for the figure builder). v2.2 (final checker) re-synced every caption with the 19:58 renders and moved Figure 5 to Section 5 as a separate finding. Judge items that change only the text are in `writeup/outline.md` section 10. v2.3 (2026-10-18) uses real names (user decision; outline sections 4 and 7): Isaiah Bond and Kyle Williams replace Receiver A and B in Figure 1. v2.4 (2026-10-19) integrates E013 in the text only (no new figure; outline section 12), shortens the Figure 1 caption, makes every mention of a named player in this plan neutral (outline section 4), and adds one optional wording change to Figure 2's DL note. **v2.5 (2026-10-19)** applies two mock judges' reviews (outline section 13). The figure builder's renders of 10:54–10:56 already carry most of their figure items; this plan marks each as done or to do (checked against the renders), updates the Figure 2, 3 and 5 captions, and lists two new to-dos for Figure 5 that follow from text cuts.
 
 ## House style (every item)
 
@@ -24,7 +24,7 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
   - Trait names exactly as in Table 1.
   - No E-numbers, B1/B2 or C0–C3. Say "position average", "Combine + draft forecast" (never "Combine forecast" alone: it includes the draft slot), "+ Combine tracking", "stopwatch", "stopwatch + draft slot".
   - "Not priced" for T4, T8 and T10 (the text uses the same word).
-  - Titles state the finding and must not imply more than the text. In particular, no title may say the Combine "failed" for Receiver A.
+  - Titles state the finding and must not imply more than the text. In particular, no title may say the Combine "failed" for Bond.
   - Every post hoc element says "post hoc" on the figure.
 - **Uncertainty.**
   - Draw 95% intervals. For E012 CGE, the simulation-calibrated bounds are the primary statement and the bootstrap interval is secondary. The bootstrap intervals are biased low: every simulated miss is low (`post_hoc_review.simulation.interval_coverage.*.b1.share_upper_below_truth`).
@@ -33,18 +33,18 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
 - **Output.**
   - PNG at 2,400 px wide (8 in at 300 dpi). The type scale in `make_figures.py` (body 10 pt, notes ≥ 9.5 pt) renders at about 12–13 px in a 750 px Kaggle column. Check every figure at 750 px before freezing.
   - Figure 1: GIF ≤ 5 MB plus a PNG still (its last frame).
-- **Captions** live in `draft.md`, count toward the word budget and stay at 25 words or fewer. Any caption change must keep the draft within both budgets in `check_numbers.py`: rendered words ≤ 1,900 and whitespace tokens ≤ 1,950 (v2.2: 1,888 words, at most 1,914 tokens; 12 words of margin).
+- **Captions** live in `draft.md`, count toward the word budget and stay at 25 words or fewer. Any caption change must keep the draft within both budgets in `check_numbers.py`: rendered words ≤ 1,900 and whitespace tokens ≤ 1,950 (v2.5: 1,898 words, at most 1,927 tokens; 2 words of margin, so any caption change needs a cut elsewhere).
 - **Alt text** for every item lives in the notebook and in the Kaggle image alt field (`save(..., alt)` in `make_figures.py`).
 
 ---
 
-## Figure 1: Receiver A (Section 1, hook; animated)
+## Figure 1: Isaiah Bond (Section 1, hook; animated)
 
 - **Purpose.**
   - The hook, and the explicit Combine-tracking-to-game moment the pass/fail rule asks for.
-  - One rookie, picked by a preregistered rule. His Combine + draft forecast sat near the position average, his games ran fast, and the trust rule caught up by game 2.
+  - One rookie, chosen by a preregistered rule. His Combine + draft forecast sat near the position average, his games ran fast, and the trust rule caught up by game 2.
 - **Layout (v2.1 target).** 16:10, three panels: two on top, one full-width below.
-  1. **Top left, the tracked 40 (animated; done).** Speed vs distance (mph vs yd, 0–40) for Receiver A and Receiver B (same-40 receiver, nfl_id 58274, 4.40). The curves draw in at real time with a dot at the head. The last 20 yards are shaded, and the gap between the curves is filled. Table inset: 40 time and last-20 speed (23.2 / 22.2 mph). Note: "Fastest finish for his 40 time of 91 Combine receivers; official electronic splits do not corroborate it (post hoc)."
+  1. **Top left, the tracked 40 (animated; done).** Speed vs distance (mph vs yd, 0–40) for Isaiah Bond and Kyle Williams (same-40 receiver, nfl_id 58274, 4.40). The curves draw in at real time with a dot at the head. The last 20 yards are shaded, and the gap between the curves is filled. Table inset: 40 time and last-20 speed (23.2 / 22.2 mph). Note: "Fastest finish for his 40 time of 91 Combine receivers; official electronic splits do not corroborate it (post hoc)."
   2. **Top right (done in the 19:58 render; judge 1 item 9, judge 2 "missing visuals"): one of his game plays on the field.** This is the drill-vs-game side-by-side that AGENTS.md lists under "what wins".
      - Field strip in standardized direction (`bdb27.standardize`; `play_direction` from `player_play`), 0–60 yd downfield.
      - His path for one play, coloured by speed (sequential ramp from the validated palette, with a colour bar in mph). The play's peak speed is labelled.
@@ -55,8 +55,8 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
      - x = qualifying game (0–15); y = "90th-percentile play top speed (mph)" (done: the label explains why it sits below the 23.2 mph Combine finish).
      - Orange dots: single games. Orange dashed line: his running average. Blue line: the in-season estimate. Blue ■ at x = 0: the forecast with its 95% range for a 15-game average (predictive SD, so z = 2.01 as in the text; done).
      - Grey line: position average 17.5. Black line: season average 18.9. Callout at game 2: "his games now outweigh the forecast".
-     - **v2.2 (20:25 render, figure builder):** hollow markers just left of game 0 now show his forecast "+ Combine tracking 17.9" (navy ◆) and "Stopwatch only 17.8" (blue ○), both post hoc, from the committed export `experiments/posthoc_writeup_v2/e012_case_priors.json` (`prior_C3`, `prior_C1`). The text quotes only the tracking nudge (+0.3 mph toward his season).
-     - **Open, for the orchestrator:** the writer's guardrail keeps `prior_C1` out of the text because, next to the 17.6 Combine + draft forecast, it shows the draft slot lowered his forecast, a hint at his draft status (outline section 4). The figure now shows it. Either drop the stopwatch-only marker or relax that guardrail; the text is correct either way.
+     - **v2.2 (final):** one hollow navy ◆ just left of game 0 shows his forecast "+ Combine tracking 17.9" (post hoc, from the committed export `experiments/posthoc_writeup_v2/e012_case_priors.json`, `prior_C3`). The text quotes only the tracking nudge (+0.3 mph toward his season).
+     - **Never drawn:** any forecast for him from another information set than the Combine + draft forecast and the + Combine tracking marker (outline section 4; a hard rule with real names). An early render drew one; the v2.2 commit removed it.
      - Footer (done): "Forecast and in-season estimate fit on 2023–24 (weight on his first game 0.37); Table 1 refits on 2023–25 (0.34)."
 - **Title (done in the 19:58 render).** **"His forecast sat near average; by game 2 his own games outweighed it."** (The old title read as a Combine failure, which the text denies.) The subtitle's "rookie receivers with 10+ qualifying games" matches the text's selection pool (the 11 of 15).
 - **Data (file → keys).**
@@ -64,10 +64,11 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
   - `experiments/results/E007_leaderboard.json` → `players[nfl_id ∈ {59278, 58274}]`: `official_forty`, `flying20_mph`, `rank`; `meta.n`; `meta.post_hoc_official_splits`.
   - 40 traces: `data/processed/e007_forty_attempts.parquet` + `combine_tracking.parquet` (as now).
   - Game play (new): `data/processed` game tracking for 2025 REG, nfl_id 59278, first qualifying game (≥ 10 tracked plays); `player_play.play_direction`.
-- **Caption (v2.2, 20 words incl. "Figure 1."):** "Receiver A (animated): tracked 40, a typical game-1 top-speed play, then his forecasts, rookie games and in-season estimate." The GIF animates all three panels in turn; "his forecasts" covers the Combine + draft forecast and the two hollow post hoc markers.
-- **Alt text (to do: the old "Receiver A pulls ahead" was wrong).** "Animation of two receivers with the same 40 time: speed curves rise together, and Receiver A's keeps climbing over the last 20 yards (23.2 vs 22.2 mph). Next, one of his game plays is drawn on a field and coloured by speed. Below, his 15 rookie games: the forecast of 17.6 mph sits by the 17.5 mph position average, his games average 18.9 mph, and the in-season estimate rises toward his games, giving them more than half the weight from game 2."
+- **Caption (v2.4, 15 words incl. "Figure 1."):** "Isaiah Bond (animated): tracked 40, a typical game-1 top-speed play, then his season." The GIF animates all three panels in turn; "his season" covers the bottom panel: the Combine + draft forecast, the hollow post hoc + Combine tracking marker, his games and the in-season estimate. (v2.3's 20-word caption was cut for the budget: outline section 12.)
+- **Alt text (to do: the old "Receiver A pulls ahead" was wrong).** "Animation of Isaiah Bond and Kyle Williams, two receivers with the same 40 time: speed curves rise together, and Bond's keeps climbing over the last 20 yards (23.2 vs 22.2 mph). Next, one of his game plays is drawn on a field and coloured by speed. Below, his 15 rookie games: the forecast of 17.6 mph sits by the 17.5 mph position average, his games average 18.9 mph, and the in-season estimate rises toward his games, giving them more than half the weight from game 2."
+- **v2.5 judge items.** Done in the 10:54–10:56 renders: the rule's 80% band around the in-season estimate (judge 2); the play labelled with its route and down and distance ("GO route, 4th & 5") and the line of scrimmage (judge 1); "peak 18.3 mph ≈ his game-1 value" with the peak marked and the colour ramp at 8–20 mph (judge 2); the hollow + Combine tracking diamond in the legend (judge 1). **To check:** in the GIF, the inset's live "speed now" values mid-run (e.g. 23.8 vs 22.7 mph at about 34 yd) appear nowhere in the text; keep the last-20 averages fixed in the inset or grey out the live column (judge 1).
 - **Accessibility.** No flashing; at most 3 loops, then hold the final frame; speeds printed as text, not only shown by motion. The right-panel build starts within 1 s of the 40's finish (judge 2: it took about 6 s).
-- **Names.** "Receiver A / B" until the user decides (outline section 7). With real names, show no draft information anywhere.
+- **Names (user decision, 2026-10-18).** Real names, exactly as in the committed results for their nfl_id: "Isaiah Bond" (59278) and "Kyle Williams" (58274) (`E007.json concept_pair[*].display_name` = `E007_leaderboard.json players[*].name` = `E012.json case_studies[*].name`). Nothing about either player's draft status, draft position or off-field matters anywhere in the figure: title, subtitle, labels, footer, alt text or file metadata (outline section 4). Say the selection rule "chose" him (outline section 4 lists the words to avoid).
 
 ## Table 1: Trust table (Section 3.1)
 
@@ -99,8 +100,10 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
   2. Subtitle: add "every simulated miss of the bootstrap is low" so the figure and the text say the same thing about the bias.
   3. On the WR top-speed row, add one note: "partly route usage: r 0.61 with deep-route share; the forecast adds 1.0 game beyond it (post hoc)" (`post_hoc_review.per_trait.T1.references.role`). Without it, the figure answers judge 1's first question (fast, or running go routes?) nowhere.
   4. Height: 2,700 px is long. Drop the duplicated "Combine: 0.14 if fit on 2023–24…" note to one line if needed, and check the figure at 750 px.
+  5. **(v2.4, optional; done in the 10:54 render)** Note ᵇ (DL rush distance) said "NFL roster position (may postdate the draft) alone is worth 2.4". That agrees with the text, which now says "roster designation (OLB vs DE), not edge alignment" (E013 PH10). If the line is touched, use "roster designation" and keep "may postdate the draft"; never "role" (the text uses role for alignment share).
 - **Data.** `experiments/results/E012.json` → `cge_table[*]`: `lambda.{est,lo,hi}`, `cge_C2.{est,lo,hi}`, `cge_C2_calibrated_lower95/upper95`, `cge_role_reference`, `cge_C2_beyond_role`, `cge_C2_2023_24_seasons_fit`, `cge_C2_leave_one_class_out_range`, `delta_cge_tracking.{est,lo,hi}`, `identified`, `rel_player_mean`, `split_half`, `r2_cv.C2`, `exposure_r_trait_log_games`. Also `post_hoc_review.simulation.interval_coverage`.
-- **Caption (v2.2, 20 words incl. "Figure 2."):** "Worth in games per trait: position average; Combine + draft forecast, simulation-calibrated bounds bold, bootstrap thin; tracking's increment (right)." It matches the render, where the calibrated bounds are the bold primary statement and the bootstrap intervals are thin.
+- **v2.5 judge items.** Done in the 10:54 render: legend "90% interval: simulation-calibrated bounds (post hoc)" and "95% bootstrap interval (biased low)" (judge 2); rows in Table 1's order with † on OL pass-set acceleration and DB retreat speed (both judges); note ᵇ "roster designation (DE/DT/NT/OLB; may postdate the draft and reflect scheme and stance)" (judge 1; matches the text); the tracking panel's footnote ("bootstrap only; [0, 0] intervals not drawn; preregistered test in Figure 3"). **To do:** (a) the render is 2,400 × 3,029 px with a seven-line footer; check legibility at 750 px and move duplicated notes (the subtitle and footer both explain the bootstrap) to the notebook if needed; (b) WR top speed's and DL get-off's thin bootstrap lines sit under the bold brackets; offset them slightly (judge 2). The text no longer quotes tracking's −0.24 to +0.18 (v2.5), so the right panel is its only display.
+- **Caption (v2.5, 19 words incl. "Figure 2."):** "Worth in games: position average; Combine + draft forecast (calibrated 90% bounds bold, 95% bootstrap thin); tracking's increment." It matches the render's legend.
 - **Alt text.** "Dot-and-interval chart of 12 game traits. For each, the position average is worth 1.5 to 6.8 games of a player's own record (10.8 to 22.8 for three outcome traits that are not priced), and the Combine + draft forecast adds 0 to 1.2 games, with simulation-calibrated bounds: WR top speed 0.08 to 1.6, DL rush distance 0.10 to 3.9, others below 1.7 to 3.6. A second panel shows Combine tracking adding −0.24 to +0.18 games."
 
 ## Figure 3: 2025 rookies (Section 3.4)
@@ -117,7 +120,8 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
   1. **Calibration panel (judge 2 item 8; the text's Section 3.4 heading now claims "the rule is calibrated").** Add a small bottom-right panel: 80% interval coverage vs k = 0–4 for the Combine + draft rule, with an 80% reference line. Data: `validation_2.calibration_80pct.C2[k].pooled_coverage` (0.79, 0.77, 0.81, 0.81, 0.80). Title: "Its 80% intervals held 77–81%".
   2. **Priced-traits H1 row (judge 2 item 8).** Under "Rule (Combine + draft prior) vs his first game", add a post hoc row "on the 9 priced traits: 68% less error". Compute it with H1's own pooling (equal-weight mean over traits of `validation_2.secondary_per_trait[T]["1"].se_blend_C2` and `.se_games`, priced T only). `check_numbers.py` reproduces H1's pooled values exactly with this pooling. No interval is committed, so draw a point only, or have the notebook bootstrap it (labelled post hoc).
   3. Keep "q 0.29" on the figure. The text dropped p and q strings by design (judge 1).
-- **Caption (v2.2, 20 words incl. "Figure 3."):** "2025 rookies: error by games observed (left); shrinkage's and the Combine's shares (right); 80% interval coverage (bottom right)." The text quotes H1 as "72% (95% CI 60–80%)", the figure's wording.
+- **v2.5 judge items.** Done in the 10:54 render: the alignment rows (E013 H1, "2.8% more error (0.4% less to 7.0% more) · preregistered", and the post hoc precision-corrected row, "1.1% more error (1.0% less to 3.6% more)"), the x-axis to +10% so the tracking and alignment intervals are legible (judge 1 item 8), the y-axis in units of between-player variance (judge 1), the 95% binomial band and per-trait dots in the coverage panel (judge 2). The text's Roles note quotes the same H1 numbers and points to Figure 3. **To do:** check the right panel at 750 px (10 labelled rows; judge 2 called it dense).
+- **Caption (v2.5, 17 words incl. "Figure 3."):** "2025 rookies: error by games observed; shrinkage, the Combine, tracking and alignment; 80% interval coverage." The text quotes H1 as "72% (95% CI 60–80%)", the figure's wording.
 - **Alt text.** "Left: forecast error for 2025 rookies after 0 to 4 games. A rookie's own games alone are far worse early (about 7.6 after one game vs about 2.1 for either rule), and the two rules overlap. Right: the rule cuts error 72% after one game and 52% after two, and a position-average rule does nearly the same; the Combine + draft forecast trims 5% before game 1 (post hoc); adding Combine tracking is 2.1% worse. Bottom right: the rule's 80% intervals hold 77 to 81% of outcomes."
 
 ## Figure 4: Transfer map, two baselines (Section 4)
@@ -133,6 +137,7 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
 - **To do (v2.1 list).**
   1. The error-free statement survives only in the text ("effects of 0.5 or more remain possible for six links"). Mark those six links (`E008.json summary.transfer.corrected_beyond_b2_ge_05`) with a small "≥ 0.5 possible if error-free (post hoc)" glyph in the n column.
   2. Check legibility at 750 px (2,400 × 2,700).
+- **v2.5 judge items.** Done: the ‡ row (E001-WR) is explained in the footer as the pipeline sanity check that fails false-discovery control and the leave-3-out check (judge 1, judge 2); the drop-3 sub-row is navy, not grey (judge 2). The text now says both non-null links are fragile WR speed links (Section 4) and names the ceiling as "game top-speed ceiling", as the figure does. The detectable effect (0.31–0.38) and the draft slot's median change (0.01) are now figure-only.
 - **Caption (draft, 17 words incl. "Figure 4."; unchanged in v2.2, it matches the render):** "Transfer map: partial correlations beyond the stopwatch, and beyond stopwatch plus draft slot (95% CIs)."
 
 ## Figure 5: Drill reliability (Section 5 since v2.2)
@@ -147,18 +152,19 @@ Every final figure is drawn by `writeup/make_figures.py` from committed results 
 - **To do (v2.1 list).**
   1. Reliability SEs. With 72–118 players, SE ≈ 0.1, so counts against 0.5 are fragile (judge 2). Either add ±1 SE whiskers to the slope panel (notebook bootstrap, post hoc) or print n per row with "SE about 0.1 at these n" in the footer.
   2. In the slope panel, mark the single pass-rush metric at 0.51 (speed at 1.0 s) as "the 1 of 6 at 0.5". The text says "mostly not".
-- **Caption (v2.2, 19 words incl. "Figure 5."):** "Reliability by measurement type (left); first-step metrics, 40 vs DL pass-rush drill, and OL session effects (right)."
+- **v2.5 judge items.** Done: the WR route-drills row has its count and "one-session retests: inflated" (judge 1); the footer explains it. **To do (both follow from v2.5 text changes):** (1) the text now says the tracked 40 is "repeatable within a session" (judge 2: same-day retests are inflated by session effects); retitle "The tracked 40 is a trait; position-drill signatures mostly are not" to "The tracked 40 is repeatable; position-drill signatures mostly are not"; (2) v2.5 cut the drill-intensity sentence from the text, so the "Drill intensity" row should carry its preregistered game null: e.g. "speed vs 40 peak; no link to play speed or snaps (preregistered); not counted" (`E010.json game.primaries.P1/P2.partial_r` −0.003 and −0.042, CIs include 0). Optional: the session-effect bars have no intervals (judge 2); the footer already says none were stored.
+- **Caption (v2.5, 16 words incl. "Figure 5."):** "Reliability by measurement type; first-step metrics, 40 vs DL pass-rush drill; OL session effects."
 
 ---
 
 ## Reserve slots (2; the maximum count stays 8)
 
-Neither reserve slot is used in v2.2. The draft is at 1,888 of 1,900 rendered words (at most 1,914 of 1,950 whitespace tokens), and a new item needs a caption (15–25 words) plus cuts elsewhere.
+Neither reserve slot is used in v2.5. The draft is at 1,898 of 1,900 rendered words (at most 1,927 of 1,950 whitespace tokens), and a new item needs a caption (15–25 words) plus cuts elsewhere. E013's role-aware figures (`experiments/results/E013.json` `figures`) stay in the notebook: the text carries E013 as a 118-word note, and Figure 3 draws its prospective rows. R2 (judge 1 item 5 again in v2.5) is deferred: it needs a user decision to name more rookies (outline section 7, item 3).
 
 | Slot | Use if... | Form | Data |
 |---|---|---|---|
 | R1 | Judges or the user want the trust rule as a picture (judge 2 item 4) | **Trust curves.** One panel; 9 lines of weight on his own games vs qualifying games (0–17), direct-labelled at each half-weight crossing, with B1 bands; 0.5 reference. Largely duplicates Table 1's weight and CI columns, which is why it stays in reserve. | `E012.json deliverables.weight_curves[T].C2.{w, lo, hi, half_weight_game}` |
-| R2 | The user decides on names (outline section 7, decision 2) | **2025 rookie trust board** (judge 1 item 4). Per trait, 2 rookies: prior, k, his average, the rule's estimate ± 80% interval after k, and "games already overrule the prior?" (k > half-weight). Rows where the Combine + draft prior is flat are labelled "far from average", never "Combine wrong". No draft status. Costs about 80–120 words, so it needs cuts. | `E012.json deliverables.rookie_outliers_vs_prior`, `c2_prior_flat_by_trait`, `traits[T].variance` (σ², τ²), `weight_curves` |
+| R2 | The user wants it (names are decided: outline section 7, item 2; it still needs about 80–120 words of cuts) | **2025 rookie trust board** (judge 1 item 4). Per trait, 2 rookies: prior, k, his average, the rule's estimate ± 80% interval after k, and "games already overrule the prior?" (k > half-weight). Rows where the Combine + draft prior is flat are labelled "far from average", never "Combine wrong". No draft status. Costs about 80–120 words, so it needs cuts. | `E012.json deliverables.rookie_outliers_vs_prior`, `c2_prior_flat_by_trait`, `traits[T].variance` (σ², τ²), `weight_curves` |
 
 **Notebook-only figures.** E012's full case-study grid (16 rookies), the research QC figures, v1's WR-signal robustness figure and the finishing-speed leaderboard.
 
@@ -171,11 +177,12 @@ Never cut Table 1, Figure 2 or Figure 4.
 
 ## Not quoted in the text (figure-only values)
 
-- Receiver B's 22.2 mph and 4.40 (Figure 1; `E007_leaderboard.json`).
+- Kyle Williams's 22.2 mph and 4.40 (Figure 1; `E007_leaderboard.json`).
 - The game-play peak speed (Figure 1 panel 2, new; recomputed from tracking in the notebook).
 - λ intervals (Figure 2; they are in Table 1 only for the not-priced rows).
 - The position-average rule vs games-only ratio (71%; Figure 3).
 - Per-metric reliabilities (Figure 5).
-- Receiver A's forecast with Combine tracking (17.9 mph) and stopwatch-only forecast (17.8 mph), drawn in Figure 1 (20:25 render): the text quotes only the +0.3 mph nudge (see the open item in the Figure 1 section).
+- Bond's forecast with Combine tracking (17.9 mph), drawn in Figure 1: the text quotes only the +0.3 mph nudge. No other information set's forecast for him is drawn or quoted (Figure 1 section).
 - The WR signal beyond the stopwatch alone (+0.42; Figure 4), cut from the text in v2.2.
 - The DL get-off and DB top-speed CGE values (0.2, 0.3) are now quoted only in Table 1, not in Section 3.2's prose.
+- (v2.5) Combine tracking's ΔCGE (−0.24 to +0.18; Figure 2 right panel); the draft slot's median change in partial r (0.01; Figure 4 subtitle); the detectable effect 0.31–0.38 (Figure 4); drill intensity's 0.74 and its game null (Figure 5, to do above); the WR sanity link's +0.32 (Figure 4 ‡); E013's precision-corrected H1 interval (Figure 3; the text says only that it "agrees"); WR top speed's position-average weights 0.40/0.73/0.84 (Table 1's caption gives k/(k + λ)).

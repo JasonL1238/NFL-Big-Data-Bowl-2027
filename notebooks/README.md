@@ -6,7 +6,7 @@
 | `run_all.py` | The pipeline. The notebook calls it cell by cell, and it also runs from the command line. It uses only the standard library; the analysis runs in the pinned interpreter. |
 | `requirements-kaggle.txt` | Exact package versions: the full dependency closure of what the code imports. |
 | `PROVENANCE.md` | Each writeup number, figure and table, with the results key and the script and function that write it. |
-| `PUBLISHING.md` | The numbered checklist for publishing on Kaggle: bundle, dataset, four stage notebooks, calibration, run order, checks, the writeup link and the Kaggle Writeup. |
+| `PUBLISHING.md` | The numbered checklist for publishing on Kaggle: bundle, dataset, the stage notebooks (stage E resumes across sessions), calibration, run order, checks, the writeup link and the Kaggle Writeup. |
 
 ## Run it locally
 
@@ -16,6 +16,9 @@
 
 - **Workspace.** The run writes everything into the workspace. The default is `data/notebook_ws/`, which is gitignored; `$BDB27_WORKSPACE` also sets it. The run never writes to the repository's `experiments/`, `data/processed/` or `writeup/`. Every script finds its paths from its own location, and the workspace holds copies of the scripts, so `writeup/check_numbers.py` and `writeup/make_figures.py` read the fresh results with no new argument.
 - **Resuming.** Each finished step is recorded in `<workspace>/_run/progress.json`. If the run is interrupted (for example, the machine sleeps), rerun the same command and it resumes at the first unfinished step.
+  - Step S10b (E013), the longest, also resumes inside the step.
+  - It keeps each finished bootstrap and simulation table as a checkpoint in `<workspace>/data/scratch/e013/ckpt`.
+  - It always runs with `--resume`, so a rerun reads those checkpoints instead of drawing them again.
 - **Logs.** Each step's log is `<workspace>/_run/logs/<step>.log`. `_run/run.log` records step start and end times.
 - **Exit code.** It is 0 only if three things hold: every step ran (the number checker is step S13), every regenerated JSON passed the comparison, and E008's transcribed constants matched.
 - **Comparison only.** Rerun the final comparison alone with `--compare`.
@@ -24,18 +27,19 @@
 
 ## Run it on Kaggle
 
-One 12-hour Kaggle CPU session is not enough for the whole chain (see [Run times](#run-times)). The same notebook therefore runs as four Kaggle notebooks. Each saves its workspace, `/kaggle/working/ws`, as notebook output, and the next attaches that output as an input.
+One 12-hour Kaggle CPU session is not enough for the whole chain (see [Run times](#run-times)). The same notebook therefore runs as five stages, each a Kaggle notebook. Stage E may need two or more notebooks, one per session ([Stage E across sessions](#stage-e-across-sessions)). Each notebook saves its workspace, `/kaggle/working/ws`, as notebook output, and the next attaches that output as an input.
 
 | Notebook | `STAGE` | Steps | Inputs to add |
 |---|---|---|---|
 | bdb27 stage A | `"A"` | S01–S07: caches, E001, round-1 probes E002–E006, E007, E010, E011 | competition data, code bundle |
 | bdb27 stage B | `"B"` | S08–S09: E008, E009 | competition data, code bundle, output of stage A |
 | bdb27 stage C | `"C"` | S10: E012 | competition data, code bundle, output of stage A |
-| **The Combine Exchange Rate: reproducibility** (public, linked from the writeup) | `"D"` | S11–S14 and the comparison | competition data, code bundle, outputs of stages B and C |
+| bdb27 stage E (and part 2, part 3 if needed) | `"E"` | S10b: E013 (resumes across sessions) | competition data, code bundle, output of stage C (a later part: output of the previous part) |
+| **The Combine Exchange Rate: reproducibility** (public, linked from the writeup) | `"D"` | S11–S14 and the comparison | competition data, code bundle, outputs of stage B and the last stage E part |
 
 Stage D's title has no digits on purpose: its URL goes into the writeup, and the number checker fails on any digit in the text that no check covers (PUBLISHING.md, step 15).
 
-Stages B and C can run at the same time. **The exact checklist, including what only the account owner can do on Kaggle, is [PUBLISHING.md](PUBLISHING.md).** In outline:
+Stages B and C can run at the same time, and B can still be running while E runs. **The exact checklist, including what only the account owner can do on Kaggle, is [PUBLISHING.md](PUBLISHING.md).** In outline:
 
 1. **Build the code bundle** from a clean commit:
    ```
@@ -44,16 +48,16 @@ Stages B and C can run at the same time. **The exact checklist, including what o
    - It writes `bdb27-bundle.zip`, about 14 MB: every git-tracked file plus `notebooks/`, and a `BUNDLE_MANIFEST.json` with the commit and any uncommitted paths. It never includes `data/`.
    - Upload it as a public Kaggle dataset: on the website, or with `kaggle datasets init -p /tmp/bdb27-dataset`, then edit the metadata and run `kaggle datasets create -p /tmp/bdb27-dataset --public`.
    - The notebook accepts either the zip or its extracted tree.
-2. **Create the four notebooks** by uploading `final_writeup.ipynb` four times. In each, set `STAGE` in the first code cell and add the inputs in the table above.
+2. **Create the stage notebooks** by uploading `final_writeup.ipynb` once per stage, and once more for each extra stage E session. In each, set `STAGE` in the first code cell and add the inputs in the table above.
 3. **Notebook settings:**
    - Internet **on**. It is used only during setup, to download uv, CPython 3.13.5 and the pinned wheels.
    - Accelerator **none**.
    - Run each stage with **Save Version → Save & Run All (Commit)**, so it runs unattended and its output is saved.
 4. **Calibrate first.** Before committing anything long, time the calibration call in an interactive session of stage A (PUBLISHING.md, step 7). It times one fixed calculation on Kaggle's CPU and predicts each stage's hours there.
-5. **Run the stages:** A, then B and C, then D. Stage D's version is the one to make public and to link from the writeup.
+5. **Run the stages:** A, then B and C, then E once C is done (as many sessions as it needs), then D. Stage D's version is the one to make public and to link from the writeup.
    - **Before starting B and C, read stage A's own calibration output** (end of Section 3 of the notebook) and apply the [stage C rule](#the-stage-c-rule) to the larger of the two measurements: start C only if it is predicted at 10.5 h or less (call time T ≤ 161 s).
 
-**What each stage saves.** Each stage's output holds the workspace: our code, our results, figures, logs and derived Parquet files. Before saving, `ra.finish()` removes two kinds of files: the raw-data links, and the caches that copy the competition data. Those caches are the S01 Parquet tables, the S02 per-frame game tracking, and E006's per-frame copy, which no later step reads. The competition data is never republished. Each stage rebuilds the caches first, in a few minutes; the rebuild is deterministic.
+**What each stage saves.** Each stage's output holds the workspace: our code, our results, figures, logs and derived Parquet files. From stage E on it also holds E013's checkpoints (`data/scratch/e013/ckpt`: bootstrap and simulation draws). Before saving, `ra.finish()` removes two kinds of files: the raw-data links, and the caches that copy the competition data. Those caches are the S01 Parquet tables, the S02 per-frame game tracking, and E006's per-frame copy, which no later step reads. The competition data is never republished. Each stage rebuilds the caches first, in a few minutes; the rebuild is deterministic.
 
 **Why a dataset bundle**, rather than the other options:
 - *Writing `src/` out from notebook cells* would put the library into the notebook. It would still miss the `experiments/` and `writeup/` scripts that produce the numbers.
@@ -61,7 +65,7 @@ Stages B and C can run at the same time. **The exact checklist, including what o
 
 A dataset version instead freezes, in one place:
 - the exact code;
-- the frozen inputs (preregistrations, the E012 audit record);
+- the frozen inputs (preregistrations, the E012 and E013 audit records);
 - the committed results that the final comparison checks against.
 
 The notebook prints the bundle's git commit. Stages refuse to merge workspaces built from different code: each workspace records a fingerprint of the code, the frozen inputs, the pins and the compatibility edits.
@@ -83,9 +87,10 @@ The notebook prints the bundle's git commit. Stages refuse to merge workspaces b
 
 ## Compatibility edits
 
-Nine scripts needed small, non-statistical edits to run on a fresh machine. Until 2026-10-17 `run_all.py` applied them to the workspace copies only. They are now made in the repository's scripts themselves:
+Ten scripts needed small, non-statistical edits to run on a fresh machine. Until 2026-10-17 `run_all.py` applied them to the workspace copies only. They are now made in the repository's scripts themselves:
 - E002–E006, E005, E009, E011 and `ph_pairs.py`, with `experiments/results/E011_prereg.json` committed as a verbatim copy of `E011.json["plan"]`;
-- E012's freeze-file path, together with its row-order fix ([Known issues](#known-issues-and-follow-ups), item 1).
+- E012's freeze-file path, together with its row-order fix ([Known issues](#known-issues-and-follow-ups), item 1);
+- E013's checkpoint folder (2026-10-19), made in the repository from the start.
 
 `run_all.py` now verifies each edit instead of applying it: the workspace copy must already contain the edited text, or the run stops. Appendix A of the notebook prints any remaining diff between the repository and the workspace copies. The table records what each edit is and why it was needed.
 
@@ -96,12 +101,13 @@ Nine scripts needed small, non-statistical edits to run on a fresh machine. Unti
 | E011 | `PLAN = RES / "E011_prereg.json"` | E011 read its frozen plan from a temporary scratch file. The same plan, stored verbatim in `E011.json["plan"]`, is now committed as `experiments/results/E011_prereg.json`, and setup checks that the two are equal. |
 | E012 | The freeze file is read from `experiments/results/E012_audit/` | E012 checks its implementation choices against a freeze file. The file has moved from a scratch folder into the committed audit record, with the same SHA-256. |
 | ph_pairs.py | The results path is taken relative to the script | It was an absolute path on one machine. On that machine it silently read the committed results instead of the fresh ones. |
+| E013 | `SCRATCH = ROOT / "data" / "scratch" / ("e013" + ("_quick" if QUICK else ""))`, so its checkpoints go to `data/scratch/e013/ckpt` | E013 kept its bootstrap and simulation checkpoints in one machine's session scratchpad, outside the workspace. On Kaggle they would not be saved, so stage E could not resume in a later session. Only the folder moves; no value changes (How this was verified, the E013 item). Its frozen implementation choice X1 still names the scratchpad, and a comment beside `SCRATCH` records the move. |
 
 These edits also resolve PROVENANCE.md's blockers B1 (round-1 crash), B2 (E011's scratch plan) and B4 (hard-coded paths); B3 (no script built the game frames) is resolved by step S02.
 
 ## What the comparison checks
 
-`run_all.compare()` walks every leaf of the 16 regenerated JSON files alongside the committed ones:
+`run_all.compare()` walks every leaf of the 17 regenerated JSON files alongside the committed ones (E013.json since 2026-10-19):
 - **Must be identical:** integers, strings, booleans, nulls, keys and list lengths.
 - **Floats** must agree within a relative 1e-9 (absolute 1e-12): |fresh − committed| ≤ 1e-12 + 1e-9 × max(|fresh|, |committed|). That allows only last-digit summation-order noise from BLAS and OpenMP threads. PROVENANCE.md N3 covers the cross-platform case; E011's docstring covers the same effect within one machine.
   - The table reports, per file, how many floats needed the tolerance, and **tol used**: the largest of those differences as a share of its limit (100% = at the limit). This is the margin a new platform has.
@@ -112,15 +118,16 @@ The documented differences:
 
 | Rule | Files | What differs | Cause | Evidence |
 |---|---|---|---|---|
-| `volatile` | E006, E007, E011, E012 | `runtime_s`. In E012, `run_started_utc`. | wall-clock metadata | — |
+| `volatile` | E006, E007, E011, E012, E013 | `runtime_s`. In E012 and E013, `run_started_utc`. | wall-clock metadata | — |
 | `harness-rev1` | E002–E006 | Test results under `primary/` and `exploratory/`, and their BH summaries. | The round-1 scripts were written for the rev-1 harness, which changed before the first commit: rev 2 added draft-year terms, and rev 3 added the one-sided Freedman–Lane test and the LOCO-vs-null rule. Round-1 decisions stand as logged (experiments/log.md GATE 1); E008 re-estimates every round-1 link under the current harness, and those are the numbers the writeup uses. | n, raw r, feature and target names are still compared exactly, and are identical. E008 and E009 also assert them at run time. |
 | `harness-rev3` | E001, E007, E008 | New keys `null_sd` and `loco_classes_pass`; a smaller (one-sided) `partial_r_mde80`, and E008's copies of it in `transfer_map[*].mde80` and `summary.transfer.mde80_two_sided`; `excess_lb_gt_0` True→False for E007 P3 seed 2. | `src/bdb27/linkage.py` rev 3 (commit 598dc08) came after these files were committed. The writeup quotes E008's own `mde80_one_sided`, which is unchanged. | E001 rerun with `linkage.py` from 7260d39: identical to the committed E001.json in all 275 leaves. E008 rerun with the code of its own commit (d11dee7) and the committed round-1 files: all 8,738 leaves of the committed E008.json reproduced (exact or float). |
 | `reliability-rev` | E002–E005, E004_reliability, E008 `drill_profile[*].round1_reliability` | Combine-side reliabilities: negative values become 0; new key `n_dropped`; E004's OL within-attempt ICCs move. | `src/bdb27/reliability.py` was revised in d11dee7, after the round-1 results were committed (7260d39): it clips a negative ICC before Spearman–Brown and drops rows alone in their centering group. No writeup number uses these blocks; E008 recomputes every Combine reliability itself and copies these only into an unquoted comparison column. | `E004 --screen` rerun with `reliability.py` from 7260d39: identical to the committed E004_reliability.json (0 differences). |
 | `upstream-hash` | E009 | `round3_inputs/e010_sha256` | E009 records the SHA-256 of the E010.json it read. The fresh E010.json differs from the committed one only in last-digit floats, so its hash differs. | E010.json itself passes the comparison. |
+| `e013-reuse` | E013 | `reuse_stored_draws` (fresh false, committed true); `runtime_note` (absent in the fresh file) | The committed E013.json was written by a `--reuse` rerun after the E013 review. That rerun read the bootstrap and simulation draws the full run had stored in `data/processed/e013_*.parquet`. The notebook draws them itself. | Every value is compared, and none differs (2026-10-19 run, How this was verified). |
 
-The game-side reliabilities that E008 reads from the round-1 files fall under no rule, so they must match, and they do. So does every other value in E007_leaderboard, E009, E010, E011, E012 and the two exports, apart from the rows above.
+The game-side reliabilities that E008 reads from the round-1 files fall under no rule, so they must match, and they do. So does every other value in E007_leaderboard, E009, E010, E011, E012, E013 and the two exports, apart from the rows above.
 
-The comparison never prints Receiver A's stopwatch-only forecast, draft details or player names (`REDACT`), per the wording guardrails in `writeup/outline.md` §4.
+The comparison never prints a stopwatch-only forecast (`prior_C1`), draft details or player names (`REDACT`), per the wording guardrails in `writeup/outline.md` §4.
 
 **Transcribed constants.** "About 90 first-round tests (q 0.06)" uses p-values from the rev-1 harness, which E008 holds as constants (PROVENANCE.md N7). `run_all.transcribed_constants()` checks each one against the committed round-1 entry it was copied from.
 
@@ -156,8 +163,22 @@ Per step (builder 1 / clean room 2):
 | S09 E009 | B | 36 / 55 min | 1.6 / 2.5 h | 0.6 GB |
 | S10 E012 | C | 1.75 / 2.33 h | 5.1 / 6.88 h | 3.0 GB |
 | S11a–S14 exports, figures, checker, traits | D | 36 / 36 s | 30 / 28 s | 3.1 GB |
+| S10b E013 (added 2026-10-19; one run, below) | E | 4.36 h | 12.6 h | 0.5 GB |
 
 \* Every stage rebuilds S01 and S02 (a few minutes on Kaggle), because no saved output contains them.
+
+**E013 (S10b), measured 2026-10-19** in the proof run (How this was verified, E013). The setup was 3 workers, OMP 3 and a load average of about 5.
+- **Totals.** Uninterrupted, it would have taken 15,685 s (4.36 h) and about 12.6 CPU-hours.
+  - The run itself was stopped after 18 min, keeping two of its 47 checkpoints, then resumed. The resumed part took 14,825 s wall and 11.9 CPU-hours.
+  - The stop cost about 225 s in all: the third trait's unfinished bootstrap, and the prospective test run twice.
+- **Phases.**
+  - The prospective test: 26 s.
+  - The nine 1,000-resample bootstraps: 3,780 s, about 420 s each.
+  - The 27 simulation belts: 7,163 s.
+  - The two coverage simulations: 2,115 and 2,120 s.
+  - The post hoc block, including its bootstrap: 480 s.
+- **The committed full run** (`experiments/results/E013_audit/full.log`, 21,077 s) logged 5,938 s for its first trait's bootstrap; the other traits took about 290 s each. Its coverage simulations took 3,805 and 3,422 s.
+- **The `--reuse` rerun** that wrote the committed E013.json took 99 s. It reads stored draws, so the notebook cannot use it (Stage E across sessions).
 
 Run times swing with the machine's state: E012 took 1.75 h to 3.55 h in these runs, on the same code.
 
@@ -168,9 +189,13 @@ Run times swing with the machine's state: E012 took 1.75 h to 3.55 h in these ru
 | Reference, 2026-10-15 (load average about 5) | 31.9 s | 24.9 s | partial r 0.321878, FL p 0.016198, CV p 0.006997 |
 | Clean room 2, same conditions as its full run | 38.4 s (1.20×) | 30.0 s (1.20×) | identical |
 | Local, other jobs running (2026-10-17) | 75.6–266 s | — | identical |
+| Local, 2026-10-19: just before / just after the E013 run / 2 min later | 49.1 / 31.0 / 30.8 s | — | identical |
 
 - **Worker count.** The clean room's slowdown was the same at both worker counts. A time measured at `n_jobs=4` therefore converts to the `n_jobs=3` scale by × 31.9 / 24.9 = 1.28.
 - **Stage-to-call ratios.** In the local runs, each stage took at most 177 (A), 140 (B) and 229 (C) times as long as the call. The ratios come from clean room 2 (A 177, B 140, C 218, against its own 38.4 s) and from the builder runs (C up to 229, against the 31.9 s reference).
+  - **Stage E: 510.** That is its compute over all sessions, from the E013 run's 15,685 s against the 31.0 s call just after it (506).
+  - The committed full run, with its first trait at the others' pace, gives about 16,200 s against the 31.9 s reference (508).
+  - The call just before the run took 49.1 s, which would give 319. The larger ratio is used, as for the other stages.
 - **Prediction.** A stage on Kaggle takes about ratio × T seconds plus 0.25 h, where T is the call's time there. The 0.25 h covers the environment build and the cache rebuild.
 - **Checked locally.** With T = 38.4 s the formula gives 229 × 38.4 / 3600 = 2.44 h for E012; clean room 2 took 2.33 h. Because the ratios are the largest of the local runs, the formula over-predicts every local run.
 
@@ -181,16 +206,20 @@ Run times swing with the machine's state: E012 took 1.75 h to 3.55 h in these ru
 | A | 5.7 h | 3.5–8.1 h |
 | B | 4.6 h | 2.9–6.5 h |
 | C | 7.4 h | 4.5–10.4 h |
+| E (E013) | 16.1 h of compute: 2 sessions | 9.7–22.9 h: 1–3 sessions |
 | D | 0.3 h | — |
 
-- **Total:** about 18 h of compute (11–25 h); about 13.4 h elapsed, with B and C running in parallel.
-- **Every stage fits one 12-hour session even at the pessimistic end, but only just.** At T ≈ 160 s, stage C has 1.6 h to spare, just inside the rule below.
+- **Total:** about 34 h of compute (21–49 h), counting 0.25 h of setup for each extra stage E session.
+- **Elapsed:** about 30 h (18–42 h), running A, then C, then E's sessions back to back, then D, with B beside C and E.
+- **Without E013** it was about 18 h of compute (11–25 h) and about 13.4 h elapsed.
+- **Every stage except E fits one 12-hour session even at the pessimistic end, but only just.** At T ≈ 160 s, stage C has 1.6 h to spare, just inside the rule below.
+- **Stage E fits one session only if T ≤ 72 s.** Otherwise it resumes across sessions, by design ([Stage E across sessions](#stage-e-across-sessions)).
 - **The clean-room report's estimate was higher:** stage C at 8.5 h, up to 12.2 h. It applied the same §7.1 factor to the CPU time of clean room 2 (6.88 CPU-h). That run's calibration call took 1.2 × the reference (38.4 vs 31.9 s), so its CPU time overstates the reference machine's. Anchoring on the call removes that difference.
 - Both are models. Only the calibration call on Kaggle decides.
 
 ### The stage C rule
 
-This is the only rule. `ra.calibrate()` applies it to the call it times, and prints a verdict per stage; the notebook's calibration cell says the same; PUBLISHING.md applies it to every measurement.
+This is the only rule; stage E needs none ([Stage E across sessions](#stage-e-across-sessions)). `ra.calibrate()` applies it to the call it times, and prints a verdict per stage; the notebook's calibration cell says the same; PUBLISHING.md applies it to every measurement.
 
 1. **T** is the calibration call's time on Kaggle, in seconds, at `n_jobs=3`, as `ra.calibrate()` prints it. If you have two measurements (PUBLISHING.md's pre-check and stage A's own call), use the larger. Do not re-measure until a number passes.
 2. **Predicted hours** for a stage = m × T / 3600 + 0.25, with m = 177 (A), 140 (B) or 229 (C).
@@ -211,7 +240,35 @@ What the rule implies:
 - **"About 6 × 31.9 s" (the notebook builder) and "r = 6 means about 11.8 h" (the clean-room report):** these describe where stage C stops fitting at all, now r = 5.79. They are not a split threshold.
 - **"Stage C at 8.5 h, up to 12.2 h" (the clean-room report):** a CPU-time model; see the Kaggle estimate above.
 
-## How this was verified (2026-10-15/17)
+### Stage E across sessions
+
+Stage E runs one step, S10b: E013 in full. Its `--reuse` mode cannot serve here. It reads E013's own stored bootstrap and simulation draws (`data/processed/e013_*.parquet`), which are gitignored and so not in the bundle. Reading them would also reproduce nothing.
+
+At 510 × T seconds, the step is longer than one Kaggle session whenever T exceeds about 72 s. That includes the central estimate. Instead of splitting E013's code, `run_all.run()` lets the step stop and resume.
+
+**Checkpoints.** E013 writes each finished piece of its Monte Carlo work as a checkpoint in `data/scratch/e013/ckpt`:
+- each trait's 1,000-resample bootstrap (`boot_T*`, 9 files);
+- each trait's simulation belts, per family (`sim_{role,beyond_C2,beyond_C3}_T*`, 27 files);
+- the two coverage simulations (`cov_T1`, `cov_T6`);
+- each trait's post hoc dummies-ridge bootstrap (`phboot_T*`, 9 files).
+
+That is 47 files. Run with `--resume`, it reads the checkpoints that exist and computes only the rest. The prospective test and the point estimates are recomputed every time; they take a few minutes.
+
+**The deadline.** On Kaggle, a resumable step must stop 10.5 h (`SESSION_H − MARGIN_H`) after the notebook imported `run_all`. At that point `run()` sends SIGTERM to the step's process group, which holds E013 and its worker processes; SIGKILL follows a minute later if anything is left. It then:
+1. removes any checkpoint cut short (a complete Parquet file starts and ends with `PAR1`);
+2. records the step as `partial`, with the number of checkpoints kept;
+3. lets the notebook finish normally, so the version saves.
+
+`finish()` then says to attach this output to another stage E notebook. There, S10b is not done, so it runs again with `--resume` and picks up the checkpoints. Locally there is no deadline; `$BDB27_STOP_AFTER_H` sets one, to test this.
+
+**Why the results cannot depend on where it stops.**
+- Each checkpoint draws from its own fixed seeds: per trait for the bootstraps, and per trait, family, grid point and dataset for the simulations. No random stream is shared across checkpoints.
+- A checkpoint is exactly the table the uninterrupted run would have built. A resumed run reads it back from Parquet, which preserves every value and type.
+- Verified: the 2026-10-19 run was stopped part-way, then resumed, and its E013.json matched the committed file in every leaf (How this was verified, E013).
+
+**Each session must make progress.** The largest single checkpoint is one coverage simulation: about 120 × T seconds, 5.4 h at T = 161 s. The 120 comes from the committed full run's 3,805 s against the 31.9 s reference; the 2026-10-19 run gives 68 (2,120 s against 31.0 s). Whenever the stage C rule passes, every stage E session therefore finishes at least one checkpoint. `ra.calibrate()` prints the expected number of sessions: ⌈(predicted hours − 0.25) / 10.25⌉.
+
+## How this was verified (2026-10-15/19)
 
 - **Full local run, from the raw CSVs.** Every step S01–S14 ran. This run found the E009 incompatibility: E009 stopped on its own check, the E009 edit was added, and the run resumed at S09.
   - **Checker:** 374 checks, 0 failures; 1,888 rendered words.
@@ -238,6 +295,25 @@ What the rule implies:
   - It re-verified the `harness-rev3` and `reliability-rev` causes by rerunning E001, E004's screen, E007 and E008 with the code of the earlier commits.
   - The raw CSVs were unchanged afterwards, and nothing was written outside the workspace.
   - Two later checks used a copy of its workspace: the comparison rerun with the `tol used` column, and `ra.calibrate()`, whose output matched.
+- **E013 in the pipeline (2026-10-19).** The notebook's own path for step S10b ran end to end in a scratch workspace.
+  - **The workspace.** `run_all.setup()` built it: code, frozen inputs and the E013 checkpoint edit, verified. It held the committed E012 outputs: E012.json from git, and the five e012 parquets of the run that wrote it. It also held the two S01 tables E013 reads.
+  - **The run.** S10b ran through `run_all.run()`, exactly as the notebook calls it.
+  - **First session.** `$BDB27_STOP_AFTER_H=0.3` stopped it after 18 min, in its third trait's bootstrap.
+    - SIGTERM reached E013 and its three workers; no process was left.
+    - The step was recorded as `partial`, with 2 checkpoints kept and none cut short, and `run()` printed the resume instruction.
+  - **Second run.** It resumed with `--resume`: it read both checkpoints in about 2 s and finished in 4.12 h.
+  - **Comparison with the committed E013.json:**
+    - 16,477 leaves: 16,340 identical and 133 floats within tolerance (tol used 0.01%; largest absolute difference 4e-16);
+    - 4 documented differences: `runtime_s` and `run_started_utc` (`volatile`), `reuse_stored_draws` and `runtime_note` (`e013-reuse`);
+    - nothing unexplained. `compare()` gave PASS, and an independent leaf-by-leaf diff agreed.
+  - **The draws themselves.** All seven e013 parquets the run wrote are byte-identical to the ones the committed E013.json was built from: the bootstrap, belts, coverage, post hoc bootstrap, both forecast tables and the role shares.
+  - **Stage mechanics** were tested on small workspaces:
+    - stage E refuses to start without stage C's output;
+    - a partial stage E output imports into the next stage E part, with its checkpoints and log, and S10b is not marked done;
+    - stage D refuses until S10b is done, then starts from stage B's output and the last stage E part;
+    - `finish()` prints the resume instruction for a partial S10b;
+    - `ra.calibrate()` prints the stage E line.
+  - **Not yet run:** E013 from a freshly regenerated E012 (only from the committed E012 outputs), and stage E on Kaggle.
 
 ## Known issues and follow-ups
 
@@ -246,7 +322,7 @@ What the rule implies:
    - For 3 of the 36 intervals (T1, T7 and T9; 2024 class, 2024→2025), whether the 95% interval excludes 0 changed from run to run.
    - The cause is in `experiments/E012_game_equivalents.py`, `stationarity()`: `nxt` comes from an unordered `group_by` and join, and `_boot_mean_ci` resamples by position.
    - The fix, now in the repository's E012: `x = grp.sort("nfl_id")["d"].to_numpy()`, recorded in `E012.json["post_hoc_review"]["determinism_fix"]`. E012 is rerun in full and recommitted, and its 36 intervals change once, to reproducible values. The `row-order` rule then comes out of `run_all.py`.
-   - **Until all of that is committed, the stage outputs and the clean-room results above describe the old E012.** Build the Kaggle bundle only after it lands (PUBLISHING.md, step 1). E012.json should then show PASS, not PASS\*.
+   - **Committed in f673643 (2026-10-18).** The clean-room results above describe the old E012. A bundle built from f673643 or later shows E012.json as PASS, not PASS\* (PUBLISHING.md, step 1).
 2. **Done (2026-10-17): the compatibility edits are committed** to the scripts, and `experiments/results/E011_prereg.json` is committed (see [Compatibility edits](#compatibility-edits)). `run_all.py` now verifies them instead of applying them.
 3. **The first Kaggle run** may show float differences larger than 1e-9 from OpenBLAS, against Apple Accelerate here.
    - Locally the comparison used at most 4.6% of its float limit (`tol used`), so there is room. The cross-platform margin is unmeasured.
@@ -258,4 +334,7 @@ What the rule implies:
 
    They are not compared. E008 and E012 read them, and no compared value moves beyond the float tolerance. Sorting before writing (LESSONS.md) would remove one source of last-digit noise.
 5. **A Kaggle stage that stops early may save competition data.** `finish()` removes the raw-data links and the S01/S02 caches only in the notebook's last cell. If a stage fails or hits the 12-hour limit, its saved output may still hold them. Do not make such a version public; delete it.
-
+6. **Stage E has not run on Kaggle.** Its stop-and-resume path was verified locally (How this was verified, E013).
+   - **Where the clock starts.** On Kaggle the deadline counts from the moment the notebook imports `run_all`, not from the session's own start. A slow kernel start eats into the 1.5 h margin.
+   - **Debris from a stop.** A stop leaves joblib's temporary memmap folders behind. They sit in the system temp folder, outside the saved output. loky's resource tracker may print `FileNotFoundError` warnings about them; they are harmless.
+7. **E013 reads only its own checkpoints.** `--resume` trusts every file in `data/scratch/e013/ckpt`, and the workspace fingerprint keeps checkpoints from different code apart. Running E013 by hand in the repository with `--resume` would read stale checkpoints from an earlier code version. Delete `data/scratch/e013/ckpt` first.

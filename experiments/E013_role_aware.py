@@ -22,7 +22,7 @@ was computed (IMPLEMENTATION_CHOICES, freeze file experiments/results/E013_audit
 is in POST_HOC.
 
 Run: .venv/bin/python -B experiments/E013_role_aware.py            (everything, n_jobs 3; several hours)
-     .venv/bin/python -B experiments/E013_role_aware.py --quick    (small counts; output to the scratchpad)
+     .venv/bin/python -B experiments/E013_role_aware.py --quick    (small counts; output to data/scratch/e013_quick)
      .venv/bin/python -B experiments/E013_role_aware.py --resume   (reuse finished bootstrap / simulation checkpoints)
      .venv/bin/python -B experiments/E013_role_aware.py --reuse    (read data/processed/e013_* draws; recompute the rest)
      .venv/bin/python -B experiments/E013_role_aware.py --figures-only  (redraw the figures from E013.json)
@@ -60,8 +60,10 @@ RESUME = "--resume" in sys.argv
 REUSE = "--reuse" in sys.argv
 FIGURES_ONLY = "--figures-only" in sys.argv
 REWRITE = "--rewrite" in sys.argv  # headline, summary, post hoc record and figures from E013.json
-SCRATCH = Path("/private/tmp/claude-501/-Users-jasonli-Documents-GitHub-NFL-Big-Data-Bowl-2027/"
-               "ca6dc0b9-7e4f-45b4-b4e4-1468819c8969/scratchpad/e013" + ("_quick" if QUICK else ""))
+# Checkpoints (--resume) and --quick output. Since 2026-10-19 they live under the repository's gitignored data/, so
+# the public notebook keeps them in its workspace and a later Kaggle session resumes from them (frozen choice X1 put
+# them in the session scratchpad; only the location changed).
+SCRATCH = ROOT / "data" / "scratch" / ("e013" + ("_quick" if QUICK else ""))
 CKPT = SCRATCH / "ckpt"
 OUT_RES, OUT_FIG = (SCRATCH, SCRATCH) if QUICK else (RES, FIG)
 N_JOBS = 3

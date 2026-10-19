@@ -4,12 +4,15 @@ No statistic is recomputed here. Every drawn or printed value is read from a res
 the `num(...)` call that prints it). The only arithmetic is presentation: yd/s -> mph, signing partial r by the
 preregistered direction (sign x r), ratios and shares printed as percents ((ratio - 1) x 100), 1.96 x a stored SD
 for a 95% range (Figure 1's predictive SD is the stored gap divided by the stored predictive z, which reproduces that
-z exactly), the 20- and 40-yard crossings of the animated 40 (asserted to reproduce its stored flying 20), and
-interpolating the 10 Hz frames for drawing and animation. Text is wrapped by its rendered width, so layouts hold in
+z exactly), Figure 1's 80% band for his level (stored prior SD x sqrt(1 - stored weight), the model's posterior SD),
+Figure 3's chance range for a pooled 80% coverage (1.96 binomial SEs at the stored number of player-traits), the
+20- and 40-yard crossings of the animated 40 (asserted to reproduce its stored flying 20), Figure 1's line of
+scrimmage (the play's yard line in the standardized frame), and interpolating the 10 Hz frames for drawing and
+animation. Text is wrapped by its rendered width, so layouts hold in
 Helvetica/Arial and DejaVu Sans.
 
 Outputs (figure numbers follow writeup/draft.md):
-  fig1_receiver_a.gif / .png   Receiver A: tracked 40 speed curves and one typical game play (animated), then his
+  fig1_receiver_a.gif / .png   Isaiah Bond: tracked 40 speed curves and one typical game play (animated), then his
                                rookie season and the in-season rule
   fig2_cge.png                 what the position average, the Combine + draft forecast and Combine tracking are worth
   fig3_rookie_test.png         2025 rookies: shrinkage does the work
@@ -17,17 +20,24 @@ Outputs (figure numbers follow writeup/draft.md):
   fig5_drill_reliability.png   drill reliability by measurement type, with the like-for-like first-step comparison
 Table 1 is a markdown table in draft.md (checked by writeup/check_numbers.py), not a figure.
 
-Encoding, the same in every figure: grey triangle = position average; blue square = Combine + draft forecast;
-navy diamond = Combine tracking; orange = the player's own games. Hollow = post hoc, and nothing else.
+Encoding, the same in every figure: grey triangle = position average (Figure 3's alignment rows: the position-average
+rule with alignment added); blue square = Combine + draft forecast; navy diamond = Combine tracking; orange = the
+player's own games. Hollow = post hoc, and nothing else. Figures 4 and 5 draw Combine tracking metrics only, in navy
+(Figure 5: circle = the same movement each rep, cross = a different one).
 
 Every printed number is registered with its source key and, where the draft quotes the same quantity, asserted to
 match the draft's rounding (`same(...)`). The run ends by printing that manifest; any mismatch raises.
 
+Named players (outline.md section 4) are guarded by writeup/check_numbers.py's own lists (NAMED, DRAFT_WORDS,
+OFF_FIELD, read from its source): Figure 1 is the only figure that names a player, so every text on it, in every GIF
+frame and in its alt text is scanned; Figures 2-5 must name no player.
+
 Sources: experiments/results/E007.json, E007_leaderboard.json, E008.json, E009.json, E010.json, E011.json,
-E012.json; experiments/posthoc_writeup_v2/e012_case_priors.json (Figure 1: Receiver A's stopwatch-only and
-+ Combine tracking forecasts, a post hoc export of stored E012 values); data/processed/{combine_tracking,
+E012.json, E013.json (Figure 3's alignment rows); experiments/posthoc_writeup_v2/e012_case_priors.json (Figure 1: the case study's + Combine tracking
+forecast, a post hoc export of stored E012 values); data/processed/{combine_tracking,
 e007_forty_attempts, e012_game_values, game_tracking_2025, games, player_play}.parquet (Figure 1 only: the 40 traces
-and the game play).
+and the game play with its route, down and distance, and line of scrimmage); writeup/draft.md (Figure 2 follows
+Table 1's row order).
 
 Run: .venv/bin/python writeup/make_figures.py [--only fig1 fig2 ...] [--no-gif]
 """
@@ -36,6 +46,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from statistics import NormalDist
 
 import matplotlib
 
@@ -107,6 +118,47 @@ def same(printed: str, draft: str, what: str) -> None:
 def minus(s: str) -> str:
     """Typographic minus signs on numbers only."""
     return re.sub(r"(?<![\w])-(?=\d)", "−", s)
+
+
+def checker_rules() -> tuple[dict, re.Pattern, re.Pattern]:
+    """NAMED, DRAFT_WORDS and OFF_FIELD exactly as writeup/check_numbers.py defines them, read from its source (it
+    runs its checks on import), so the text and the figures are guarded by the same lists."""
+    import ast
+    got = {}
+    for node in ast.parse((Path(__file__).resolve().parent / "check_numbers.py").read_text()).body:
+        if isinstance(node, ast.Assign) and [getattr(t, "id", None) for t in node.targets] in (
+                ["NAMED"], ["DRAFT_WORDS"], ["OFF_FIELD"]):
+            k = node.targets[0].id
+            if k == "NAMED":
+                got[k] = ast.literal_eval(node.value)
+            else:  # re.compile(<literal pattern>, re.I)
+                assert ast.unparse(node.value.func) == "re.compile" and ast.unparse(node.value.args[1]) == "re.I", k
+                got[k] = re.compile(ast.literal_eval(node.value.args[0]), re.I)
+    assert set(got) == {"NAMED", "DRAFT_WORDS", "OFF_FIELD"}, set(got)
+    return got["NAMED"], got["DRAFT_WORDS"], got["OFF_FIELD"]
+
+
+NAMED, DRAFT_WORDS, OFF_FIELD = checker_rules()
+# Figure 1 is stricter than the text: no draft or slot word at all, the forecast's name ("Combine + draft forecast")
+# aside, which is removed before the scan.
+FIG1_EXTRA = re.compile(r"\b\w*draft\w*\b|\bslots?\b", re.I)
+
+
+def no_status_words(texts: list[str]) -> None:
+    """No draft-status or off-field word in any text about a named player (Figure 1: every text)."""
+    for s in texts:
+        s = " ".join(s.split()).replace(FC, "")  # wrapped lines can split the forecast's name
+        for rx in (DRAFT_WORDS, OFF_FIELD, FIG1_EXTRA):
+            m = rx.search(s)
+            assert m is None, f"named-player guard: {m.group()!r} in {s[:90]!r}"
+
+
+def no_named_player(texts: list[str], name: str) -> None:
+    """Figures 2-5 name no player (names and surnames from check_numbers.py NAMED)."""
+    for nm in NAMED.values():
+        for x in (nm, nm.split()[-1]):
+            hit = [s[:60] for s in texts if re.search(rf"\b{re.escape(x)}\b", s)]
+            assert not hit, f"{name}: names {x!r} in {hit}"
 
 
 # ------------------------------------------------------------------------------------------------ helpers
@@ -223,8 +275,9 @@ def check_inside(fig, name: str) -> None:
 
 
 def save(fig, name: str, alt: str) -> Path:
-    """PNG at DPI with the alt text in the file's Description metadata."""
+    """PNG at DPI with the alt text in the file's Description metadata (Figures 2-5; Figure 1 saves its own)."""
     check_inside(fig, name)
+    no_named_player([t.get_text() for t in fig.findobj(matplotlib.text.Text)] + [alt], name)
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / name
     fig.savefig(path, dpi=DPI, metadata={"Title": name, "Description": alt})
@@ -233,12 +286,16 @@ def save(fig, name: str, alt: str) -> Path:
     return path
 
 
-def interval(ax, est, lo, hi, y, color, marker, lw=2.4, ms=MS, hollow=False, ring=True, arrow=False):
-    """Point + interval line clipped to the x-limits (an arrowhead marks a clipped upper end when arrow=True).
-    Hollow only for post hoc estimates. Returns True when the point lies outside its own interval."""
+def interval(ax, est, lo, hi, y, color, marker, lw=2.4, ms=MS, hollow=False, ring=True, arrow=False, caps=0.0):
+    """Point + interval line clipped to the x-limits (an arrowhead marks a clipped upper end when arrow=True;
+    caps > 0 draws end ticks of that half-height in y units). Hollow only for post hoc estimates. Returns True when
+    the point lies outside its own interval."""
     a, b = ax.get_xlim()
     if hi - lo > 1e-9 and lo < b:
         ax.plot([max(lo, a), min(hi, b)], [y, y], color=color, lw=lw, zorder=3, solid_capstyle="butt")
+        for xe in (lo, hi):
+            if caps and a <= xe <= b:
+                ax.plot([xe, xe], [y - caps, y + caps], color=color, lw=min(lw, 1.5), zorder=3)
         if arrow and hi > b:
             ax.plot([b], [y], marker=">", ms=4.5, color=color, mec=color, ls="none", zorder=3, clip_on=False)
     if est <= b:
@@ -266,10 +323,32 @@ def one_dp(v: float) -> str:
     return "0" if round(v, 1) == 0 else f"{v:.1f}"
 
 
+NONSTAT = {t for t, r in CGE.items() if any(nt.startswith("non-stationary") for nt in r["notes"])}  # Table 1's †
+assert NONSTAT == {"T9", "T11"}
+
+
+def table1_groups() -> list[list[str]]:
+    """Rows in draft.md Table 1's order (matched by trait name), checked against its rules: priced traits by
+    half-weight, then the non-stationary (†) ones, then the not-priced (‡) ones by lambda."""
+    order = []
+    for line in (ROOT / "writeup" / "draft.md").read_text().splitlines():
+        if line.startswith("|"):
+            order += [t for t, nm in NAME.items() if line[1:].startswith(nm + " (")]
+    assert sorted(order) == sorted(NAME), order
+    hw = {t: E12["traits"][t]["half_weight_game"]["C2"]["est"] for t in NAME}
+    g = [[t for t in order if t in IDENT and t not in NONSTAT], [t for t in order if t in NONSTAT],
+         [t for t in order if t not in IDENT]]
+    assert order == g[0] + g[1] + g[2]
+    assert [round(hw[t], 1) for t in g[0]] == sorted(round(hw[t], 1) for t in g[0])
+    assert g[2] == sorted(g[2], key=lambda t: CGE[t]["lambda"]["est"])
+    return g
+
+
 # =============================================================================================================
-# Figure 1: Receiver A (animated GIF + still PNG)
+# Figure 1: Isaiah Bond (animated GIF + still PNG)
 # =============================================================================================================
-A_ID, B_ID = 59278, 58274  # E007.json concept_pair fast / slow (same official 40 within 0.01 s); names withheld
+A_ID, B_ID = 59278, 58274  # E007.json concept_pair fast / slow (same official 40 within 0.01 s); names read by
+# nfl_id from the committed results and asserted in fig1 (user decision 2026-10-18: real names, no draft information)
 
 
 def forty_trace(nfl_id: int) -> dict:
@@ -325,6 +404,12 @@ def game_play(nfl_id: int, case: dict) -> dict:
         (pl.col("game_id") == g0) & (pl.col("play_id") == play))
     f = (st.standardize(frames.filter(pl.col("play_id") == play), st.play_directions(pp))
          .sort("time").collect())
+    # Football context from his own player_play row: route, down and distance, and the line of scrimmage in the
+    # standardized frame (offense toward +x, own goal line at x = 10), from the play's yard line (whole yards)
+    me = pp.filter(pl.col("nfl_id") == nfl_id).row(0, named=True)
+    assert pp.filter(pl.col("nfl_id") == nfl_id).height == 1 and me["team_abbr"] == me["possession_team"]
+    assert me["yardline_side"] is not None and me["route_ran"] and me["down"] in (1, 2, 3, 4)
+    los = 10 + me["yardline_number"] if me["yardline_side"] == me["possession_team"] else 110 - me["yardline_number"]
     ev = f["event"].to_list()
     i0 = ev.index("ball_snap")
     t = (f["time"] - f["time"][i0]).dt.total_milliseconds().to_numpy() / 1000
@@ -333,8 +418,11 @@ def game_play(nfl_id: int, case: dict) -> dict:
     assert abs(s.max() - pm["smax"][0] * MPH) < 1e-9
     assert np.argmax(s) >= i0  # the play's max comes after the snap, so drawing from the snap keeps it
     t, x, y, s = t[i0:], x[i0:] - x[i0], y[i0:] - y[i0], s[i0:]
+    # he lines up behind the line (2025 receivers: median 1.4 yd behind this line, 90th percentile 2.5)
+    assert 0 < los - f["x"][i0] < 4, (los, f["x"][i0])
     return {"t": t, "x": x, "y": y, "s": s, "y_snap": f["y"][i0], "x_snap": f["x"][i0],
-            "peak": int(np.argmax(s)), "value": v0, "play_id": play, "game_id": g0}
+            "peak": int(np.argmax(s)), "value": v0, "play_id": play, "game_id": g0,
+            "route": me["route_ran"], "down": me["down"], "ytg": me["yards_to_go"], "los": los - f["x"][i0]}
 
 
 def fig1(gif: bool = True) -> None:
@@ -342,6 +430,7 @@ def fig1(gif: bool = True) -> None:
     from matplotlib import patheffects
     from matplotlib.collections import LineCollection
     from matplotlib.colors import LinearSegmentedColormap, Normalize
+    from matplotlib.patches import Polygon
     from PIL import Image
 
     case = next(c for c in E12["deliverables"]["case_studies"] if c["nfl_id"] == A_ID and c["trait"] == "T1")
@@ -350,6 +439,14 @@ def fig1(gif: bool = True) -> None:
     pair = load("E007.json")["concept_pair"]
     assert pair["fast"]["nfl_id"] == A_ID and pair["slow"]["nfl_id"] == B_ID
     assert lb[A_ID]["rank"] == 1
+    # Real names by nfl_id (players.csv display_name, carried into the committed results). The figure shows no draft
+    # information about either player (outline.md section 4; checked on every text below).
+    name = {A_ID: pair["fast"]["display_name"], B_ID: pair["slow"]["display_name"]}
+    assert name == NAMED, name  # the names check_numbers.py checks in the text
+    assert all(lb[i]["name"] == name[i] for i in name) and case["name"] == name[A_ID]
+    for i, side in ((A_ID, "fast"), (B_ID, "slow")):
+        PRINTED.append((F, name[i], f"E007.concept_pair.{side}.display_name (nfl_id {i}; = E007_leaderboard name)"))
+    A_NAME = name[A_ID]
 
     prior, pos_avg, season = case["prior_C2"] * MPH, case["prior_C0"] * MPH, case["season_mean"] * MPH
     games = np.array(case["game_values"]) * MPH
@@ -363,14 +460,27 @@ def fig1(gif: bool = True) -> None:
     rng95 = 1.96 * sd_pred * MPH
     PRINTED.append((F, "drawn", "E012.deliverables.case_studies[59278,T1]: 95% range = prior_C2 +- 1.96 x "
                                 "(season_mean - prior_C2) / z_predictive; game_values, running_mean, blend_C2"))
+    # The rule's 80% interval for his level after k games. prior_sd is the prior SD of his level and the weights are
+    # w_k = k / (k + sigma2 / prior_sd^2) (E012_game_equivalents.case_studies), so the posterior SD is
+    # prior_sd x sqrt(1 - w_k). Check that prior_sd is the one the stored weights and predictive z use:
+    # sigma2 / prior_sd^2 from w_1 equals n (sd_pred^2 - prior_sd^2) / prior_sd^2 from z_predictive.
+    w = np.r_[0.0, case["weight_C2"]]
+    lam_w = 1 / case["weight_C2"][0] - 1
+    lam_z = n * (sd_pred ** 2 - case["prior_sd"] ** 2) / case["prior_sd"] ** 2
+    assert abs(lam_w - lam_z) < 1e-9 * lam_w, (lam_w, lam_z)
+    band_sd = case["prior_sd"] * np.sqrt(1 - w) * MPH
+    z80 = NormalDist().inv_cdf(0.9)
+    band_lo, band_hi = blend - z80 * band_sd, blend + z80 * band_sd
+    PRINTED.append((F, "drawn", "E012.deliverables.case_studies[59278,T1]: 80% band = blend_C2 +- z(0.9) x prior_sd "
+                                "x sqrt(1 - weight_C2[k])"))
     p_txt = num(F, prior, ".1f", "E012.deliverables.case_studies[59278,T1].prior_C2 x mph")
     a_txt = num(F, pos_avg, ".1f", "E012.deliverables.case_studies[59278,T1].prior_C0 x mph")
     s_txt = num(F, season, ".1f", "E012.deliverables.case_studies[59278,T1].season_mean x mph")
     g1_txt = num(F, games[0], ".1f", "E012.deliverables.case_studies[59278,T1].game_values[0] x mph")
-    same(p_txt, "17.6", "Receiver A forecast")
+    same(p_txt, "17.6", f"{A_NAME} forecast")
     same(a_txt, "17.5", "position average")
-    same(s_txt, "18.9", "Receiver A season average")
-    same(g1_txt, "18.3", "Receiver A first game")
+    same(s_txt, "18.9", f"{A_NAME} season average")
+    same(g1_txt, "18.3", f"{A_NAME} first game")
     same(str(half), "2", "his games outweigh the forecast by game 2")
     same(str(n), "15", "qualifying games")
     w_2324 = num(F, case["weight_C2"][0], ".2f", "E012.deliverables.case_studies[59278,T1].weight_C2[0] (2023-24 fit)")
@@ -379,10 +489,10 @@ def fig1(gif: bool = True) -> None:
     same(w_all, "0.34", "Table 1 WR top speed weight after 1 game")
     f40 = {i: num(F, lb[i]["official_forty"], ".2f", f"E007_leaderboard.players[{i}].official_forty")
            for i in (A_ID, B_ID)}
-    same(f40[A_ID], "4.39", "Receiver A 40")
+    same(f40[A_ID], "4.39", f"{A_NAME} 40")
     v20 = {i: num(F, lb[i]["flying20_mph"], ".1f", f"E007_leaderboard.players[{i}].flying20_mph")
            for i in (A_ID, B_ID)}
-    same(v20[A_ID], "23.2", "Receiver A last 20 yards")
+    same(v20[A_ID], "23.2", f"{A_NAME} last 20 yards")
     tr_ = {i: forty_trace(i) for i in (A_ID, B_ID)}
     for i, tr in tr_.items():  # the animated attempt's own flying 20 prints the same as the player mean
         same(f"{20 / (tr['t40'] - tr['t20']) * MPH:.1f}", v20[i], f"{i} animated attempt flying 20")
@@ -394,14 +504,18 @@ def fig1(gif: bool = True) -> None:
     pk_txt = num(F, gp["s"][gp["peak"]], ".1f", "data/processed/game_tracking_2025.parquet: max device speed of the "
                                                 "selected play (figure-only; equals the game's E012 value)")
     same(pk_txt, g1_txt, "the selected play's peak equals his game-1 value")
+    ctx_txt = f"{gp['route']} route, {('1st', '2nd', '3rd', '4th')[gp['down'] - 1]} & {gp['ytg']}"
+    PRINTED.append((F, ctx_txt, f"player_play[game {gp['game_id']}, play {gp['play_id']}, nfl_id 59278]"
+                                ".route_ran, down, yards_to_go"))
+    PRINTED.append((F, "drawn", "line of scrimmage: player_play.yardline_side / yardline_number / possession_team "
+                                "of the same row (standardized frame)"))
     # His game-0 forecast with Combine tracking added (C3 = C2 + tracking; post hoc export of the stored E012 k = 0
-    # forecasts, 2023-24 fit as the case study). The stopwatch-only forecast (C1) is deliberately NOT drawn: beside
-    # C2 it would reveal how the draft slot moved his forecast, i.e. hint at his draft status (outline.md section 4).
+    # forecasts, 2023-24 fit as the case study). Only the forecasts named here are read from the export.
     cp = json.loads((ROOT / "experiments" / "posthoc_writeup_v2" / "e012_case_priors.json").read_text())
     cpa = next(c for c in cp["cases"] if c["nfl_id"] == A_ID and c["trait"] == "T1")
     for k in ("prior_C0", "prior_C2", "season_mean"):  # the export is the same case study as E012.json
         assert cpa[k] == case[k], k
-    for k, v in (("prior_C0", 8.568), ("prior_C1", 8.683), ("prior_C2", 8.607), ("prior_C3", 8.749),
+    for k, v in (("prior_C0", 8.568), ("prior_C2", 8.607), ("prior_C3", 8.749),
                  ("season_mean", 9.239), ("tracking_shift_C3_minus_C2", 0.142)):
         assert round(cpa[k], 3) == v, (k, cpa[k])  # the values the brief quotes (yd/s)
     assert cpa["tracking_shift_C3_minus_C2"] == cpa["prior_C3"] - cpa["prior_C2"]
@@ -409,25 +523,35 @@ def fig1(gif: bool = True) -> None:
     CPK = "experiments/posthoc_writeup_v2/e012_case_priors.json cases[nfl_id=59278,T1]"
     c3 = cpa["prior_C3"] * MPH
     c3_txt = num(F, c3, ".1f", f"{CPK}.prior_C3 x mph (+ Combine tracking; post hoc export)")
-    same(c3_txt, "17.9", "Receiver A forecast + Combine tracking")
-    same(f"{(cpa['prior_C3'] - cpa['prior_C2']) * MPH:.1f}", "0.3", "draft: tracking nudged his forecast 0.3 mph")
+    same(c3_txt, "17.9", f"{A_NAME} forecast + Combine tracking")
+    same(f"{(cpa['prior_C3'] - cpa['prior_C2']) * MPH:.1f}", "0.3", "writeup: tracking nudged his forecast 0.3 mph")
 
     # ---------------------------------------------------------------- layout: two panels on top, one below
-    fh = 7.43  # v2.1 7.0 + the footer's fourth line (hollow-marker note) + 0.25 in for the season panel
-    fig = new_fig(fh)
-    top = header(fig, "His forecast sat near average; by game 2 his own games outweighed it.",
-                 "Receiver A, a 2025 rookie receiver, picked by a rule fixed in advance: the largest gap between "
-                 f"the {FC} and the season average among rookie receivers with 10+ qualifying games.")
-    fb = footer(fig, f"Fastest finish for his 40 time of {n_wr} Combine receivers; official electronic splits do "
-                     f"not corroborate it (post hoc). Forecast and in-season estimate fit on 2023–24 (weight on "
-                     f"his first game {w_2324}); Table 1 refits on 2023–25 ({w_all}). The 95% range is for a "
-                     "15-game average under the forecast. Hollow diamond, just left of game 0 (post hoc): the same "
-                     "forecast with Combine tracking added.")
+    foot = (f"Fastest finish for his 40 time of {n_wr} Combine receivers; official electronic splits do not "
+            f"corroborate it (post hoc). Forecast and in-season estimate fit on 2023–24 (weight on his first game "
+            f"{w_2324}); Table 1 refits on 2023–25 ({w_all}). Shaded band: the rule’s 80% interval for his level; "
+            "the bar at game 0: 95% range for a 15-game average under the forecast. Line of scrimmage from the "
+            "play’s yard line (nearest yard).")
+
+    def band_glyph(kax, xc):
+        kax.fill_between([xc - 0.18, xc + 0.18], [-0.55, -0.55], [0.55, 0.55], color=BLUE, alpha=0.16, lw=0)
+        kax.plot([xc - 0.18, xc + 0.18], [0, 0], color=BLUE, lw=2.2, solid_capstyle="butt")
     leg_items = [(k_point("o", ORANGE, ms=4.6), "his single games"),
                  (k_point(None, ORANGE, line=(0, (4, 2)), lw=1.8), "his average so far"),
-                 (k_point(None, BLUE, line="-", lw=2.2), "in-season estimate (the rule)"),
-                 (k_point("s", BLUE, line="-", lw=2.0), "forecast, 95% range")]
-    n_rows = len(key_layout(fig, leg_items, gap=0.28))
+                 (band_glyph, "in-season estimate (the rule), 80% band"),
+                 (k_point("s", BLUE, line="-", lw=2.0), "forecast, 95% range"),
+                 (k_point("D", NAVY, ms=5.0, hollow=True), f"{TRK} (post hoc)")]
+    mfig = new_fig(5)
+    n_rows = len(key_layout(mfig, leg_items, gap=0.28))
+    n_foot = len(wrap_in(mfig, foot, FS_N, W - 0.3))
+    plt.close(mfig)
+    # v2.1 7.0 + a fourth footer line + 0.25 in for the season panel; grows with any further legend or footer line
+    fh = 7.43 + (n_rows - 1) * 0.3 + max(0, n_foot - 4) * FS_N * 1.35 / 72
+    fig = new_fig(fh)
+    top = header(fig, "His forecast sat near average; by game 2 his own games outweighed it.",
+                 f"{A_NAME}, a 2025 rookie receiver, chosen by a rule fixed in advance: the largest gap between "
+                 f"the {FC} and the season average among rookie receivers with 10+ qualifying games.")
+    fb = footer(fig, foot)
     ky = fb + 0.26 + (n_rows - 1) * 0.3
     key_row(fig, ky, leg_items, gap=0.28)
     s_bot = ky + 0.12 + 0.55
@@ -455,7 +579,6 @@ def fig1(gif: bool = True) -> None:
     axL.text(30, 26.6, "last 20 yards", ha="center", va="top", size=FS_N, color=INK2)
     col = {A_ID: ORANGE, B_ID: INK2}
     sty = {A_ID: "-", B_ID: (0, (3.5, 2))}
-    name = {A_ID: "Receiver A", B_ID: "Receiver B"}
     curves = {i: axL.plot([], [], color=col[i], lw=2.2, ls=sty[i], zorder=3)[0] for i in tr_}
     heads = {i: axL.plot([], [], "o", ms=6, color=col[i], mec=SURF, mew=1.0, zorder=4)[0] for i in tr_}
     dg = np.linspace(20, 40, 161)
@@ -464,22 +587,33 @@ def fig1(gif: bool = True) -> None:
     sA, sB = (np.interp(dg, tr_[i]["d"], tr_[i]["s"]) for i in (A_ID, B_ID))
     gap = axL.fill_between(dg, sB, sA, where=sA >= sB, color=ORANGE, alpha=0.28, lw=0, zorder=2, visible=False)
     tx = axL.transAxes
-    cx = (0.27, 0.64, 0.88)
     y_hdr, y_row = 0.47, (0.33, 0.19)
-    hdr_speed = axL.text(cx[2], y_hdr, "speed now", transform=tx, size=FS_N, color=INK2, ha="center", va="center")
+    # The name column ends 0.15 in left of the 40-time column, placed by rendered width: the names are longer than the
+    # old "Receiver A/B", and DejaVu Sans (Kaggle) is wider than Helvetica.
+    aw = axL.get_position().width * W  # axes width (in)
+    c1_left = 0.64 - max(text_w(fig, "40 time", FS_N), *(text_w(fig, f"{f40[i]} s", FS) for i in tr_)) / 2 / aw
+    x_nm = c1_left - (0.15 + max(text_w(fig, name[i], FS) for i in tr_)) / aw
+    v_top = (y_row[0] + 0.04) * axL.get_ylim()[1]  # speed at the top of the upper row
+    for tr in tr_.values():  # the line samples (from x_nm - 0.09) stay right of both curves' climb at that height
+        assert x_nm - 0.09 > tr["d"][np.argmax(tr["s"] >= v_top)] / axL.get_xlim()[1] + 0.02, x_nm
+    cx = (x_nm, 0.64, 0.88)
+    # The table is fixed in every frame (the last-20 averages the text quotes); the moving dots show speed now.
+    axL.text(cx[2], y_hdr, "last 20 yd", transform=tx, size=FS_N, color=INK2, ha="center", va="center")
     axL.text(cx[1], y_hdr, "40 time", transform=tx, size=FS_N, color=INK2, ha="center", va="center")
-    reads = {}
     for j, i in enumerate(tr_):
         yy = y_row[j]
         axL.plot([cx[0] - 0.09, cx[0] - 0.02], [yy, yy], transform=tx, color=col[i], lw=2.2, ls=sty[i],
                  solid_capstyle="butt")
         axL.text(cx[0], yy, name[i], transform=tx, size=FS, color=INK, ha="left", va="center")
         axL.text(cx[1], yy, f"{f40[i]} s", transform=tx, size=FS, color=INK, ha="center", va="center")
-        reads[i] = axL.text(cx[2], yy, "", transform=tx, size=FS, color=INK, ha="center", va="center")
+        axL.text(cx[2], yy, f"{v20[i]} mph", transform=tx, size=FS, color=INK, ha="center", va="center")
 
-    # ---- top right: the game play on the field, coloured by speed (one sequential orange ramp, light -> dark)
+    # ---- top right: the game play on the field, coloured by speed (one sequential orange ramp, light -> dark).
+    # The ramp spans the play's running speeds (8-20 mph; slower frames, the first second, take the lightest step),
+    # so the build to the peak reads; the peak itself is marked.
     cmap = LinearSegmentedColormap.from_list("speed", ["#f7c3a8", ORANGE, "#7d2c0e"])
-    norm = Normalize(0, 24)
+    norm = Normalize(8, 20)
+    assert gp["s"].max() <= norm.vmax
     x0g, x1g = -3.0, max(30.0, gp["x"].max() + 2)
     box_w, box_h = 2.9, t_h
     yc_ = (gp["y"].min() + gp["y"].max()) / 2
@@ -487,13 +621,18 @@ def fig1(gif: bool = True) -> None:
     axF.set_xlim(x0g, x1g)
     axF.set_ylim(yc_ - y_half, yc_ + y_half)
     axF.set_aspect("equal", adjustable="box")
-    axF.set_yticks([])
     axF.spines["left"].set_visible(False)
     axF.set_xticks([0, 10, 20, 30])
     axF.set_xlabel("Yards downfield from his spot at the snap", labelpad=3)
+    ysl = -gp["y_snap"]  # the near sideline (y = 0) relative to his snap spot
+    # lateral scale: yards in from the near sideline (same scale as downfield)
+    yt = [v for v in np.arange(0, 60, 5) if ysl + v <= yc_ + y_half - 1]
+    axF.set_yticks([ysl + v for v in yt])
+    axF.set_yticklabels([f"{v:.0f}" for v in yt])
+    axF.tick_params(axis="y", length=2, labelsize=FS_N, pad=2)
+    axF.set_ylabel("Yards from sideline", size=FS_N, labelpad=2)
     for xa in np.arange(10, 111, 5):  # yard lines every 5 yd (standardized frame: goal lines at 10 and 110)
         axF.axvline(xa - gp["x_snap"], color=GRID, lw=0.9, zorder=0)
-    ysl = -gp["y_snap"]  # the near sideline (y = 0) relative to his snap spot
     if yc_ - y_half < ysl:
         axF.axhspan(yc_ - y_half, ysl, color=BAND, lw=0, zorder=0.5)
         axF.axhline(ysl, color=INK2, lw=1.0, zorder=1)
@@ -502,21 +641,31 @@ def fig1(gif: bool = True) -> None:
     if yc_ + y_half > ysl2:
         axF.axhspan(ysl2, yc_ + y_half, color=BAND, lw=0, zorder=0.5)
         axF.axhline(ysl2, color=INK2, lw=1.0, zorder=1)
+    # line of scrimmage (from the play's yard line), drawn in bounds only
+    axF.plot([gp["los"]] * 2, [ysl, min(ysl2, yc_ + y_half)], color=INK2, lw=1.1, ls=(0, (4, 2.5)), zorder=1)
+    axF.text(gp["los"] + 0.6, ysl + 0.5, "line of scrimmage", ha="left", va="bottom", size=FS_N, color=INK2)
     axF.plot([0], [0], marker="x", ms=6, mew=1.4, color=INK2, ls="none", zorder=2)
-    axF.text(0.3, 0.7, "snap", size=FS_N, color=INK2, ha="left", va="bottom")
+    axF.text(0, -1.0, "snap", size=FS_N, color=INK2, ha="center", va="top")
+    bbw = dict(fc=SURF, ec="none", pad=0.6)  # the notes sit over the yard lines and the line of scrimmage
+    axF.text(0.03, 0.95, ctx_txt, transform=axF.transAxes, size=FS_N, color=INK, ha="left", va="top", bbox=bbw,
+             zorder=6)
     pts = np.c_[gp["x"], gp["y"]]
     seg = np.stack([pts[:-1], pts[1:]], axis=1)
     lc = LineCollection([], cmap=cmap, norm=norm, lw=4.2, zorder=3, capstyle="round",
                         path_effects=[patheffects.Stroke(linewidth=5.6, foreground=INK2), patheffects.Normal()])
     axF.add_collection(lc)
     g_head = axF.plot([], [], "o", ms=6.5, color=INK, mec=SURF, mew=1.0, zorder=4)[0]
-    g_read = axF.text(0.98, 0.95, "", transform=axF.transAxes, size=FS, color=INK, ha="right", va="top")
     pk = gp["peak"]
-    pk_note = axF.annotate(f"peak {pk_txt} mph = his game-1 value", xy=(gp["x"][pk], gp["y"][pk]),
-                           xytext=(0.03, 0.93), textcoords="axes fraction", ha="left", va="top", size=FS_N, color=INK,
-                           arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8, shrinkA=0, shrinkB=3), visible=False)
+    pk_dot = axF.plot([gp["x"][pk]], [gp["y"][pk]], "o", ms=5.5, color=INK, mec=SURF, mew=1.0, zorder=5,
+                      visible=False)[0]
+    # "≈": the rule picks the play whose peak is closest to the game value (equal at one decimal here)
+    pk_note = axF.annotate(f"peak {pk_txt} mph ≈ his game-1 value", xy=(gp["x"][pk], gp["y"][pk]),
+                           xytext=(0.03, 0.83), textcoords="axes fraction", ha="left", va="top", size=FS_N, color=INK,
+                           arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8, shrinkA=0, shrinkB=4), visible=False,
+                           bbox=bbw, zorder=6)
     cax = axes_in(fig, 4.35 + 2.9 + 0.12, t_bot + 0.1, 0.1, t_h - 0.2)
-    cb = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax, ticks=[0, 6, 12, 18, 24])
+    cb = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax, ticks=[8, 12, 16, 20], extend="min",
+                      extendfrac=0.06)
     cb.outline.set_visible(False)
     cb.ax.tick_params(labelsize=FS_N, length=2)
     cb.set_label("mph", size=FS_N, color=INK2, labelpad=2)
@@ -545,19 +694,21 @@ def fig1(gif: bool = True) -> None:
     axR.plot([0], [prior], "s", ms=MS, color=BLUE, mec=SURF, mew=1.0, zorder=5)
     axR.annotate(f"Forecast {p_txt}", xy=(0.12, prior - 0.06), xytext=(0.8, lo_y + 0.3), size=FS, color=INK,
                  va="center", ha="left", arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8, shrinkA=0, shrinkB=3))
-    # His tracking forecast (post hoc, so hollow), set just left of game 0 because it sits within 0.3 mph of the
-    # forecast, with a vertical leader up to its label above the forecast's 95% range.
+    # His tracking forecast (post hoc, so hollow) sits at game 0 on the forecast's range, 0.3 mph above the forecast;
+    # its label goes above the range, with a leader down to the marker from the label's lower-left corner.
     rend = fig.canvas.get_renderer()
     mph_per_pt = (hi_y - lo_y) / (axR.get_window_extent(rend).height * 72 / fig.dpi)
-    yl = prior + rng95 + 5 * mph_per_pt  # bottom of the lower label, 5 pt above the range's top
-    for xm, ym, mk, ms_, colr, txt in ((-0.5, c3, "D", 5.0, NAVY, f"+ Combine\ntracking {c3_txt}"),):
-        axR.plot([xm], [ym], marker=mk, ms=ms_, mfc=SURF, mec=colr, mew=1.5, ls="none", zorder=5)
-        axR.plot([xm, xm], [ym + 5.5 * mph_per_pt, yl - 1.5 * mph_per_pt], color=INK2, lw=0.8, zorder=2,
-                 solid_capstyle="butt")
-        lab = axR.text(xm - 0.1, yl, txt, size=FS_N, color=INK, ha="left", va="bottom", linespacing=1.15)
-        lab_top = axR.transData.inverted().transform(lab.get_window_extent(rend))[1, 1]  # rendered top (mph)
-        yl = lab_top + 6 * mph_per_pt  # the next label stacks 6 pt above
+    yl = prior + rng95 + 5 * mph_per_pt  # bottom of the label, 5 pt above the range's top
+    axR.plot([0], [c3], marker="D", ms=5.0, mfc=SURF, mec=NAVY, mew=1.5, ls="none", zorder=6)
+    lab = axR.annotate(f"+ Combine\ntracking {c3_txt}", xy=(0, c3), xytext=(-0.75, yl), size=FS_N, color=INK,
+                       ha="left", va="bottom", linespacing=1.15,
+                       arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8, shrinkA=0, shrinkB=4, relpos=(0, 0)))
+    lab_top = axR.transData.inverted().transform(lab.get_window_extent(rend))[1, 1]  # rendered top (mph)
     assert lab_top < hi_y - 3 * mph_per_pt, (lab_top, hi_y)  # the label sits inside the panel
+    # the rule's 80% band for his level, built game by game with the estimate
+    band = Polygon([[0, prior], [0, prior], [0, prior]], closed=True, fc=BLUE, alpha=0.16, lw=0, zorder=1.5,
+                   visible=False)
+    axR.add_patch(band)
     g_dots = axR.plot([], [], "o", ms=4.6, color=ORANGE, mec=SURF, mew=0.6, zorder=2)[0]
     g_run = axR.plot([], [], color=ORANGE, lw=1.8, ls=(0, (4, 2)), zorder=3)[0]
     g_est = axR.plot([], [], color=BLUE, lw=2.2, zorder=4)[0]
@@ -585,10 +736,7 @@ def fig1(gif: bool = True) -> None:
             else:
                 curves[i].set_data([], [])
                 heads[i].set_data([], [])
-            fin = t >= tr["t"][-1]
-            done &= fin
-            reads[i].set_text(f"{v20[i]} mph" if fin else f"{np.interp(t, tr['t'], tr['s']):4.1f} mph")
-        hdr_speed.set_text("last 20 yd" if done else "speed now")
+            done &= t >= tr["t"][-1]
         gap.set_visible(done)
 
     def set_play(tp: float | None) -> None:
@@ -596,23 +744,26 @@ def fig1(gif: bool = True) -> None:
         if tp is None:
             lc.set_segments([])
             g_head.set_data([], [])
-            g_read.set_text("")
             pk_note.set_visible(False)
+            pk_dot.set_visible(False)
             return
         k = int(np.searchsorted(gp["t"], tp, side="right"))  # frames shown so far
         k = max(1, min(k, len(gp["t"])))
         lc.set_segments(seg[: k - 1])
         lc.set_array(((gp["s"][:-1] + gp["s"][1:]) / 2)[: k - 1])
         g_head.set_data([gp["x"][k - 1]], [gp["y"][k - 1]])
-        fin = k == len(gp["t"])
-        g_read.set_text("" if fin else f"{gp['s'][k - 1]:4.1f} mph")
-        g_head.set_visible(not fin)
+        g_head.set_visible(k < len(gp["t"]))
         pk_note.set_visible(k - 1 >= pk)
+        pk_dot.set_visible(k - 1 >= pk)
 
     def set_games(k: int) -> None:
         g_dots.set_data(np.arange(1, k + 1), games[:k])
         g_run.set_data(np.arange(1, k + 1), run[:k])
         g_est.set_data(np.arange(0, k + 1), blend[: k + 1])
+        xs = np.arange(0, k + 1)
+        band.set_visible(k > 0)
+        if k:
+            band.set_xy(np.r_[np.c_[xs, band_lo[: k + 1]], np.c_[xs[::-1], band_hi[: k + 1][::-1]]])
         call.set_visible(k >= half)
         season_line.set_visible(k == n)
         season_txt.set_visible(k == n)
@@ -621,14 +772,19 @@ def fig1(gif: bool = True) -> None:
     set_run(t_end)
     set_play(np.inf)
     set_games(n)
-    alt = (f"Top left: speed along the tracked 40 for two receivers with the same official time ({f40[A_ID]} and "
-           f"{f40[B_ID]} s). The curves rise together, and Receiver A's keeps climbing over the last 20 yards "
+    alt = (f"Top left: speed along the tracked 40 for {A_NAME} and {name[B_ID]}, two receivers with the same official "
+           f"time ({f40[A_ID]} and {f40[B_ID]} s). The curves rise together, and {A_NAME.split()[-1]}'s keeps "
+           f"climbing over the last 20 yards "
            f"({v20[A_ID]} vs {v20[B_ID]} mph), the fastest finish for his 40 time of {n_wr} Combine receivers, though "
            f"official electronic splits do not corroborate it. Top right: a typical top-speed play from his first "
-           f"game drawn on the field and coloured by speed, a deep route peaking at {pk_txt} mph. Bottom: his {n} "
-           f"rookie qualifying games. The forecast of {p_txt} mph sits by the {a_txt} mph {PA}; beside it, a hollow "
-           f"diamond (post hoc) shows the forecast with Combine tracking added ({c3_txt}). His games average {s_txt} mph, just above the forecast's 95% range; the in-season estimate "
-           f"rises toward his games and gives them more than half the weight from game {half}.")
+           f"game, a {ctx_txt.replace(' route,', ' route on')}, drawn on the field from his spot at the snap, just "
+           f"behind the line of scrimmage, and coloured by speed, peaking at {pk_txt} mph. Bottom: his {n} rookie "
+           f"qualifying games. The forecast of {p_txt} mph sits by the {a_txt} mph {PA}; on its range, a hollow "
+           f"diamond (post hoc) shows the forecast with Combine tracking added ({c3_txt}). His games average {s_txt} "
+           f"mph, just above the forecast's 95% range; the in-season estimate and its 80% band rise toward his games, "
+           f"giving them more than half the weight from game {half}.")
+    # Named players: no draft-status or off-field word anywhere on the figure, in its alt text or (below) in any GIF frame
+    no_status_words([t.get_text() for t in fig.findobj(matplotlib.text.Text)] + [alt])
     check_inside(fig, "fig1_receiver_a.png")
     fig.savefig(OUT / "fig1_receiver_a.png", dpi=DPI, metadata={"Title": "fig1_receiver_a.png", "Description": alt})
     print(f"wrote {OUT / 'fig1_receiver_a.png'}")
@@ -643,6 +799,7 @@ def fig1(gif: bool = True) -> None:
     frames, durs = [], []
 
     def grab(ms_: int) -> None:
+        no_status_words([t.get_text() for t in fig.findobj(matplotlib.text.Text) if t.get_visible()])
         fig.canvas.draw()
         frames.append(Image.fromarray(np.asarray(fig.canvas.buffer_rgba())[..., :3].copy()))
         durs.append(ms_)
@@ -713,7 +870,7 @@ def fig1(gif: bool = True) -> None:
 # =============================================================================================================
 def fig2() -> None:
     F = "fig2"
-    groups = [["T1", "T2", "T3", "T5", "T4"], ["T6", "T7", "T8"], ["T9", "T10"], ["T12", "T11"]]
+    groups = table1_groups()  # Table 1's row order (judges: cross-reading)
     lam = {t: CGE[t]["lambda"] for t in NAME}
     lam_lo = min(lam[t]["est"] for t in IDENT)
     lam_hi = max(lam[t]["est"] for t in IDENT)
@@ -745,13 +902,18 @@ def fig2() -> None:
     same(beyond1, "1.0", "forecast beyond deep share")
     rtxt = num(F, t6["cge_role_reference"], ".1f", "cge_table[T6].cge_role_reference")
     same(rtxt, "2.4", "DL NFL position alone")
+    ref6 = E12["post_hoc_review"]["per_trait"]["T6"]["references"]["role"]
+    assert ref6["cge_ref"] == t6["cge_role_reference"]  # the same reference as the cge_table key
+    assert "may be the latest roster designation rather than the one known on draft day" in ref6["reference"]
+    PRINTED.append((F, "may postdate the draft", "post_hoc_review.per_trait.T6.references.role.reference "
+                                                 "(E013: descriptive; the label may postdate the draft)"))
     btxt = num(F, t6["cge_C2_beyond_role"], ".2f", "cge_table[T6].cge_C2_beyond_role")
     same(btxt, "−0.25", "DL Combine beyond role")
-    notes = {"T1": ("ᵃ", f"WR top speed (post hoc): {f2324} if fit on 2023–24 and 0 with one class left out; partly "
-                          f"route usage (r\u00a0{r_deep} with deep-route share), and the forecast adds {beyond1} game "
-                          "beyond it."),
-             "T6": ("ᵇ", f"DL rush distance (post hoc): NFL roster position alone is worth {rtxt}; the Combine adds "
-                          f"{btxt} beyond it.")}
+    assert ref6["reference"].startswith("NFL roster position (players.csv nfl_position: DE/DT/NT/OLB)")
+    notes = {"T1": ("ᵃ", f"Post hoc: {f2324} if fit on 2023–24, 0 without one draft class; r\u00a0{r_deep} with "
+                          f"deep-route share, though the forecast adds {beyond1} game beyond it."),
+             "T6": ("ᵇ", "Post hoc, descriptive: roster designation (DE/DT/NT/OLB; may postdate the draft and reflect "
+                          f"scheme and stance) alone is worth {rtxt}; the forecast adds {btxt} beyond it.")}
 
     def unpriced_lines(t):
         r = CGE[t]
@@ -767,8 +929,9 @@ def fig2() -> None:
     same(f"{CGE['T8']['exposure_r_trait_log_games']:+.2f}", "+0.40", "DL pressure exposure r")
 
     # ---- measurement pass: every height in inches, so a row with a wrapped note gets exactly its lines
+    label = {t: NAME[t] + (" †" if t in NONSTAT else "") for t in NAME}  # † as in Table 1
     mfig = new_fig(5)
-    lab_w = max(text_w(mfig, NAME[t], FS) for t in NAME)
+    lab_w = max(text_w(mfig, label[t], FS) for t in NAME)
     gap_, d_w = 0.22, 1.35
     ax_x = 0.1 + lab_w + 0.15
     ax_w = W - 0.15 - d_w - gap_ - ax_x
@@ -790,16 +953,16 @@ def fig2() -> None:
     H_plot = y + 0.04
     title = (f"For priced traits, the {PA} is worth {l1} to {l2} games of a player’s own record; the Combine and draft add 0 to "
              f"{c2}")
-    sub = ("Qualifying games of his own NFL record that each prior is worth when forecasting his level (fit on "
-           "2023–25). The Combine’s estimate is clipped at 0, so it reads low when its true worth is small. Its "
-           "bootstrap intervals cover only about 80% in simulation and every miss is low, so the "
-           "simulation-calibrated bounds are the primary statement.")
-    foot = ("Bold blue line and brackets: simulation-calibrated bounds, each a one-sided 95% bound (post hoc). Thin "
-            "lines: 95% player-bootstrap intervals; * marks an estimate outside its own bootstrap interval (each "
-            "resample relearns the forecast from a subset of players). Not priced: reliability or odd/even "
-            f"split-half below 0.5 (post hoc rule); uncorrected R²: before the reliability correction. {n_lo}–{n_hi} "
-            f"players per trait. {notes['T1'][0]} "
-            f"{notes['T1'][1]} {notes['T6'][0]} {notes['T6'][1]}")
+    sub = ("Games of his own NFL record that each prior is worth when forecasting his level (fit on 2023–25; rows "
+           f"as in Table 1). The {FC}’s worth is what a model learns from {n_lo}–{n_hi} players per trait, clipped "
+           "at 0; its bootstrap intervals cover about 80% in simulation, every miss low, so the calibrated bounds "
+           "are primary.")
+    foot = ("Brackets: simulation-calibrated bounds, two one-sided 95% bounds forming a 90% interval (post hoc). "
+            "Thin capped lines: 95% player-bootstrap intervals; * estimate outside its own interval. Tracking panel: "
+            "bootstrap only; [0, 0] intervals (both forecasts clipped) not drawn; preregistered test in Figure 3. "
+            "† Levels shift between seasons (no weights in Table 1). Not priced: reliability or odd/even split-half "
+            "below 0.5 (post hoc rule); uncorrected R²: before the reliability correction. "
+            f"{notes['T1'][0]} {notes['T1'][1]} {notes['T6'][0]} {notes['T6'][1]}")
     keys1 = [(k_point("v", GREY, ms=6.5, line="-", lw=1.4), f"{PA} alone"),
              (k_point("s", BLUE, line="-", lw=2.4), f"{FC} adds"),
              (k_point("D", NAVY, ms=6.2, line="-", lw=1.4), "Combine tracking adds")]
@@ -810,8 +973,12 @@ def fig2() -> None:
             kax.plot([xb, xb], [-0.6, 0.6], color=BLUE, lw=1.4)
             kax.plot([xb, xb + sg * 0.04], [0.6, 0.6], color=BLUE, lw=1.4)
             kax.plot([xb, xb + sg * 0.04], [-0.6, -0.6], color=BLUE, lw=1.4)
-    keys2 = [(bracket_glyph, "simulation-calibrated bounds (post hoc)"),
-             (k_point(None, INK2, line="-", lw=1.0), "95% bootstrap interval (biased low)")]
+    def thin_glyph(kax, xc):
+        kax.plot([xc - 0.15, xc + 0.15], [0, 0], color=INK2, lw=1.0, solid_capstyle="butt")
+        for xb in (xc - 0.15, xc + 0.15):
+            kax.plot([xb, xb], [-0.3, 0.3], color=INK2, lw=1.0)
+    keys2 = [(bracket_glyph, "90% interval: simulation-calibrated bounds (post hoc)"),
+             (thin_glyph, "95% bootstrap interval (biased low)")]
     n_k1, n_k2 = len(key_layout(mfig, keys1)), len(key_layout(mfig, keys2))
     t_lines = len(wrap_in(mfig, title, FS_T, W - 0.3, "bold"))
     s_lines = len(wrap_in(mfig, sub, FS, W - 0.3))
@@ -880,8 +1047,11 @@ def fig2() -> None:
         c = r["cge_C2"]
         brackets(yc, r["cge_C2_calibrated_lower95"], r["cge_C2_calibrated_upper95"])
         PRINTED.append((F, "brackets", f"cge_table[{t}].cge_C2_calibrated_lower95/upper95"))
-        if c["hi"] - c["lo"] > 1e-9:
-            ax.plot([c["lo"], c["hi"]], [yc + 0.07] * 2, color=INK2, lw=1.0, zorder=3, solid_capstyle="butt")
+        if c["hi"] - c["lo"] > 1e-9:  # set 0.12 in below the brackets' line, with caps, so it never merges with them
+            yb = yc + 0.12
+            ax.plot([c["lo"], c["hi"]], [yb] * 2, color=INK2, lw=1.0, zorder=3, solid_capstyle="butt")
+            ax.plot([c["lo"]] * 2 + [np.nan] + [c["hi"]] * 2, [yb - 0.025, yb + 0.025, np.nan, yb - 0.025,
+                                                              yb + 0.025], color=INK2, lw=1.0, zorder=3)
         PRINTED.append((F, "drawn", f"cge_table[{t}].cge_C2.lo/hi (B1)"))
         ax.plot([c["est"]], [yc], marker="s", ms=MS, color=BLUE, mec=SURF, mew=1.0, ls="none", zorder=5)
         if not (c["lo"] - 1e-9 <= c["est"] <= c["hi"] + 1e-9):
@@ -898,7 +1068,7 @@ def fig2() -> None:
             outside.append(t + " (tracking)")
     # row labels
     ax.set_yticks(list(ypos.values()))
-    ax.set_yticklabels([NAME[t] for t in ypos], size=FS)
+    ax.set_yticklabels([label[t] for t in ypos], size=FS)
     for lab, t in zip(ax.get_yticklabels(), ypos):
         lab.set_color(INK if CGE[t]["identified"] else INK2)
         if not CGE[t]["identified"]:
@@ -926,18 +1096,19 @@ def fig2() -> None:
     dmax = max(CGE[t]["delta_cge_tracking"]["est"] for t in IDENT)
     same(f"{dmin:+.2f} to {dmax:+.2f}", "-0.24 to +0.18", "tracking adds")
     alt = minus(
-        f"Dot-and-interval chart of 12 game traits, in games of a player's own record. For the nine priced traits "
+        f"Dot-and-interval chart of 12 game traits in Table 1's order, in games of a player's own record. For the nine "
+        f"priced traits "
         f"the {PA} alone is worth {l1} to {l2} games, and the {FC} adds {c2} games for DL first-second rush "
         f"distance, {one_dp(t1['cge_C2']['est'])} for WR top speed, about {one_dp(CGE['T7']['cge_C2']['est'])}-"
         f"{one_dp(CGE['T12']['cge_C2']['est'])} for DL get-off and DB top speed, and 0 for five traits. "
-        f"Simulation-calibrated bounds put WR top speed at {t1['cge_C2_calibrated_lower95']:.2f} to "
+        f"Simulation-calibrated bounds (a 90% interval) put WR top speed at {t1['cge_C2_calibrated_lower95']:.2f} to "
         f"{t1['cge_C2_calibrated_upper95']:.1f} games and DL rush distance at "
         f"{t6['cge_C2_calibrated_lower95']:.2f} to {t6['cge_C2_calibrated_upper95']:.1f}, and rule out more than "
         f"{min(rest):.1f} to {max(rest):.1f} for the rest; the bootstrap intervals all include 0 but are biased "
         f"low. Three outcome traits are not priced; the {PA} alone is worth {nl_lo:.1f} to {nl_hi:.1f} games for "
         f"them, though for DL pressure over expected the forecast's cross-validated R² before correction is "
         f"{CGE['T8']['r2_cv']['C2']:.2f}. A second panel shows Combine tracking adding {dmin:+.2f} to {dmax:+.2f} "
-        f"games, every interval including 0.")
+        f"games; its bootstrap intervals are degenerate at 0 for several traits.")
     save(fig, "fig2_cge.png", alt)
 
 
@@ -952,8 +1123,9 @@ def pct(F: str, r: dict, src: str, spec: str = ".0f", ci_spec: str = ".1f") -> t
         s = f"{e}% less error ({format(-hi, ci_spec)}–{format(-lo, ci_spec)}%)"
     elif lo > 0:
         s = f"{e}% more error ({format(lo, ci_spec)}–{format(hi, ci_spec)}%)"
-    else:
-        s = f"{e}% less error ({format(-lo, ci_spec)}% less to {format(hi, ci_spec)}% more)"
+    else:  # the interval spans 0: the estimate's own direction, then both ends
+        s = (f"{e}% {'less' if est < 0 else 'more'} error ({format(-lo, ci_spec)}% less to {format(hi, ci_spec)}% "
+             "more)")
     PRINTED.append((F, s, src + ".ratio, ratio_ci95"))
     return s, est, lo, hi
 
@@ -1000,32 +1172,50 @@ def fig3() -> None:
                   for v in (min(cov80), max(cov80)))
     same(f"{c_lo}–{c_hi}%", "77–81%", "80% interval coverage")
 
+    # E013 (role-aware, preregistered H1): the position-average rule with his alignment share from his first game vs
+    # without, at k = 1, on the 9 priced traits; and its post hoc version with the alignment coefficient matched to a
+    # one-game share's precision (E013 PH4).
+    E13 = load("E013.json")
+    r1 = E13["prospective"]["tests"]["primary"]["H1"]
+    r1c = E13["post_hoc_review"]["prospective"]["tests"]["calibrated:H1"]
+    assert (r1["a"], r1["b"], r1["k"], r1["pass"]) == ("se_blend_C0_role", "se_blend_C0", 1, False)
+    assert (r1c["a"], r1c["b"], r1c["k"]) == (r1["a"], r1["b"], 1)
+    assert sorted(r1["n_by_trait"]) == sorted(IDENT)  # the nine priced traits
+    E13S = "E013.prospective.tests.primary.H1"
+    E13C = "E013.post_hoc_review.prospective.tests['calibrated:H1']"
+
     title = "On 2025 rookies, shrinkage does the work; the Combine trims a few percent"
     sub = (f"Fit on the 2023–24 seasons, applied to {H1['n_players']} rookies in 2025 (pseudo-prospective: trait "
            "definitions were chosen after earlier analyses had used 2025 games). Blending toward the "
            f"{PA} alone captures {share:.0%} of the rule’s gain over his raw early games (post hoc).")
-    foot = ("Error pooled over all 12 traits with equal weight (including the 3 not priced) unless noted, each "
-            "scaled by how much players differ (2023–24 between-player variance); 95% player-bootstrap intervals. At "
-            "0 games each rule is its prior. Filled: preregistered; hollow: post hoc; q: false-discovery-adjusted "
-            "over 10 post hoc comparisons. Coverage: share of rookies’ remaining-games averages inside the rule’s "
-            "80% predictive interval.")
-    # forest rows in inches (top = 0): headers, full rows (label, value line, interval), one point-only row
+    foot = ("Error pooled over all 12 traits with equal weight (including the 3 not priced) unless noted; alignment "
+            "rows: the 9 priced traits, with his alignment share (e.g. slot vs outside) from his first game; "
+            "‘corrected’ matches the alignment effect to one game’s precision. 95% player-bootstrap intervals; at 0 "
+            "games each rule is its prior. Filled: preregistered; hollow: post hoc; q: false-discovery-adjusted over "
+            "10 post hoc comparisons. Coverage: share of rookies’ remaining-games averages inside the rule’s 80% "
+            "predictive interval; dots: single traits; shading: 95% binomial range for the pooled share (ignores "
+            "clustering within rookies).")
+    # forest rows in inches (top = 0): headers, full rows (label, value line, interval), point rows (one text line)
     PITCH, HDR, PT = 0.52, 0.34, 0.36
-    n_full, n_hdr = 7, 2
-    H_r = 0.1 + n_hdr * HDR + 0.12 + n_full * PITCH + PT + 0.12
+    n_full, n_hdr, n_pt = 8, 3, 2
+    H_r = 0.1 + n_hdr * HDR + (n_hdr - 1) * 0.12 + n_full * PITCH + n_pt * PT + 0.12
     mfig = new_fig(5)
     head_h = (0.1 + len(wrap_in(mfig, title, FS_T, W - 0.3, "bold")) * FS_T * 1.2 / 72 + 0.1
               + len(wrap_in(mfig, sub, FS, W - 0.3)) * FS * 1.35 / 72 + 0.08)
     foot_h = 0.08 + len(wrap_in(mfig, foot, FS_N, W - 0.3)) * FS_N * 1.35 / 72
     plt.close(mfig)
-    c_h = 1.05
-    fh = foot_h + 0.62 + c_h + 0.85 + H_r + 0.45 + head_h
+    fh = foot_h + 0.62 + H_r + 0.45 + head_h
     fig = new_fig(fh)
     top = header(fig, title, sub)
     fb = footer(fig, foot)
+    # Left column, bottom up: coverage panel, legend, error panel. Right column: the forest, full height.
+    lx, lw_ = 0.62, 2.65
+    c_bot, c_h = fb + 0.62, 1.3
+    leg_top = c_bot + c_h + 0.42 + 0.72
+    y0 = leg_top + 0.55
+    assert top - 0.45 - y0 > 3.0, top - 0.45 - y0
     # ---- left: pooled error by k (three series; the forecast-only and tracking series are in the right panel)
-    y0 = fb + 1.25
-    ax = axes_in(fig, 0.62, y0, 2.65, top - 0.45 - y0)
+    ax = axes_in(fig, lx, y0, lw_, top - 0.45 - y0)
     series = [("se_games", None, "His own games only", ORANGE, "s"),
               ("se_blend_C0", "se_comb_C0", "Rule, position-average prior", GREY, "v"),
               ("se_blend_C2", "se_comb_C2", "Rule, Combine + draft prior", BLUE, "s")]
@@ -1043,8 +1233,9 @@ def fig3() -> None:
     ax.set_ylim(0, 11.5)
     ax.grid(axis="y", color=GRID, lw=0.8)
     ax.set_axisbelow(True)
-    ax.set_xlabel("Qualifying games observed")
-    ax.set_ylabel("Squared forecast error (scaled)")
+    ax.set_xlabel("Qualifying games observed", labelpad=3)
+    # each trait's squared error is divided by its between-player variance (footer), so 1 = that variance
+    ax.set_ylabel("Squared error (1 = between-player variance)", labelpad=3)
     ax.set_title("Error forecasting his remaining games", loc="left", size=FS_P, color=INK, weight="bold", pad=7)
     g1 = curves["1"]["se_games"]
     ax.annotate(f"His first game alone:\n{num(F, times, '.1f', 'validation_2.primary.H1.pooled_b / pooled_a')}"
@@ -1052,28 +1243,39 @@ def fig3() -> None:
                 va="center", arrowprops=dict(arrowstyle="-", color=INK2, lw=0.9, shrinkA=2, shrinkB=5))
     ax.text(4.3, 0.95, "both rules overlap", size=FS_N, color=INK2, ha="right", va="top")
     fig.legend(*ax.get_legend_handles_labels(), loc="upper left", fontsize=FS, handlelength=2.0,
-               labelspacing=0.35, borderaxespad=0, bbox_to_anchor=(0.1 / W, (y0 - 0.5) / fig.get_size_inches()[1]))
+               labelspacing=0.35, borderaxespad=0, bbox_to_anchor=(0.1 / W, leg_top / fh))
 
-    # ---- right bottom: calibration of the rule's 80% intervals (preregistered secondary analysis)
-    rx, rw = 3.75, 4.1
-    c_bot = fb + 0.62
-    axc = axes_in(fig, rx + 0.45, c_bot, rw - 0.45, c_h)
+    # ---- left bottom: calibration of the rule's 80% intervals (preregistered secondary analysis)
+    axc = axes_in(fig, lx, c_bot, lw_, c_h)
     axc.set_title(f"Its 80% intervals held {c_lo}–{c_hi}%", loc="left", size=FS_P, color=INK,
                   weight="bold", pad=7)
-    axc.axhline(80, color=INK2, lw=1.0, zorder=1)
-    axc.text(4.35, 80.4, "80% target", ha="right", va="bottom", size=FS_N, color=INK2)
+    # chance range for the pooled share: 80% +- 1.96 binomial SEs at each k's number of player-traits
+    nk = np.array([cal[str(k)]["n_player_traits"] for k in range(5)])
+    hw_ = 196 * np.sqrt(0.8 * 0.2 / nk)
+    xb = np.r_[-0.3, np.arange(5), 4.45]
+    hb = np.r_[hw_[0], hw_, hw_[-1]]
+    axc.fill_between(xb, 80 - hb, 80 + hb, color=BAND, lw=0, zorder=0.5)
+    PRINTED.append((F, "drawn", "80 +- 196 x sqrt(0.16 / validation_2.calibration_80pct.C2[k].n_player_traits)"))
+    for k in range(5):  # single traits, just left of the pooled point
+        bt = np.array(list(cal[str(k)]["by_trait"].values())) * 100
+        assert len(bt) == 12
+        axc.plot(np.full(len(bt), k - 0.2), bt, "o", ms=3.2, color=BLUE, alpha=0.4, mec="none", zorder=2)
+    PRINTED.append((F, "drawn", "validation_2.calibration_80pct.C2[k].by_trait"))
+    axc.axhline(80, color=INK2, lw=1.0, zorder=1)  # the target, labelled by its own tick
     axc.plot(range(5), np.array(cov80) * 100, color=BLUE, lw=2.0, marker="s", ms=6.2, mec=SURF, mew=1.0, zorder=3)
     PRINTED.append((F, "drawn", "validation_2.calibration_80pct.C2[0..4].pooled_coverage"))
-    axc.set_xlim(-0.3, 4.45)
-    axc.set_ylim(70, 90)
-    axc.set_yticks([70, 80, 90])
-    axc.set_yticklabels(["70%", "80%", "90%"])
+    axc.set_xlim(-0.4, 4.45)
+    axc.set_ylim(48, 104)
+    axc.set_yticks([50, 80, 100])
+    axc.set_yticklabels(["50%", "80%", "100%"])
     axc.set_xticks(range(5))
     axc.set_xlabel("Qualifying games observed", labelpad=3)
     axc.grid(axis="y", color=GRID, lw=0.8)
     axc.set_axisbelow(True)
-    # ---- right top: one linear axis of percent change in squared error
-    r_bot = c_bot + c_h + 0.85
+    # ---- right: one linear axis of percent change in squared error, full column height (the "+10%" tick label
+    # needs about 0.2 in right of the axis end)
+    rx, rw = 3.75, 4.0
+    r_bot = fb + 0.62
     assert abs((r_bot + H_r) - (top - 0.45)) < 1e-6
     axr = axes_in(fig, rx, r_bot, rw, H_r)
     axr.set_xlim(-88, 12)
@@ -1094,19 +1296,24 @@ def fig3() -> None:
          "post_hoc_review.validation_2.ph3_drivers.k0_identified_traits_only", BLUE, "s", True, ".1f", ".1f"),
         (k1, "Same comparison inside the rule, after game 1", "post hoc", f"{P}.k1.blend_C2_vs_C0", BLUE, "s", True,
          ".1f", ".1f"),
+        ("hdr", "Adding Combine tracking or alignment to the prior"),
         (H3, f"{TRK} vs without, game 1: not supported", "preregistered", f"{S}.H3", NAVY, "D", False,
          ".1f", ".1f"),
+        (r1, "Position-average rule + game-1 alignment: not supported", "preregistered", E13S, GREY, "v", False,
+         ".1f", ".1f"),
+        ("ptci", r1c, "corrected", "post hoc", E13C, GREY, "v"),
     ]
-    assert sum(r[0] == "hdr" for r in rows) == n_hdr and sum(r[0] == "pt" for r in rows) == 1
-    assert len(rows) - n_hdr - 1 == n_full
+    assert sum(r[0] == "hdr" for r in rows) == n_hdr and sum(r[0] in ("pt", "ptci") for r in rows) == n_pt
+    assert len(rows) - n_hdr - n_pt == n_full
     y = 0.1  # inches from the top of the forest
     tr = axr.get_yaxis_transform()
     bb = dict(fc=SURF, ec="none", pad=0.5)
+    cap = 0.045
     for gi, row in enumerate(rows):
         if row[0] == "hdr":
             y += 0.12 if gi else 0.0
             axr.text(0.0, y + 0.12, row[1], transform=tr, size=FS_P, color=INK, weight="bold", va="center",
-                     ha="left")
+                     ha="left", bbox=bb, zorder=5)
             y += HDR
             continue
         if row[0] == "pt":  # a post hoc point with no committed interval
@@ -1116,17 +1323,29 @@ def fig3() -> None:
                      zorder=4)
             y += PT
             continue
+        if row[0] == "ptci":  # a post hoc variant of the row above: one text line, then its interval
+            _, r, lab, tag, src, col, mk = row
+            s, est, lo, hi = pct(F, r, src, ".1f", ".1f")
+            t_ = f"{lab}: {s} · {tag}"
+            assert text_w(fig, t_, FS_N) < rw - 0.05, t_
+            axr.text(0.0, y + 0.1, t_, transform=tr, size=FS_N, color=INK2, va="center", ha="left", bbox=bb,
+                     zorder=5)
+            interval(axr, est, lo, hi, y + 0.27, col, mk, lw=1.5, ms=6.2, hollow=True, caps=cap)
+            y += PT
+            continue
         r, lab, tag, src, col, mk, hollow, spec, ci_spec = row
         s, est, lo, hi = pct(F, r, src, spec, ci_spec)
+        assert text_w(fig, lab, FS) < rw - 0.05 and text_w(fig, f"{s} · {tag}", FS_N) < rw - 0.05, lab
         axr.text(0.0, y + 0.1, lab, transform=tr, size=FS, color=INK, va="center", ha="left", bbox=bb, zorder=5)
         axr.text(0.0, y + 0.27, f"{s} · {tag}", transform=tr, size=FS_N, color=INK2, va="center", ha="left",
                  bbox=bb, zorder=5)
         interval(axr, est, lo, hi, y + 0.43, col, mk, lw=1.5 if hollow else 2.4, ms=6.2 if hollow else MS,
-                 hollow=hollow)
+                 hollow=hollow, caps=cap)
         y += PITCH
+    assert abs(y + 0.12 - H_r) < 1e-6, (y, H_r)
     axr.set_ylim(H_r, 0)
-    axr.set_xticks([-80, -60, -40, -20, 0])
-    axr.set_xticklabels(["−80%", "−60%", "−40%", "−20%", "0"])
+    axr.set_xticks([-80, -60, -40, -20, 0, 10])
+    axr.set_xticklabels(["−80%", "−60%", "−40%", "−20%", "0", "+10%"])
     axr.axvline(0, color=INK2, lw=1.0, zorder=1)
     axr.grid(axis="x", color=GRID, lw=0.8)
     axr.set_axisbelow(True)
@@ -1134,7 +1353,8 @@ def fig3() -> None:
     axr.spines["left"].set_visible(False)
     axr.set_xlabel("Change in squared error (left = better)", labelpad=3)
     alt = minus(
-        f"Left: squared forecast error for 2025 rookies after 0 to 4 qualifying games. Using only his own games is "
+        f"Left: squared forecast error for 2025 rookies after 0 to 4 qualifying games, in units of the "
+        f"between-player variance. Using only his own games is "
         f"far worse early (about {g1['est']:.1f} after one game vs about {curves['1']['se_blend_C2']['est']:.1f} for "
         f"the rule), and the rules with the {PA} and with the {FC} as prior overlap. Right: percent change in error "
         f"on one axis. The preregistered rule cuts error {1 - H1['ratio']:.0%} after one game and "
@@ -1142,8 +1362,11 @@ def fig3() -> None:
         f"rule does nearly the same. The {FC} beats the {PA} by "
         f"{(1 - k0['ratio']) * 100:.0f}% before the first game (post hoc, not robust to multiplicity), "
         f"{(1 - k0id['ratio']) * 100:.1f}% on the priced traits, and {(1 - k1['ratio']) * 100:.1f}% after one game; "
-        f"adding Combine tracking is {(H3['ratio'] - 1) * 100:.1f}% worse. Bottom right: the rule's 80% intervals "
-        f"held {c_lo} to {c_hi}% of outcomes at every k from 0 to 4.")
+        f"adding Combine tracking is {(H3['ratio'] - 1) * 100:.1f}% worse (preregistered), and adding his alignment "
+        f"share from his first game to the {PA} rule is {(r1['ratio'] - 1) * 100:.1f}% worse (preregistered; "
+        f"{(r1c['ratio'] - 1) * 100:.1f}% worse when corrected for one game's precision, post hoc), both intervals "
+        f"near 0. Bottom left: the rule's 80% intervals held {c_lo} to {c_hi}% of outcomes at every k from 0 to 4, "
+        f"inside the range expected by chance; single traits scatter more widely.")
     save(fig, "fig3_rookie_test.png", alt)
 
 
@@ -1152,8 +1375,8 @@ def fig3() -> None:
 # =============================================================================================================
 # Plain-English link labels (E009.json transfer_map[*].label is the technical label). Grouped by position.
 LINKS = [
-    ("WR", [("E006-P1", "40 top speed (fitted) → game top-speed capacity †"),
-            ("E001-WR", "40 peak speed → game top speed (same signal)"),
+    ("WR", [("E006-P1", "40 top speed (fitted) → game top-speed ceiling †"),  # the draft's names (Section 5)
+            ("E001-WR", "40 peak speed → game top speed ‡"),
             ("E002-P1", "Route-drill speed kept → OUT/IN speed kept"),
             ("E002-P2", "Route-drill speed kept → separation at the throw"),
             ("E002-P3", "Stop-route drill braking → HITCH braking")]),
@@ -1191,6 +1414,15 @@ def fig4() -> None:
     same(f"{w['b2_partial_r']:+.2f}", "+0.48", "E006-P1 beyond B2")
     same(f"{w['b1_partial_r']:+.2f}", "+0.42", "E006-P1 beyond B1")
     same(f"{w['b2_drop3_partial_r']:+.2f}", "+0.31", "E006-P1 without 3 WRs")
+    # the second non-null row: the pipeline's sanity link, the same speed signal on observed game top speed
+    sl = tm["E001-WR"]
+    assert not sl["primary14"] and sl["b2_ci_lo"] > 0 and not sl["b2_passes_1to6"]
+    assert sum(r["primary14"] for r in tm.values()) == 14  # the other four rows are the E001 "40 peak speed" links
+    assert {i for i in tm if not tm[i]["primary14"]} == {i for _, g in LINKS for i, lab in g if "40 peak speed" in lab}
+    assert not sl["b2_c4_bh_q_lt_05"] and not sl["b2_c6_seeds_and_leave3out"]  # fails BH and leave-3-out
+    assert sorted(i for i in tm if tm[i]["b2_ci_lo"] > 0) == ["E001-WR", "E006-P1"]
+    PRINTED.append((F, "‡ note", "E009.transfer_map[E001-WR]: primary14 false, b2_ci_lo > 0, b2_c4_bh_q_lt_05 false, "
+                                 "b2_c6_seeds_and_leave3out false"))
 
     rows, spans, y = [], [], 0.0  # rows: (link id, label, y); spans: (position, first y, last y)
     for gi, (pos, links) in enumerate(LINKS):
@@ -1228,9 +1460,11 @@ def fig4() -> None:
                  gap=0.25)
 
     fb = footer(fig, f"† Passes our go criteria beyond the draft slot, but fragile: it fails false-discovery "
-                     f"control across ~{m_tests} first-round tests (q {qtxt}). Nulls are bounds, not proof of "
-                     "no effect: an interval shows the effects a link rules out. Outcome targets are over expected; "
-                     "pooled rows mix positions.")
+                     f"control across ~{m_tests} first-round tests (q {qtxt}). ‡\u00a0A pipeline sanity check, "
+                     "like every “40 peak speed” row, not a preregistered primary: the same speed signal as †, against observed game top speed; its "
+                     "interval excludes 0, but it fails false-discovery control and the leave-3-out check. Nulls are "
+                     "bounds, not proof of no effect: an interval shows the effects a link rules out. Outcome targets "
+                     "are over expected; pooled rows mix positions.")
     lab_w = max(text_w(fig, lab, FS) for _, g in LINKS for _, lab in g)
     ax_x = 0.45 + lab_w + 0.12
     ax_w = W - 0.75 - ax_x
@@ -1260,7 +1494,8 @@ def fig4() -> None:
     for lid, lab, yy in rows:
         if lid == "drop3":
             ax.text(-0.025, yy, lab, transform=tr, size=FS, color=INK2, va="center", ha="right", style="italic")
-            interval(ax, w["b2_drop3_partial_r"], w["b2_drop3_ci_lo"], w["b2_drop3_ci_hi"], yy, INK2, "D",
+            # beyond stopwatch + draft slot, so the same navy diamond (grey is the position average elsewhere)
+            interval(ax, w["b2_drop3_partial_r"], w["b2_drop3_ci_lo"], w["b2_drop3_ci_hi"], yy, NAVY, "D",
                      lw=1.6, ms=5.6)
             PRINTED.append((F, "drawn", "E009.transfer_map[E006-P1].b2_drop3_partial_r, b2_drop3_ci_lo/hi"))
             ax.text(1.09, yy, num(F, w["b2_drop3_n"], "d", "E009.transfer_map[E006-P1].b2_drop3_n"), transform=tr,
@@ -1289,7 +1524,8 @@ def fig4() -> None:
         f"nearly coincide on every row. Two WR top-speed links, one signal, sit at about "
         f"{tm['E001-WR']['b2_partial_r']:+.1f} and {w['b1_partial_r']:+.2f} to {w['b2_partial_r']:+.2f}; the "
         f"stronger is marked fragile, falling to {w['b2_drop3_partial_r']:+.2f} without its three most "
-        f"supportive receivers. A tick on each row marks the smallest effect detectable with 80% power; a hollow "
+        f"supportive receivers, and the weaker is a pipeline sanity check, which fails false-discovery control "
+        f"and the leave-3-out check. A tick on each row marks the smallest effect detectable with 80% power; a hollow "
         f"circle marks the six links where effects of 0.5 or more remain possible if both measures were error-free "
         f"(post hoc).")
     save(fig, "fig4_transfer_map.png", alt)
@@ -1360,6 +1596,12 @@ def fig5() -> None:
          "cross-drill composites >= 0.5")
     retest = E8["summary"]["drill_profile"]["wr_route_same_drill_retest"]["retest_icc_median"]
     same(f"{retest:.2f}", "0.70", "WR same-drill retest median")
+    # the metrics behind that median (E008_transfer_map: probe "A route breaks (E002)", position WR)
+    wr_rt = [r["retest_icc"] for r in E8["drill_profile"]
+             if r["probe"] == "A route breaks (E002)" and r["position"] == "WR"]
+    assert all(v is not None for v in wr_rt) and abs(float(np.median(wr_rt)) - retest) < 1e-12
+    n_rt = num(F, len(wr_rt), "d", "E008.drill_profile[A route breaks (E002), WR] rows (retest_icc median = "
+                                   "summary.drill_profile.wr_route_same_drill_retest.retest_icc_median)")
     e10 = E10["combine"]["stop_rule"]["reliability"]
     same(f"{e10:.2f}", "0.74", "drill intensity reliability")
     e11 = {m: v["cross_drill"]["reliability"] for m, v in E11["reliability"].items()
@@ -1404,15 +1646,17 @@ def fig5() -> None:
                  "different kind of reliability, so compare within a row. Most position drills are run once per "
                  "player, so their signatures can only be checked across different drills.")
     fb = footer(fig, "Reliability as used in the round-1 tests (Spearman–Brown; 0 when negative); n = players per "
-                     "metric. No per-metric intervals were stored except the catch mechanic’s (post hoc bootstrap, "
-                     "95%), so counts against 0.5 are approximate. Not shown: two DL composites that include the 40, "
-                     "and OL within-one-rep metrics, which overstate a trait (notebook). Same-session retests are "
-                     "inflated by session effects.")
+                     "metric. No intervals were stored for single metrics or session shares except the catch "
+                     "mechanic’s (post hoc bootstrap, 95%), so counts against 0.5 are approximate. The three single "
+                     "rows are separate tests, not in the counts; the WR row is a single-rep retest within one "
+                     "session, which session effects inflate. Not shown: two DL composites that include the 40, and "
+                     "OL within-one-rep metrics, which overstate a trait (notebook).")
     ky = top - 0.2
     pre = "Position-drill repeat reps:"
     ftext(fig, 0.1, ky, pre, size=FS, color=INK, va="center")
     ky = key_row(fig, ky, [(k_point("o", NAVY, ms=5.6), "DL pass-rush (the same movement each rep)"),
-                           (k_point("o", GREY, ms=5.6), "DB reaction or OL opposite side")], gap=0.2,
+                           (lambda kax, xc: kax.plot([xc], [0], marker="X", ms=7.2, mfc=NAVY, mec="none", ls="none"),
+                            "DB reaction or OL opposite side")], gap=0.2,
                  x0=0.1 + text_w(fig, pre, FS) + 0.05)
     # ---- left: strip chart
     ax_x, ax_w = 2.2, 2.75
@@ -1451,8 +1695,9 @@ def fig5() -> None:
         same_move = np.array([(r["scope"], r["metric"]) in pr_ids for r in sel]) if i == 1 else np.ones(len(sel), bool)
         if i == 1:
             assert same_move.sum() == 6 and (~same_move).sum() == 16
-            ax.plot(x[~same_move], yc[i] + oy[~same_move], ls="none", marker="o", ms=ms, mfc=GREY, mec=SURF,
-                    mew=0.6, zorder=3)
+            # a different movement each rep: navy cross (grey is the position average elsewhere)
+            ax.plot(x[~same_move], yc[i] + oy[~same_move], ls="none", marker="X", ms=ms + 1.4, mfc=NAVY,
+                    mec="none", zorder=3)
         ax.plot(x[same_move], yc[i] + oy[same_move], ls="none", marker="o", ms=ms, mfc=NAVY, mec=SURF, mew=0.6,
                 zorder=3)
         n05 = int((x >= 0.5).sum())
@@ -1461,19 +1706,20 @@ def fig5() -> None:
         PRINTED.append((F, f"{n05} / {len(sel)}", f"E008.summary.drill_profile.by_group_kind[{g} | {k}]"))
     ax.text(1.04, -0.82, "≥ 0.5", transform=tr, ha="left", va="bottom", size=FS_N, color=INK2)
     # single values: two later tests (not in the counts) and the WR same-drill retest median
-    singles = [("e10", e10, "E010.combine.stop_rule.reliability", "Drill intensity", "later test; no game link"),
+    singles = [("e10", e10, "E010.combine.stop_rule.reliability", "Drill intensity",
+                "speed vs 40 peak; not counted"),
                ("e11", e11v, "E011.reliability.catch_offset.cross_drill.reliability", "Best catch mechanic",
-                "later test; 2025 balls"),
+                "2025 ball tracking; not counted"),
                ("wr", retest, "E008.summary.drill_profile.wr_route_same_drill_retest.retest_icc_median",
-                "WR route drills", "same drill and session")]
+                "WR route drills", "one-session retests: inflated")]
     ci11 = E11["reliability"]["catch_offset"]["cross_drill_boot_ci95"]  # post hoc bootstrap (E011 revision)
     ax.plot(ci11, [yc["e11"]] * 2, color=NAVY, lw=1.3, zorder=3, solid_capstyle="butt")
     PRINTED.append((F, "drawn", "E011.reliability.catch_offset.cross_drill_boot_ci95"))
     for key, v, src, l1, l2 in singles:
         ax.plot([v], [yc[key]], marker="o", ms=6.4, mfc=NAVY, mec=SURF, mew=0.8, ls="none", zorder=4)
         xl = ci11[1] if key == "e11" else v
-        ax.text(xl + 0.035, yc[key], ("median " if key == "wr" else "") + num(F, v, ".2f", src), ha="left",
-                va="center", size=FS, color=INK)
+        ax.text(xl + 0.035, yc[key], ("median " if key == "wr" else "") + num(F, v, ".2f", src)
+                + (f", {n_rt} metrics" if key == "wr" else ""), ha="left", va="center", size=FS, color=INK)
         row_label(yc[key], l1, l2, bold=(key == "wr"))
 
     # ---- right top: like-for-like first-step metrics
@@ -1548,7 +1794,7 @@ def fig5() -> None:
            f"opposite-side reps, different movements. The same six DL first-step metrics reach {min(r40):.2f} to "
            f"{max(r40):.2f} in the 40 but {min(rpr):.2f} to {max(rpr):.2f} in the pass-rush drill. Drill intensity "
            f"reaches {e10:.2f}; the best ball-tracking catch mechanic reaches {e11v:.2f}; WR route drills repeat at a "
-           f"median {retest:.2f} within one session. Inset: {min(wave.values()):.0%} to {max(wave.values()):.0%} of "
+           f"median {retest:.2f} over {n_rt} metrics within one session, inflated by session effects. Inset: {min(wave.values()):.0%} to {max(wave.values()):.0%} of "
            f"OL wave-drill variance lies between Combine sessions.")
     save(fig, "fig5_drill_reliability.png", alt)
 

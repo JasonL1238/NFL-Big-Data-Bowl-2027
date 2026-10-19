@@ -1,6 +1,13 @@
 # PROVENANCE: every writeup number, figure and table → results key → script
 
-Scope: `writeup/draft.md` **v2.2** (commit `1a1e8be`), its 5 figures and Table 1. Built 2026-10-15 for Gate 3 (PLAN.md §5: "public notebook reproducing every writeup number"). AGENTS.md requires an attached **public Kaggle notebook** from which every writeup result is reproducible, run top to bottom.
+Scope: `writeup/draft.md` **v2.2** (commit `1a1e8be`), its 5 figures and Table 1, extended on 2026-10-19 to the E013 numbers of draft v2.4 (§2.12). Built 2026-10-15 for Gate 3 (PLAN.md §5: "public notebook reproducing every writeup number"). AGENTS.md requires an attached **public Kaggle notebook** from which every writeup result is reproducible, run top to bottom.
+
+**Status (2026-10-19): E013 is in the pipeline.**
+- Step **S10b** (stage E) reruns E013, the role-aware check, from the workspace's own E012 outputs, never from committed copies. `E013.json` is the 17th compared file.
+- **§2.12** maps every E013 number in draft v2.4 (writer, 2026-10-19): the Section 3.4 Roles note, the Section 3.2 DL wording, and the Section 3.2 correction of §2.4's "five traits reach 0.4–1.7 games" to two traits. The rows of §2.1–§2.11 are those of v2.2; rows whose wording changed in v2.4 say so.
+- **Writeup v2.3** uses real player names in place of the earlier versions' "Receiver A" and "Receiver B" (`writeup/outline.md` §1); §2.1 and §3 use them too. No number changed.
+- **E013 needs its full run in the notebook.** Its `--reuse` mode reads E013's own stored bootstrap and simulation draws (`data/processed/e013_*.parquet`). Those are gitignored, so they are not in the bundle, and reading them would not reproduce anything. The notebook therefore draws them itself.
+- **The notebook path is proven** (§9, run R7). A scratch workspace held the committed E012 outputs. E013 ran through `run_all.run()`, was stopped part-way and resumed, and its E013.json matched the committed file in every leaf.
 
 **Status (2026-10-17).** This file was written on 2026-10-15, before the notebook was built. It remains the provenance map (§2–§5, §8). For the current state, read `notebooks/README.md`; to publish, `notebooks/PUBLISHING.md`.
 - **B1–B4 are resolved, in the repository itself** (§0 says how). The compatibility edits are committed to the scripts: E002–E006, E005, E009, E011 and `ph_pairs.py`, plus `experiments/results/E011_prereg.json`. E012's freeze-file path is committed with its row-order fix. `run_all.py` verifies these edits instead of applying them, and its step S02 builds the game frames (B3).
@@ -98,6 +105,9 @@ S8  E008   (S2, S3, S4 + round-1 JSONs + E00x_prereg)     → E008.json, e008_{t
 S9  E009   (imports E008 link builders; E008.json, E010.json, E011.json, E009_prereg) → E009.json, e009_*.parquet
 S10 E012   (S4 probe_a..d, S5 e007_players/routes, S6 e010_play_max, E012_prereg)  → E012.json, e012_*.parquet
             (e012_forecasts_2025 and e012_game_values: full run only)
+S10b E013  (S1 games/player_play; S10 E012.json, e012_{players, game_values, prospective_values, forecasts_2025,
+            bootstrap}; E013_prereg, E013_audit freeze file; full run, --resume)  → E013.json, e013_*.parquet
+            (added 2026-10-19; stage E; checkpoints in data/scratch/e013/ckpt)
 S11 exports: posthoc_writeup_v2/e012_case_priors.py (S10 full); posthoc_writeup_v1/ph_pairs.py (S5; B4)
 S12 writeup/make_figures.py (JSONs of S5–S11 + combine_tracking, e007_forty_attempts, e012_game_values, game_tracking_2025, games, player_play)
 S13 writeup/check_numbers.py (374 checks, must exit 0) + print the §4 arithmetic from keys
@@ -108,6 +118,10 @@ Ordering constraints beyond the arrows:
 - **E008 runs before E009.** E009 copies E008.json's beyond-B2 columns into the Figure 4 table and asserts that its rev-3 rerun reproduces them to 1e-12.
 - **E012 full (not `--quick`) runs before S11/S12.** Only a full run writes `e012_forecasts_2025.parquet` and `e012_game_values.parquet`.
 - E008 asserts the rebuilt links' n/raw r against the committed round-1 JSONs before doing anything else.
+- **E012 full runs before E013 (S10b), and E013 before S12/S13** (added 2026-10-19).
+  - E013 reads E012.json and five e012 parquets.
+  - It asserts that it reproduces E012's internal CGE, its 1,000 B1 draws per trait and its 626 stored 2025 forecast rows (`E013 internal[T].e012_reproduction`, `data_checks.e012_forecast_reproduction`).
+  - The checker reads E013.json once the draft quotes E013.
 
 | Step | Command (repo root) | Ran end to end on 2026-10-15? (§9) | Local wall, M4 Pro, n_jobs 3 | CPU-s (user+sys) | Peak RSS |
 |---|---|---|---|---|---|
@@ -122,6 +136,7 @@ Ordering constraints beyond the arrows:
 | S8 | `python experiments/E008_transfer_map.py` | yes (`--quick`; every quoted key identical) | full 2,047 s (log) | 5,132 (log) | 1.5 GB |
 | S9 | `python experiments/E009_beyond_stopwatch.py` | yes (`--quick`; quoted keys identical) | full 2,390 s (log) | 6,580 (log) | 0.6 GB |
 | S10 | `python experiments/E012_game_equivalents.py` | yes (`--quick`; every deterministic quoted key identical) | full 16,086 s on a shared machine (log); 2,162 s without the PH6 simulations | 20,730 (log) | 3.4 GB |
+| S10b (2026-10-19) | `python experiments/E013_role_aware.py --resume` | yes, 2026-10-19 (§9 R7): stopped part-way, resumed, every leaf of E013.json reproduced | see README.md (Run times) | — | — |
 | S11 | `python experiments/posthoc_writeup_v2/e012_case_priors.py`; `python experiments/posthoc_writeup_v1/ph_pairs.py` | yes; both JSONs identical to the committed ones | 0.1 s; 0.5 s | — | small |
 | S12 | `python writeup/make_figures.py` | yes; all 6 files byte-identical | 27 s | 28 | 3.5 GB |
 | S13 | `python writeup/check_numbers.py` | yes: 374 checks, 0 failures | < 1 s | — | small |
@@ -130,7 +145,9 @@ The status and times in this table come from the 2026-10-15 sandbox runs (§9). 
 
 ---
 
-## 2. Number-by-number provenance (draft.md v2.2)
+## 2. Number-by-number provenance (draft.md v2.2; E013 rows for v2.4 in §2.12)
+
+**Wording.** §2.1–§2.11 quote the v2.2 wording. v2.3 and v2.4 reworded or cut some of those sentences (`writeup/outline.md` §12, item 6). Examples: the League items on mirror-side reps and the 87% timing check, Limitations' role examples, and "five traits reach 0.4–1.7" (superseded, §2.12). No key or value of a remaining number changed. `writeup/check_numbers.py` is the authority on the current wording.
 
 **Abbreviations used in the tables.**
 
@@ -141,7 +158,7 @@ The status and times in this table come from the 2026-10-15 sandbox runs (§9). 
 | `PP` | `experiments/posthoc_writeup_v1/ph_pairs.json` |
 | `ct[T]` | the `E012 cge_table` row for trait T |
 | `tr[T]` | `E012 traits[T]` |
-| `CS` | `E012 deliverables.case_studies[nfl_id 59278, T1]` (Receiver A) |
+| `CS` | `E012 deliverables.case_studies[nfl_id 59278, T1]` (Isaiah Bond) |
 | `V2` | `E012 validation_2` |
 | `PHR` | `E012 post_hoc_review` |
 | `TM8[id]` | `E008 transfer_map[id]` |
@@ -177,11 +194,11 @@ Hand-written, frozen inputs (not script output, never written by the notebook):
 - `E010_prereg.json`
 - `experiments/results/E012_audit/*`
 
-### 2.1 Title and §1 (hook: Receiver A = nfl_id 59278)
+### 2.1 Title and §1 (hook: Isaiah Bond, nfl_id 59278)
 
 | Quoted | Value | Source key | Producer | Status |
 |---|---|---|---|---|
-| "4.39 forty at the 2025 Combine" | 4.39; 2025 | `E007_leaderboard players[59278].official_forty`, `.draft_year` | E007 | OK |
+| "4.39 forty at the 2025 Combine" | 4.39; 2025 | `E007_leaderboard players[59278].official_forty`, and its Combine-class field (2025) | E007 | OK |
 | "last 20 yards at 23.2 mph" | 23.15 | `players[59278].flying20_mph` | E007 | OK |
 | "fastest finish for his 40 time of 91" | rank 1; 91 | `players[59278].rank` (ranked by `hidden_speed_mph`); `meta.n`; cross-check `PP hook_fast_rank_hidden_of_91` | E007; ph_pairs.py | OK (B4 for the cross-check) |
 | "fit on 2023–24" | — | `V2.design_label` | E012 | OK |
@@ -191,7 +208,7 @@ Hand-written, frozen inputs (not script output, never written by the notebook):
 | "averaged 18.9 over 15" (heading "fifteen games") | 9.239 yd/s; 15 | `CS.season_mean`, `CS.n_games` | E012 | OK |
 | "two forecast standard deviations" | 2.009 | `CS.z_predictive` | E012 | OK |
 | "the 11 of 15 rookie receivers … ten or more qualifying games" | 11; 15 | `CP pools.T1.n_with_10plus_games`, `.n_test_players_k0`. Cross-checks: 15 = `V2.primary.H1.n_by_trait.T1` = `V2.secondary_per_trait.T1["1"].n` | e012_case_priors.py | OK (needs the full-run parquet) |
-| "largest gap … (a rule fixed in advance picked him)" | abs_gap 0.632 | `CS.abs_gap` (max over WR case studies), `CS.rule`; rule text in `E012_prereg.json deliverables[2]` | E012; prereg | OK |
+| "largest gap … (a rule fixed in advance chose him)" | abs_gap 0.632 | `CS.abs_gap` (max over WR case studies), `CS.rule`; rule text in `E012_prereg.json deliverables[2]` | E012; prereg | OK |
 | "worth only 0.14 games" | 0.1355 | `CS.cge_C2_2023_24_fit` (= `ct[T1].cge_C2_2023_24_seasons_fit`) | E012 | OK (rounding edge, §5) |
 | "about 40% of the time" | 0.40 | Arith A6 with 11 = `CP pools.T1.n_with_10plus_games` | arith | OK |
 | "nudged his forecast 0.3 mph toward his season average" | 0.142 yd/s | `CP cases[59278,T1].tracking_shift_C3_minus_C2` (= prior_C3 − prior_C2) | e012_case_priors.py | OK |
@@ -250,8 +267,8 @@ Hand-written, frozen inputs (not script output, never written by the notebook):
 | "covering about 80% in simulation" | 0.775; 0.825 | `PHR.simulation.interval_coverage.{T1,T6}.b1.coverage` (PH6: 80 datasets × 250 B1 resamples each) | E012 | **OK-MC** |
 | "WR top speed at 0.08–1.6 games, DL rush distance at 0.10–3.9, and the rest below 1.7–3.6" | 0.079–1.597; 0.105–3.900; uppers 1.669–3.553 | `ct[T].cge_C2_calibrated_lower95` and `_upper95` (PH6 belt: 26,400 simulated datasets) | E012 | **OK-MC** |
 | "(the Combine as learned from 62–85 players …)" (also §7) | 62; 85 | `ct[*].n_players` | E012 | OK |
-| "five traits reach 0.4–1.7 games (post hoc)" | 0.430–1.746 | `ct[T].cge_C2_vs_C0_same_cv` (PH8) | E012 | OK |
-| "DL rush distance (1.2) … roster position alone is worth 2.4 games, the Combine −0.25 beyond it" | 1.227; 2.362; −0.247 | `ct[T6].cge_C2.est`, `.cge_role_reference`, `.cge_C2_beyond_role` | E012 | OK |
+| "five traits reach 0.4–1.7 games (post hoc)" | 0.430–1.746 | `ct[T].cge_C2_vs_C0_same_cv` (PH8) | E012 | OK, but **superseded 2026-10-19**: the C0 reference credits ridge shrinkage of the class dummies to the Combine. Against a ridge on the dummies alone it is **two traits**, WR top speed 0.63 and DL rush distance 1.68 (§2.12) |
+| "DL rush distance (1.2) … roster position alone is worth 2.4 games, the Combine −0.25 beyond it" (v2.4: "is body type and roster designation (OLB vs DE), not edge alignment: designation alone is worth 2.4 games", with E013 evidence in §2.12) | 1.227; 2.362; −0.247 | `ct[T6].cge_C2.est`, `.cge_role_reference`, `.cge_C2_beyond_role` | E012 | OK |
 | "WR top speed (0.5) falls to 0.14 in the 2023–24 fit and to 0 without one draft class" | 0.471; 0.135; 0.0 | `ct[T1].cge_C2.est`, `.cge_C2_2023_24_seasons_fit`, `.cge_C2_leave_one_class_out_range[0]` | E012 | OK |
 | "(r 0.61 with deep-route share) … adds 1.0 game beyond deep share" | 0.612; 1.045 | `PHR.per_trait.T1.references.role.{r_trait_deep_share, combine_beyond_ref}` (= `ct[T1].cge_C2_beyond_role`) | E012 | OK |
 | "reliability 0.34–0.53, split-half 0.20–0.28" | — | `ct[T4,T8,T10].{rel_player_mean, split_half}` | E012 | OK |
@@ -349,7 +366,7 @@ Their regenerated values differ wherever an ICC was negative, because the curren
 | Quoted | Value | Source key | Producer | Status |
 |---|---|---|---|---|
 | "weights become 0.40/0.73/0.84 after 1/4/8 games" | 0.403/0.730/0.844 | `E012 deliverables.weight_curves.T1.C0.w[1,4,8]` | E012 | OK |
-| "roster role (DE, DT, NT, OLB) beats the Combine: worth 2.4 games, outweighed after 6.0 (post hoc; roles may postdate the draft)" | 2.362; 5.97 | `PHR.per_trait.T6.references.role.{reference, cge_ref, cge_ref_plus_C2}`; Arith A4 | E012; arith | OK |
+| "roster role (DE, DT, NT, OLB) beats the Combine: worth 2.4 games, outweighed after 6.0 (post hoc; roles may postdate the draft)" (v2.4: "a roster-designation prior beats the Combine: outweighed after 6.0 games (post hoc; designations may postdate the draft)") | 2.362; 5.97 | `PHR.per_trait.T6.references.role.{reference, cge_ref, cge_ref_plus_C2}`; Arith A4 | E012; arith | OK |
 | "3.5 times the forecast error" | 3.54 | Arith A7 | arith | OK |
 | "point estimates 0 to 1.2, more than about 4 ruled out" | 0–1.227; 3.900 | `ct[identified].cge_C2.est`; max `ct[identified].cge_C2_calibrated_upper95` | E012 | estimates OK; "about 4" OK-MC |
 | "stable traits in the 40 (reliability 0.66–0.79)" | 0.659–0.785 | `E008 summary.drill_profile.forty.dl_starts.rel` | E008 | OK |
@@ -359,7 +376,7 @@ Their regenerated values differ wherever an ICC was negative, because the curren
 | "Session effects dominate the OL wave drill" | > 0.5 | wave `share_session` (as in §5) | E008 | OK |
 | "the 2025 comeback drill was a different movement" | — | `E008 links["E002-P3"].caveats` | E008 | OK |
 | "The 2025 ball data (no height)" | [2025] | `E011 data.draft_years` | E011 | **B2** |
-| "time 87% of reached balls within one frame" | 0.869 | `E011 detection.contact_time_check["share_within_0.1s"]` | E011 | **B2** |
+| "time 87% of reached balls within one frame" (not quoted since v2.4) | 0.869 | `E011 detection.contact_time_check["share_within_0.1s"]` | E011 | **B2** |
 | "no catch mechanic is yet a stable trait (best 0.42)" | 0.423 | max `E011 reliability[*].cross_drill.reliability` (catch_offset) | E011 | **B2** |
 | "about 6–46 catching drills per player" | [6.1, 46.2] | `E011 reliability.catch_offset.drills_needed_range_from_icc_ci["for_0.5"]` | E011 | **B2** |
 
@@ -379,6 +396,56 @@ Allowlisted non-result constants (the checker only confirms they appear):
 - illustrative game numbers: "game 1", "a typical game-1 top-speed play"
 - table and CI labels: "Weight after 1/4/8", "(95% CI)", "(95% CIs)"
 
+### 2.12 E013 numbers in draft v2.4 (added 2026-10-19)
+
+Draft v2.4 (writer, 2026-10-19) quotes E013 in three places:
+- the Section 3.2 correction;
+- the Section 3.2 DL wording;
+- the Section 3.4 **Roles** note.
+
+`writeup/check_numbers.py` asserts each number below from its key.
+
+**Abbreviations.**
+- `E13` = `experiments/results/E013.json`.
+- `S13` = `E13 post_hoc_review.summary`.
+- `I13` = `E13 post_hoc_review.internal`.
+- `PHR13` = `E13 post_hoc_review` (PH4–PH13, post hoc: decided after the E013 review).
+
+**Producer.** Step S10b, `experiments/E013_role_aware.py` (function named per row), with `src/bdb27/probes/i_role_aware.py`. It runs from the fresh E012 outputs of S10. Status as in §2: OK = deterministic given E012's tables; OK-MC = Monte Carlo with fixed seeds.
+
+**Proven.** Every key below reproduced in the 2026-10-19 notebook-path run (§9, R7): the whole E013.json matched the committed file.
+
+**Quoted in the text**
+
+| Quoted (v2.4) | Value | Source key | Producer | Status |
+|---|---|---|---|---|
+| §3.2 "against draft-class averages under the same cross-validation, WR top speed reaches 0.63 games and DL rush distance 1.68" | 0.6281; 1.6762 | `S13.e012_C2_vs_dummies_ridge_same_cv.{T1, T6}` (= `I13[T].same_cv_vs_dummies_ridge.e012_C2.est`) | `posthoc_internal_trait()` PH8 (same CV folds as E012, seed 0), `posthoc_summary()` | OK |
+| §3.2 "(intervals include 0)" | [0, 1.651]; [0, 4.172] | `I13.{T1, T6}.same_cv_vs_dummies_ridge.e012_C2.{lo, hi}` | PH8. The post hoc 1,000-resample bootstrap on E012's resamples and CV seeds, `data/processed/e013_posthoc_bootstrap.parquet`, is regenerated in S10b | OK-MC |
+| §3.2 "the rest under 0.4 (post hoc)" | ["T1", "T6"] | `S13.e012_C2_vs_dummies_ridge_ge_0.4` | PH8 | OK |
+| §3.2 "may be conservative" | 0.63 > 0.47; 1.68 > 1.23 | `S13.e012_C2_vs_dummies_ridge_same_cv` against E012 `cge_table[T].cge_C2.est` | PH8; E012 | OK |
+| §3.4 "explains 29%, 21% and 10% of between-player variance in WR hitch braking, DL rush distance and DB top speed" | 0.2894; 0.2075; 0.0955 | `S13.anova_share.{T3, T6, T12}` (= `I13[T].anova.share_of_between_player_variance.est`); traits `E13 internal[T].{position, name, role}` | PH6 (the preregistered ANOVA `lambda_role`) | OK |
+| (the three are the BH q < 0.05 ones; the other six ≤ 6.5%) | q 0.0027 / 0.0027 / 0.0261; max other 0.064 (T7) | `S13.anova_share_bh_q_lt_0.05`, `S13.anova_bh_q`; `S13.anova_share` | PH6: 10,000 within-class permutations | q OK-MC; shares OK |
+| §3.4 "yet, cross-validated, adds −0.06 to +0.16 games beyond the Combine and draft (post hoc)" | −0.0567 (T7); +0.1595 (T1) | `S13.role_beyond_combine_draft_range` (= min/max of `S13.role_beyond_combine_draft` = `I13[T].attribution_C2.role_beyond_c.est`) | PH9 | OK |
+| §3.4 "Alignment from a rookie's first games did not improve 2025 forecasts (preregistered)" | H1 1.0279 [0.9959, 1.0695], H2 1.0023 [0.9843, 1.0220]; `pass` false | `E13 prospective.tests.primary.{H1, H2}.{ratio, ratio_ci95, pass, k}`; claims in `E013_prereg.json prospective_test.primary_tests` | `prospective_tests()`: 100,000 sign flips, 10,000-resample player bootstrap, BH over H1–H4 | ratio OK; CI and `pass` OK-MC |
+| §3.4 "even after a post hoc precision correction" | 1.0115 [0.9901, 1.0362], p 0.826 | `PHR13.prospective.tests["calibrated:H1"].{ratio, ratio_ci95, p_one_sided}` | `posthoc_prospective()` (PH4) | ratio OK; CI and p OK-MC |
+| §3.4 "the test's detectable effect (4%)" | 1 − 0.9558 = 4.4% | `PHR13.prospective.power.primary.H1.mde_ratio_one_sided_80pct_power` (arithmetic: outline §6, item 10) | PH7, from the test's own bootstrap draws | OK-MC |
+| §3.4 "exceeds the 3% gain the fit implies" | 1 − 0.9665 = 3.3% | `PHR13.prospective.power.best_case_from_internal_fit.H1.ratio_vs_observed_position_average_error` | PH7 | OK |
+
+**In the source comments and checker conditions (not printed as numbers in the text)**
+
+| Statement | Value | Source key | Producer | Status |
+|---|---|---|---|---|
+| §3.2 DL wording "body type and roster designation (OLB vs DE), not edge alignment": OLB +0.110 beyond edge share and weight (p 4e-5); edge share −0.028 (p 0.57) | | `I13.T6.roster_designation.ols_hc1_role_weight_olb.{olb, edge_share, combine_weight}.{coef, p}` | `roster_designation()` (PH10). Descriptive and in sample. `nfl_position` may be the latest roster label, so it may postdate the draft | OK |
+| Among pure edge players OLBs out-rush DEs, in all three classes | 0.1045 vs −0.0149; Welch p 0.00031; n 21 / 19 | `I13.T6.roster_designation.pure_edge_olb_vs_de.{mean_olb, mean_de, welch_p_two_sided, n_olb, n_de, by_class}` | PH10 | OK |
+| Edge share adds < 0.1 games beyond the Combine and draft, and is 75% predictable from them | 0.0649; CV R² 0.7517 | `S13.role_beyond_combine_draft.T6`; `S13.role_share_from_combine_draft_cv_r2.T6` | PH9 | OK |
+| The old "five traits" (the claim the correction removes) | T1, T2, T6, T7, T12 | `S13.e012_C2_vs_C0_same_cv_ge_0.4`, equal to E012 `cge_table[T].cge_C2_vs_C0_same_cv` (asserted inside E013) | PH8 | OK |
+
+**Not quoted** (outline §12; they stay in E013.json and the notebook's printed E013 summary):
+- H3 (0.964, p 0.077) and H4 (1.004);
+- the CV role worth (0.77, 0.24) and the role-aware trust table (2.1–6.9 qualifying games);
+- the matched-precision variants (1.007, 0.983), and role from his whole season (1.013);
+- the influence table. `PHR13.prospective.t3_influence.top2[*].display_name` names two other rookies, who must not be named. The comparison never prints a `name` field (`REDACT`).
+
 ---
 
 ## 3. Figures (`writeup/make_figures.py`)
@@ -387,7 +454,7 @@ The script prints a manifest of every drawn or printed number with its source ke
 
 | Figure | JSON keys | Parquets (`data/processed`) | Upstream steps |
 |---|---|---|---|
-| **1** `fig1_receiver_a.gif/.png` | `E012 deliverables.case_studies[59278,T1]`: prior_C2, prior_C0, season_mean, game_values, running_mean, blend_C2, weight_C2, z_predictive, n_games<br>`E012 deliverables.weight_curves.T1.C2.w[1]`<br>`E007_leaderboard players[59278, 58274]`: official_forty, flying20_mph, rank; `meta.n`; `meta.post_hoc_official_splits.note`<br>`E007 concept_pair.{fast,slow}.nfl_id`<br>`CP cases[59278,T1].prior_C3` (17.9 mph, post hoc marker); asserts on `prior_C1`, `tracking_shift_C3_minus_C2` and `pools.T1` | `e007_forty_attempts` (E007); `combine_tracking`, `game_tracking_2025`, `games`, `player_play` (S1); `e012_game_values` (**E012 full run only**) | S1, S5, S10 (full), S11 |
+| **1** `fig1_receiver_a.gif/.png` | `E012 deliverables.case_studies[59278,T1]`: prior_C2, prior_C0, season_mean, game_values, running_mean, blend_C2, weight_C2, z_predictive, n_games<br>`E012 deliverables.weight_curves.T1.C2.w[1]`<br>`E007_leaderboard players[59278, 58274]`: official_forty, flying20_mph, rank; `meta.n`; `meta.post_hoc_official_splits.note`<br>`E007 concept_pair.{fast,slow}.nfl_id`<br>`CP cases[59278,T1].prior_C3` (17.9 mph, post hoc marker); asserts on `tracking_shift_C3_minus_C2` and `pools.T1` | `e007_forty_attempts` (E007); `combine_tracking`, `game_tracking_2025`, `games`, `player_play` (S1); `e012_game_values` (**E012 full run only**) | S1, S5, S10 (full), S11 |
 | **2** `fig2_cge.png` | `ct[T]`: lambda.est/lo/hi, cge_C2.est/lo/hi, cge_C2_calibrated_lower95/upper95, rel_player_mean, split_half, r2_cv.C2, n_players, cge_C2_2023_24_seasons_fit, cge_role_reference, cge_C2_beyond_role, exposure_r_trait_log_games, delta_cge_tracking (right panel)<br>`PHR.simulation.interval_coverage.{T1,T6}.b1`<br>`PHR.per_trait.T1.references.role.{r_trait_deep_share, combine_beyond_ref}` | — | S10 |
 | **3** `fig3_rookie_test.png` | `V2.primary.{H1,H2,H3}`: ratio, ratio_ci95, n_players, pooled_a, pooled_b<br>`V2.pooled_curves[k]`: se_games, se_blend_C0, se_blend_C2<br>`V2.calibration_80pct.C2[0..4].pooled_coverage`<br>`V2.post_hoc_combine_prior_vs_position_mean.{k0.comb_C2_vs_C0, k1.blend_C2_vs_C0}`<br>`PHR.validation_2`: shrinkage_share_of_blend_gain["1"], blend_C0_vs_games.k1, ph3_drivers.k0_identified_traits_only, ph3_bh_q_over_10<br>`V2.secondary_per_trait[priced T]["1"]` (the 68%) | — | S10 |
 | **4** `fig4_transfer_map.png` | `E009 transfer_map[*]`: n, b1_partial_r, b1_ci_*, b2_partial_r, b2_ci_*, b2_mde80_one_sided, b2_drop3_* (the b2_* columns are copied from E008.json)<br>`E009 summary`: b1_n_nulls, draft_delta_abs_median, b1_/b2_nulls_partial_r_expected_direction<br>`E008 summary.transfer`: n_links, n_nulls, corrected_beyond_b2_ge_05 (**B1**)<br>`E008 summary.multiplicity["E006-P1"].bh_q_all_round1_tests` | — | S8, S9 |
@@ -646,13 +713,18 @@ for nj in (3, 4):
 
 ---
 
+### 7.4 Stage E (E013), added 2026-10-19
+
+E013 needs about 510 × T seconds of compute over all its sessions: 4.36 h here at T = 31.0 s; about 16 h on Kaggle at the central T ≈ 112 s.
+- **It has a stage of its own**, E, after C. Stage E has no split rule: `run_all.run()` stops it 10.5 h into a Kaggle session with its finished checkpoints kept, and the next stage E notebook resumes from them (README.md, Stage E across sessions).
+- **This plan avoids the E012-style code split of §7.2.** It changes no E013 statistic and needs only the checkpoint-folder edit (README.md, Compatibility edits).
+
 ## 8. Other provenance notes
 
 - `experiments/posthoc_writeup_v1/ph_inseason.json` and `ph_rev3.json` are **not used** by draft v2.2 or by the checker; they are leftovers from writeup v1.
 - `check_numbers.py` checks draft text against JSON keys only; it does not check figures. `make_figures.py` checks the figures' copies of drafted numbers with `same(...)`, so together the two cover both.
 - `E012_prereg.json`, `E009_prereg.json`, `E010_prereg.json` and `E012_audit/` are frozen inputs. The notebook reads them and never writes them.
-- **Receiver A's stopwatch-only forecast must not be printed.** It is `CP prior_C1` (17.8 mph): the checker checks it, but the text never shows it. outline.md §4's guardrail explains why: beside C2 it reveals his draft slot, so the notebook must not print it either.
-- **`writeup/figure_plan.md` is stale on Figure 1.** Its "Not quoted in the text" list still says Figure 1 draws the 17.8 mph stopwatch-only forecast. The v2.2 code does not draw it (`make_figures.py` fig1 comment; the manifest prints only `prior_C3`, 17.9).
+- **No stopwatch-only forecast (`CP prior_C1`) is ever shown:** not in the text, a figure, or the notebook's output (outline.md §4). The checker tests it only as a true/false condition. The comparison withholds every `prior_C1` value (`REDACT` in `run_all.py`).
 
 ---
 
@@ -667,5 +739,6 @@ for nj in (3, 4):
 | R4 | **Sandbox B**, read-only on the repo's `data/processed`: `make_figures.py`, `e012_case_priors.py`, `ph_pairs.py` | All 6 figure files byte-identical (27 s, 3.5 GB). Both post hoc JSONs identical. |
 | R5 | n_jobs invariance: `linkage.evaluate` and `H.bootstrap` (T1) at n_jobs 1, 3 and 4 | bit-identical |
 | R6 | Rounding-edge scan (§5) and the PyPI metadata of every pin (§6) | as reported |
+| R7 (2026-10-19) | **E013 through the notebook's own path.** A `run_all` workspace held the committed E012 outputs: E012.json from git, the five e012 parquets of the run that wrote it, and the two S01 tables. Step S10b ran via `run_all.run()`: it was stopped at 18 min (`$BDB27_STOP_AFTER_H`), keeping 2 checkpoints, then resumed with `--resume` to the end (4.12 h; 4.36 h uninterrupted). | **E013.json:** 16,477 leaves. 16,340 are identical and 133 floats are within 1e-9 (largest absolute difference 4e-16). The 4 others are the documented metadata (`runtime_s`, `run_started_utc`, `reuse_stored_draws`, `runtime_note`). `compare()` PASS.<br>**Draws:** all seven e013 parquets are byte-identical to the stored draws behind the committed file.<br>**So every §2.12 key reproduces,** OK-MC rows included. Details: README.md, How this was verified. |
 
 **Done since (2026-10-16/17): four full local runs**, which reproduce every value (README.md, How this was verified; runtimes in §7.0). Original note: **not done here: full-count runs of E008, E009, E010 and E012** (≈ 7 h together on this machine). With the counts unchanged and the seeds fixed, those should reproduce the committed OK-MC values. A full dry run of each is still the last check before Gate 3, and also the way to measure Kaggle times (§7.3). Sandbox logs are in the session scratchpad (`prov/logs/`), which is temporary.

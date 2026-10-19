@@ -14,8 +14,9 @@ What it does:
   2. Workspace: a fresh copy of the repository's code and its frozen inputs (preregistrations, E012 audit files),
      plus links to the raw CSVs. Every script derives its paths from its own location, so all outputs land in the
      workspace and the committed experiments/results is only ever read, by the final comparison.
-  3. Steps S01-S14 in dependency order, each in its own process, with a log, wall time, CPU time and peak memory.
-     A finished step is recorded in _run/progress.json and skipped on a rerun, so an interrupted run resumes.
+  3. Steps S01-S14 (S10b is E013) in dependency order, each in its own process, with a log, wall time, CPU time and
+     peak memory. A finished step is recorded in _run/progress.json and skipped on a rerun, so an interrupted run
+     resumes; S10b also resumes inside the step from its checkpoints, and on Kaggle stops at the session deadline.
   4. Comparison: every regenerated results JSON against the committed one, leaf by leaf (compare()), and E008's
      constants transcribed from round 1 against their committed source (transcribed_constants()).
 
@@ -38,6 +39,7 @@ import os
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -50,6 +52,7 @@ COMPETITION = "nfl-big-data-bowl-2027"
 KAGGLE_INPUT = Path("/kaggle/input")
 KAGGLE_WORKING = Path("/kaggle/working")
 HERE = Path(__file__).resolve().parent
+SESSION_START = time.time()  # the notebook imports this file first: on Kaggle, near the start of the 12-hour clock
 
 RAW_FILES = ("players.csv", "combine_results.csv", "player_career_successes.csv", "games.csv", "player_play.csv",
              "combine_tracking.csv", "game_tracking_2023.csv", "game_tracking_2024.csv", "game_tracking_2025.csv")
@@ -105,6 +108,9 @@ class Step:
     title: str
     argv: tuple  # arguments to the pinned interpreter, run from the workspace root
     writes: str  # the outputs a reader cares about
+    # A resumable step's checkpoint folder (relative to the workspace). On Kaggle such a step stops at the session
+    # deadline (_deadline) with its finished checkpoints saved; the next session's run resumes from them.
+    checkpoints: str = ""
 
 
 STEPS = (
@@ -132,6 +138,9 @@ STEPS = (
          "E009.json, e009_*.parquet"),
     Step("S10", "C", "E012 Combine Game Equivalents", ("experiments/E012_game_equivalents.py",),
          "E012.json, e012_*.parquet"),
+    # --resume reads only checkpoints this workspace wrote (one code fingerprint per workspace); a first run has none
+    Step("S10b", "E", "E013 role-aware Combine Exchange Rate", ("experiments/E013_role_aware.py", "--resume"),
+         "E013.json, e013_*.parquet", checkpoints="data/scratch/e013/ckpt"),
     Step("S11a", "D", "Case-study export (post hoc)", ("experiments/posthoc_writeup_v2/e012_case_priors.py",),
          "e012_case_priors.json"),
     Step("S11b", "D", "Same-40 pairs export (post hoc)", ("experiments/posthoc_writeup_v1/ph_pairs.py",),
@@ -150,9 +159,9 @@ CACHE_FILES = tuple(f"{t}.parquet" for t in ("players", "combine_results", "play
                                               "player_play", "combine_tracking", "game_tracking_2023",
                                               "game_tracking_2024", "game_tracking_2025", "game_frames_post_snap",
                                               "probe_e_game_frames"))
-STAGES = {"A": "features, round-1 probes, E007, E010, E011", "B": "E008, E009", "C": "E012",
+STAGES = {"A": "features, round-1 probes, E007, E010, E011", "B": "E008, E009", "C": "E012", "E": "E013",
           "D": "exports, figures, number checker, comparison"}
-UPSTREAM = {"A": "", "B": "A", "C": "A", "D": "ABC"}  # B and C can run at the same time
+UPSTREAM = {"A": "", "B": "A", "C": "A", "E": "AC", "D": "ABCE"}  # B runs beside C and E; E needs C's E012 outputs
 
 # ------------------------------------------------------------------------------------------------ patches
 # Non-statistical compatibility edits. R1_KEYS and COMMITTED_EDITS are committed to the repository scripts
@@ -199,6 +208,11 @@ COMMITTED_EDITS = (  # (file, old text (now absent), new text, expected count of
      'f = RES / "E012_audit" / "implementation_choices_frozen.json"', 1,
      "the freeze file E012 checks its implementation choices against moved from a scratch folder to the "
      "committed experiments/results/E012_audit/ (same SHA-256)"),
+    ("experiments/E013_role_aware.py",
+     'SCRATCH = Path("/private/tmp/claude-501/-Users-jasonli-Documents-GitHub-NFL-Big-Data-Bowl-2027/"',
+     'SCRATCH = ROOT / "data" / "scratch" / ("e013" + ("_quick" if QUICK else ""))', 1,
+     "E013 kept its bootstrap and simulation checkpoints in one machine's session scratchpad; they now live in the "
+     "workspace (data/scratch/e013/ckpt), so a Kaggle session saves them and the next session resumes from them"),
 )
 LITERAL_PATCHES = ()  # (file, old, new, expected count, why); none at present
 R1_WHY = ("round-1 script written against the rev-1 harness keys (perm_p, perm_p_lt_05, loco_delta_r2, "
@@ -209,7 +223,8 @@ R1_WHY = ("round-1 script written against the rev-1 harness keys (perm_p, perm_p
 CODE_GLOBS = ("src/bdb27/**/*.py", "experiments/*.py", "experiments/posthoc_writeup_v1/ph_pairs.py",
               "experiments/posthoc_writeup_v2/e012_case_priors.py", "writeup/check_numbers.py",
               "writeup/make_figures.py", "writeup/draft.md")
-FROZEN_GLOBS = ("experiments/results/*_prereg.json", "experiments/results/E012_audit/*")
+FROZEN_GLOBS = ("experiments/results/*_prereg.json", "experiments/results/E012_audit/*",
+                "experiments/results/E013_audit/*")
 
 # ------------------------------------------------------------------------------------------------ comparison
 COMPARED = ("experiments/results/E001.json", "experiments/results/E002.json", "experiments/results/E003.json",
@@ -217,16 +232,17 @@ COMPARED = ("experiments/results/E001.json", "experiments/results/E002.json", "e
             "experiments/results/E005.json", "experiments/results/E006.json", "experiments/results/E007.json",
             "experiments/results/E007_leaderboard.json", "experiments/results/E008.json",
             "experiments/results/E009.json", "experiments/results/E010.json", "experiments/results/E011.json",
-            "experiments/results/E012.json", "experiments/posthoc_writeup_v1/ph_pairs.json",
-            "experiments/posthoc_writeup_v2/e012_case_priors.json")
+            "experiments/results/E012.json", "experiments/results/E013.json",
+            "experiments/posthoc_writeup_v1/ph_pairs.json", "experiments/posthoc_writeup_v2/e012_case_priors.json")
 NOT_REGENERATED = {
     "experiments/results/*_prereg.json": "frozen inputs (preregistrations), copied into the workspace",
     "experiments/results/E012_audit/*": "frozen audit record of E012 (amendment, freeze file, logs)",
+    "experiments/results/E013_audit/*": "frozen audit record of E013 (freeze file, full-run log)",
     "experiments/results/E002_run1_eb_bug.json": "historical record of E002's first, buggy run; no script writes it",
     "experiments/posthoc_writeup_v1/ph_inseason.json, ph_rev3.json": "writeup v1 leftovers; draft v2.2 uses neither",
 }
 REL_TOL, ABS_TOL = 1e-9, 1e-12  # floats only: last-digit differences from BLAS/OpenMP summation order
-# Values never printed (writeup/outline.md section 4): Receiver A's stopwatch-only forecast, draft status, names.
+# Values never printed (writeup/outline.md section 4): stopwatch-only forecasts (prior_C1), draft status, names.
 REDACT = re.compile(r"prior_C1|name|draft_(round|pick|status)|undrafted|college", re.I)
 
 # Documented differences between a fresh and a committed JSON, by cause. Every other difference fails the comparison.
@@ -254,6 +270,11 @@ DOCUMENTED = {
         "cross-drill ICCs drop rows alone in their centering group (new key n_dropped). These Combine-side "
         "blocks feed no writeup number; E008 recomputes every Combine reliability it uses and copies these values "
         "only into its unquoted comparison column drill_profile[*].round1_reliability."),
+    "e013-reuse": (
+        "The committed E013.json was written by a --reuse rerun after the E013 review: it read the bootstrap and "
+        "simulation draws that the full run had stored in data/processed/e013_*.parquet (experiments/log.md, E013 "
+        "review response). The notebook computes those draws itself, so its file records reuse_stored_draws false "
+        "and has no runtime_note. Every value is compared."),
 }
 DEFECTS = set()  # rules that document a reproducibility bug: such a file shows PASS* and the verdict names it; none now
 _ADDED = lambda x, y: y is KeyError and x is not KeyError  # noqa: E731  key new in the fresh file
@@ -264,6 +285,10 @@ _ROUND1 = ("E002", "E003", "E004", "E005", "E006")
 EXPECTED = (
     ("*", r"^/runtime_s$", "volatile", None),
     ("experiments/results/E012.json", r"^/(run_started_utc|rewritten_utc)$", "volatile", None),
+    ("experiments/results/E013.json", r"^/run_started_utc$", "volatile", None),
+    ("experiments/results/E013.json", r"^/reuse_stored_draws$", "e013-reuse", lambda x, y: x is False and y is True),
+    ("experiments/results/E013.json", r"^/runtime_note$", "e013-reuse",
+     lambda x, y: x is KeyError and isinstance(y, str)),
     ("experiments/results/E009.json", r"^/round3_inputs/e010_sha256$", "upstream-hash",
      lambda x, y: isinstance(x, str) and re.fullmatch(r"[0-9a-f]{64}", x) is not None),
     *((f"experiments/results/{e}.json", r"^/(primary|exploratory)/(?!(.*/)?(n|raw_r|feature|target)$)",
@@ -711,8 +736,43 @@ def _summary(sid: str, rec: dict) -> str:
             f"peak memory {rec['peak_rss_gb']:.1f} GB{where}); log _run/logs/{sid}.log")
 
 
+def _deadline() -> float | None:
+    """When a resumable step must stop so that the session can still save its output: on Kaggle, SESSION_H - MARGIN_H
+    hours after the session started; elsewhere never. $BDB27_STOP_AFTER_H (hours after the start) overrides both, to
+    test the stop and the resume locally."""
+    h = os.environ.get("BDB27_STOP_AFTER_H")
+    if h:
+        return SESSION_START + float(h) * 3600
+    return SESSION_START + (SESSION_H - MARGIN_H) * 3600 if on_kaggle() else None
+
+
+def _kill_group(pid: int, sig: int) -> None:
+    try:
+        os.killpg(pid, sig)  # the step and its worker processes (it runs in its own process group)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def _drop_cut_checkpoints(d: Path) -> list:
+    """Remove checkpoint files that a stop cut short (a complete Parquet file starts and ends with b"PAR1"), so the
+    resumed run rebuilds them; return their names."""
+    cut = []
+    for p in sorted(d.glob("*.parquet")) if d.is_dir() else []:
+        n = p.stat().st_size
+        with open(p, "rb") as f:
+            head = f.read(4)
+            f.seek(max(n - 4, 0))
+            tail = f.read(4)
+        if n < 12 or head != b"PAR1" or tail != b"PAR1":
+            p.unlink()
+            cut.append(p.name)
+    return cut
+
+
 def run(ctx: Context, sid: str, heartbeat_s: int = 900) -> None:
-    """Run one step in the pinned interpreter (skipped if already done); raises if it fails."""
+    """Run one step in the pinned interpreter (skipped if already done); raises if it fails. A resumable step
+    (Step.checkpoints) that reaches the session deadline is stopped instead, with status "partial": its finished
+    checkpoints are kept, and the next session's run resumes from them."""
     s = STEP[sid]
     rec = load_progress(ctx).get(sid)
     if rec and rec.get("status") == "done":
@@ -724,33 +784,57 @@ def run(ctx: Context, sid: str, heartbeat_s: int = 900) -> None:
     log_p = ctx.run_dir / "logs" / f"{sid}.log"
     _log(ctx, f"start {sid} {s.title}")
     print(f"{sid} {s.title}: running ...", flush=True)
+    deadline = _deadline() if s.checkpoints else None
+    if deadline is not None:
+        print(f"  (resumable: stops at {time.strftime('%H:%M UTC', time.gmtime(deadline))} if not finished, keeping "
+              f"its checkpoints in {s.checkpoints})", flush=True)
     t0 = time.time()
-    with open(log_p, "w") as log:
+    stop_t = None
+    # a resumable step's rerun keeps the earlier session's log above its own
+    with open(log_p, "a" if s.checkpoints and log_p.exists() else "w") as log:
         log.write(f"# {_utc()} {ctx.py} {' '.join(s.argv) if s.argv[0] != '-c' else '-c <inline>'}\n")
         log.flush()
         proc = subprocess.Popen([str(ctx.py), *s.argv], cwd=ctx.ws, env=_step_env(ctx.ws, ctx.workers),
-                                stdout=log, stderr=subprocess.STDOUT)
+                                stdout=log, stderr=subprocess.STDOUT, start_new_session=bool(s.checkpoints))
         last = t0
         while True:
             pid, status, ru = os.wait4(proc.pid, os.WNOHANG)
             if pid:
                 break
             time.sleep(2)
-            if time.time() - last > heartbeat_s:
-                last = time.time()
+            now = time.time()
+            if deadline is not None and now > deadline:
+                if stop_t is None:  # SIGTERM, then SIGKILL if it is still running a minute later
+                    stop_t = now
+                    _kill_group(proc.pid, signal.SIGTERM)
+                elif now - stop_t > 60:
+                    _kill_group(proc.pid, signal.SIGKILL)
+            if now - last > heartbeat_s:
+                last = now
                 print(f"  ... {sid} still running ({_fmt_s(last - t0)})", flush=True)
+        if stop_t is not None:
+            _kill_group(proc.pid, signal.SIGKILL)  # any worker left behind
+            log.write(f"\n# {_utc()} stopped by run_all at the session deadline\n")
     rc = os.waitstatus_to_exitcode(status)
     proc.returncode = rc
     rss = ru.ru_maxrss / (1 << 30 if sys.platform == "darwin" else 1 << 20)
-    rec = {"status": "done" if rc == 0 else "failed", "rc": rc, "finished_utc": _utc(), "wall_s": time.time() - t0,
-           "cpu_s": ru.ru_utime + ru.ru_stime, "peak_rss_gb": rss, "stage_run": ctx.stage,
+    stopped = stop_t is not None and rc != 0
+    rec = {"status": "done" if rc == 0 else ("partial" if stopped else "failed"), "rc": rc, "finished_utc": _utc(),
+           "wall_s": time.time() - t0, "cpu_s": ru.ru_utime + ru.ru_stime, "peak_rss_gb": rss, "stage_run": ctx.stage,
            "where": "Kaggle" if on_kaggle() else f"local {platform.system()} {platform.machine()}"}
+    if stopped:
+        rec["checkpoints_cut_short_removed"] = _drop_cut_checkpoints(ctx.ws / s.checkpoints)
+        rec["checkpoints_kept"] = len(list((ctx.ws / s.checkpoints).glob("*.parquet")))
     prog = load_progress(ctx)
     prog[sid] = rec
     _save_progress(ctx, prog)
     _log(ctx, f"end {sid} rc={rc} wall={rec['wall_s']:.0f}s cpu={rec['cpu_s']:.0f}s rss={rss:.2f}GB")
     print(_summary(sid, rec))
-    if rc != 0:
+    if stopped:
+        print(f"{sid} stopped at the session deadline with {rec['checkpoints_kept']} finished checkpoints kept "
+              f"({len(rec['checkpoints_cut_short_removed'])} cut short, removed). Let this version finish and save, "
+              f"then attach its output to another stage {s.stage} notebook: the step resumes from its checkpoints.")
+    elif rc != 0:
         tail = log_p.read_text().splitlines()[-40:]
         raise RuntimeError(f"{sid} failed (exit {rc}). Last lines of {log_p}:\n" + "\n".join(tail))
 
@@ -779,15 +863,18 @@ print(json.dumps({"seconds": time.time() - t, **{k: r[k] for k in ("partial_r", 
 CALIBRATION_OUTPUT = {"partial_r": 0.321878, "fl_p": 0.016198, "cv_perm_p": 0.006997}  # rounded to 6 places
 # Stage wall time per second of the calibration call, the largest over the four local full runs: clean-room run
 # 2026-10-17 (call timed in the same conditions, 38.4 s): A 177, B 140, C 218; builder runs 2026-10-16 (call 31.9 s,
-# timed 2026-10-15): A 165-171, B 112-119, C 197-229.
-STAGE_PER_CALIBRATION_S = {"A": 177, "B": 140, "C": 229}
+# timed 2026-10-15): A 165-171, B 112-119, C 197-229. E (E013, its compute over all sessions): 15,685 s uninterrupted
+# on 2026-10-19 against calls of 31.0 s (just after) and 49.1 s (just before), 506 and 319. The committed full run
+# (E013_audit/full.log, its 5,938 s T1 bootstrap taken at the other traits' 290 s, plus the post hoc bootstrap) gives
+# about 16,200 s, 508 against the 31.9 s reference.
+STAGE_PER_CALIBRATION_S = {"A": 177, "B": 140, "C": 229, "E": 510}
 SETUP_H = 0.25  # per Kaggle stage: environment build and the S01/S02 cache rebuild (A's multiplier already has S01/S02)
 SESSION_H, MARGIN_H = 12.0, 1.5  # Kaggle's session limit, and the margin a stage should keep below it
 
 
 def calibrate(ctx: Context) -> dict:
     """Time the calibration call in the pinned interpreter, check its output, and predict each stage's wall time on
-    this machine. On Kaggle, run it in stage A and read the prediction before starting stages B and C."""
+    this machine. On Kaggle, run it in stage A and read the prediction before starting stages B, C and E."""
     if not done(ctx, "S01", "S03"):
         raise RuntimeError("the calibration call needs the outputs of S01 and S03")
     r = subprocess.run([str(ctx.py), "-c", CALIBRATION], cwd=ctx.ws, env=_step_env(ctx.ws, ctx.workers),
@@ -797,12 +884,22 @@ def calibrate(ctx: Context) -> dict:
     out = json.loads(r.stdout.strip().splitlines()[-1])
     same = all(round(out[k], 6) == v for k, v in CALIBRATION_OUTPUT.items())
     pred = {s: m * out["seconds"] / 3600 + SETUP_H for s, m in STAGE_PER_CALIBRATION_S.items()}
+    resumable = {s.stage for s in STEPS if s.checkpoints}
+    per_session = SESSION_H - MARGIN_H - SETUP_H  # compute hours a resumable stage gets in each session
+    sessions = {s: math.ceil((h - SETUP_H) / per_session) for s, h in pred.items() if s in resumable}
     rec = {"utc": _utc(), "where": "Kaggle" if on_kaggle() else f"local {platform.system()} {platform.machine()}",
-           "cpu_count": os.cpu_count(), **out, "output_matches": same, "predicted_stage_hours": pred}
+           "cpu_count": os.cpu_count(), **out, "output_matches": same, "predicted_stage_hours": pred,
+           "predicted_sessions_resumable_stages": sessions}
     _write_json(ctx.run_dir / f"calibration_{ctx.stage}.json", rec)
     print(f"calibration call: {out['seconds']:.1f} s ({out['seconds'] / 31.9:.2f} x the 31.9 s reference); output "
           + ("matches" if same else f"DIFFERS: {({k: out[k] for k in CALIBRATION_OUTPUT})} vs {CALIBRATION_OUTPUT}"))
     for s, h in pred.items():
+        if s in resumable:
+            verdict = ("fits in one session" if sessions[s] == 1 else
+                       f"about {sessions[s]} sessions: it stops {SESSION_H - MARGIN_H:g} h into a session and the "
+                       f"next stage {s} notebook resumes from its checkpoints")
+            print(f"  stage {s} ({STAGES[s]}): about {h:.1f} h of compute here -> {verdict}")
+            continue
         verdict = ("fits" if h <= SESSION_H - MARGIN_H else
                    f"within {MARGIN_H:g} h of the limit" if h <= SESSION_H else "does NOT fit")
         print(f"  stage {s} ({STAGES[s]}): about {h:.1f} h per session here -> {verdict}")
@@ -819,6 +916,11 @@ def finish(ctx: Context) -> None:
     todo = [s.id for s in STEPS if not done(ctx, s.id) and s.id not in CACHE_STEPS]
     print("all steps done" if not todo else f"workspace {ctx.ws} saved; steps still to run: {', '.join(todo)} "
                                             f"(attach this notebook's output to the next stage)")
+    prog = load_progress(ctx)
+    for sid in todo:
+        if prog.get(sid, {}).get("status") == "partial":
+            print(f"{sid} ({STEP[sid].title}) stopped at the session deadline with its checkpoints saved: attach this "
+                  f"notebook's output to another stage {STEP[sid].stage} notebook, which resumes it")
 
 
 # ------------------------------------------------------------------------------------------------ display
